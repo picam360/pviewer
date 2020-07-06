@@ -36,6 +36,7 @@
 <link rel="shortcut icon" href="./favicon.ico">
 
 <!-- JS dependencies (order matters!) -->
+<script type="text/javascript" src="cordova.js"></script>
 <script src="lib/angular/angular.js"></script>
 <script src="lib/onsen/js/onsenui.js"></script>
 <script
@@ -152,7 +153,9 @@
 
 	<ons-template id="menu.html"> <ons-page
 		modifier="menu-page"
-	> <ons-toolbar>
+	>
+    <div class="page__background" style="background-color: black;"></div>
+    <ons-toolbar>
 	<div class="right">
 		<ons-toolbar-button ng-click="app.menu.closeMenu()">
 		<ons-icon
@@ -301,6 +304,9 @@
 	<script>
 		ons.bootstrap();
 		ons.ready(function() {
+			if(!window.cordova){
+				document.body.style.backgroundColor = "black";
+			}
 			//addEventListener spec migration
 			var supportsPassive = false;
 			try {

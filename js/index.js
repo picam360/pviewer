@@ -408,7 +408,7 @@ var app = (function() {
 							],
 					}
 					if(window.cordova){
-						config.plugins.push("plugins/cordova_binder_st.so");
+						config.plugin_paths.push("plugins/cordova_binder_st.so");
 					}
 					const config_json = JSON.stringify(config);
 					m_pstcore.pstcore_init(config_json);
