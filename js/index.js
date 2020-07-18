@@ -8,15 +8,14 @@ var app = (function() {
 	//private members
 	var tilt = 0;
 	var socket;
-	var m_view_fov = 120;
 	var auto_scroll = false;
-	var view_offset_lock = false;
 	var m_afov = false;
 	var m_fpp = false;
 	var m_vertex_type = "";
-	var debug = 0;
 
 	var m_pstcore = null;
+	var m_pst = null;
+	
 	// main canvas
 	var m_canvas;
 	// overlay
@@ -36,22 +35,15 @@ var app = (function() {
 	var opus_decoder;
 	var audio_first_packet_s = 0;
 	// motion processer unit
-	var mpu;
+	var m_mpu;
 
 	var server_url = window.location.href.split('?')[0];
 	var m_options = {};
-	var plugins = [];
-	var watches = [];
-	var statuses = [];
 	var is_recording = false;
-	var view_offset = new THREE.Quaternion();
 	var p2p_num_of_members = 0;
 	var peer_call = null;
 	var p2p_uuid_call = "";
 	var default_image_url = null;
-
-	var cmd2upstream_list = [];
-	var filerequest_list = [];
 
 	var m_frame_active = false;
 	var m_menu_visible = false;
@@ -73,6 +65,7 @@ var app = (function() {
 	var query = GetQueryString();
 
 	var self = {
+		debug: 0,
 		plugin_host: null,
 		isDeviceReady: false,
 		base_path: "",
@@ -139,6 +132,10 @@ var app = (function() {
 		receivedEvent: function(id) {
 			console.log('Received Event: ' + id);
 		},
+		
+		connected:function(){
+			return false;
+		},
 
 		init_common_options_done: false,
 		init_common_options: function(callback) {
@@ -158,6 +155,9 @@ var app = (function() {
 				}
 				if(!m_options.plugin_paths){
 					m_options.plugin_paths = [];
+				}
+				if(callback){
+					callback();
 				}
 			});
 		},
@@ -202,57 +202,6 @@ var app = (function() {
 					}
 					self.init_plugins(callback);
 				});
-		},
-		
-		init_plugins: function(callback) {
-			if (!m_options.plugin_paths || m_options.plugin_paths.length == 0) {
-				if (callback) {
-					callback();
-				}
-				return;
-			}
-			function load_plugin(idx) {
-				self.plugin_host
-					.getFile(m_options.plugin_paths[idx], function(
-						chunk_array) {
-						var script_str = (new TextDecoder)
-							.decode(chunk_array[0]);
-						var script = document
-							.createElement('script');
-						script.onload = function() {
-							console.log("loaded : " +
-								m_options.plugin_paths[idx]);
-							if (create_plugin) {
-								var plugin = create_plugin(self.plugin_host);
-								plugins.push(plugin);
-								create_plugin = null;
-							}
-							if (idx + 1 < m_options.plugin_paths.length) {
-								load_plugin(idx + 1);
-							} else {
-								for (var i = 0; i < plugins.length; i++) {
-									if (plugins[i].init_options) {
-										plugins[i]
-											.init_options(m_options[plugins[i].name] || {});
-									}
-								}
-								if (callback) {
-									callback();
-								}
-							}
-						};
-						console.log("loding : " +
-							m_options.plugin_paths[idx]);
-						var blob = new Blob(chunk_array, {
-							type: "text/javascript"
-						});
-						var url = window.URL || window.webkitURL;
-						script.src = url.createObjectURL(blob);
-
-						document.head.appendChild(script);
-					});
-			}
-			load_plugin(0);
 		},
 
 		init_watch: function() {
@@ -304,7 +253,7 @@ var app = (function() {
 							port: SIGNALING_PORT,
 							secure: SIGNALING_SECURE,
 							key: P2P_API_KEY,
-							debug: debug
+							debug: self.debug
 						});
 						var call = peer_call.call(p2p_uuid_call, stream);
 						call.on('stream', function(remoteStream) {
@@ -367,7 +316,7 @@ var app = (function() {
 				auto_scroll = parseBoolean(query['auto-scroll']);
 			}
 			if (query['debug']) {
-				debug = parseFloat(query['debug']);
+				self.debug = parseFloat(query['debug']);
 			}
 			if (query['view-offset-lock']) {
 				view_offset_lock = parseBoolean(query['view-offset-lock']);
@@ -382,46 +331,68 @@ var app = (function() {
 			m_canvas = document.getElementById('panorama');
 			m_overlay = document.getElementById('overlay');
 
-			self.plugin_host = PluginHost(self);
-			self.init_common_options();
-
-			m_pstcore = window.PstCoreLoader({
-				preRun: [],
-				postRun: [],
-				print: function(msg) {
-					console.log(msg);
-				},
-				printErr: function(e) {
-					console.error(e);
-				},
-				canvas: function() {
-					var e = m_canvas;
-					return e;
-				}(),
-				onRuntimeInitialized : function() {
-					console.log("pstcore initialized");
-					const config = {
-							"plugin_paths" : [
-								"plugins/pvf_loader_st.so",
-								"plugins/libde265_decoder_st.so",
-								"plugins/pgl_renderer_st.so",
-							],
+			self.init_common_options(() => {
+				self.plugin_host = PluginHost(self, m_options);
+				self.plugin_host.init_plugins();
+				self.plugin_host.on_view_quat_changed((view_quat, view_quat_offset) => {
+					var quat = view_quat_offset;
+					m_pstcore._pstcore_set_view_quat(m_pst, quat.x, quat.y, quat.z, quat.w);
+				});
+				
+				m_mpu = MPU();
+				m_mpu.init((quat) => {
+					if(!m_pstcore || !m_pst){
+						return;
 					}
-					if(window.cordova){
-						config.plugin_paths.push("plugins/cordova_binder_st.so");
-					}
-					const config_json = JSON.stringify(config);
-					m_pstcore.pstcore_init(config_json);
-					
-					const url =
-						"https://storage.granbosque.net/picam360_vpm/biwako_191213";
-					m_pstcore.pstcore_start_pvf_loader(url);
+					self.plugin_host.set_view_quaternion(quat);
+				});
 
-					self.start_animate();
-				},
-				locateFile : function(path, prefix) {
-					return self.base_path + "../lib/pstcore/" + path;
-				},
+				m_pstcore = window.PstCoreLoader({
+					preRun: [],
+					postRun: [],
+					print: function(msg) {
+						console.log(msg);
+					},
+					printErr: function(e) {
+						console.error(e);
+					},
+					canvas: function() {
+						var e = m_canvas;
+						return e;
+					}(),
+					onRuntimeInitialized : function() {
+						console.log("pstcore initialized");
+						const config = {
+								"plugin_paths" : [
+									"plugins/pvf_loader_st.so",
+									"plugins/libde265_decoder_st.so",
+									"plugins/pgl_renderer_st.so",
+								],
+								"window_size" : {
+									"width" : window.innerWidth,
+									"height" : window.innerHeight
+								}
+						}
+						if(window.cordova){
+							config.plugin_paths.push("plugins/cordova_binder_st.so");
+						}
+						const config_json = JSON.stringify(config);
+						m_pstcore.pstcore_init(config_json);
+						
+						const url =
+							"https://storage.granbosque.net/picam360_vpm/biwako_191213";
+						m_pst = m_pstcore.pstcore_start_pvf_loader(url);
+
+						self.start_animate();
+						
+						window.addEventListener('resize', () => {
+							m_pstcore.Browser.setCanvasSize(window.innerWidth, window.innerHeight);
+						}, false);
+					},
+					locateFile : function(path, prefix) {
+						return self.base_path + "../lib/pstcore/" + path;
+					},
+				});
 			});
 		},
 	};

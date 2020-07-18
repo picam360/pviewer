@@ -1,8 +1,22 @@
 
 // interface for plugin
-function PluginHost(core) {
-
+function PluginHost(core, options) {
 	//private members
+	var m_options = options || {};
+	var m_debug = core.debug;
+	var m_plugins = [];
+	var m_watches = [];
+	var m_cmd2upstream_list = [];
+	var m_statuses = [];
+	var m_filerequest_list = [];
+	var m_view_fov = 120;
+	var m_view_offset = new THREE.Quaternion();
+	var m_view_offset_lock = false;
+	var m_view_quat = new THREE.Quaternion();
+	var m_north = 0;
+	var m_view_quat_changed_callback = null;
+
+	var query = GetQueryString();
 	
 	//private functions
 	function handle_command(cmd) {
@@ -18,9 +32,9 @@ function PluginHost(core) {
 			return core.timediff_ms;
 		},
 		get_plugin: function(name) {
-			for (var i = 0; i < plugins.length; i++) {
-				if (name == plugins[i].name) {
-					return plugins[i];
+			for (var i = 0; i < m_plugins.length; i++) {
+				if (name == m_plugins[i].name) {
+					return m_plugins[i];
 				}
 			}
 			return null;
@@ -29,50 +43,100 @@ function PluginHost(core) {
 			if (cmd.indexOf(UPSTREAM_DOMAIN) == 0) {
 				cmd = cmd.substr(UPSTREAM_DOMAIN.length);
 				if(update){
-					for (var i = 0; i < cmd2upstream_list.length; i++) {
-						if(cmd2upstream_list[i].update){
+					for (var i = 0; i < m_cmd2upstream_list.length; i++) {
+						if(m_cmd2upstream_list[i].update){
 							var cmd_s1 = cmd.split(' ')[0];
-							var cmd_s2 = cmd2upstream_list[i].cmd.split(' ')[0];
+							var cmd_s2 = m_cmd2upstream_list[i].cmd.split(' ')[0];
 							if(cmd_s1 == cmd_s2){
-								cmd2upstream_list[i] = {cmd, update};
+								m_cmd2upstream_list[i] = {cmd, update};
 								return;
 							}
 						}
 					}
 				}
-				cmd2upstream_list.push({cmd, update});
+				m_cmd2upstream_list.push({cmd, update});
 				return;
 			}
-			for (var i = 0; i < plugins.length; i++) {
-				if (plugins[i].command_handler) {
-					plugins[i].command_handler(cmd, update);
+			for (var i = 0; i < m_plugins.length; i++) {
+				if (m_plugins[i].command_handler) {
+					m_plugins[i].command_handler(cmd, update);
 				}
 			}
 			handle_command(cmd, update);
 		},
 		send_event: function(sender, event) {
-			for (var i = 0; i < plugins.length; i++) {
-				if (plugins[i].event_handler) {
-					plugins[i].event_handler(sender, event);
+			for (var i = 0; i < m_plugins.length; i++) {
+				if (m_plugins[i].event_handler) {
+					m_plugins[i].event_handler(sender, event);
 				}
 			}
 		},
 		add_watch: function(name, callback) {
-			watches[name] = callback;
+			m_watches[name] = callback;
+		},
+		init_plugins: function(callback) {
+			if (!m_options.plugin_paths || m_options.plugin_paths.length == 0) {
+				if (callback) {
+					callback();
+				}
+				return;
+			}
+			function load_plugin(idx) {
+				self.getFile(m_options.plugin_paths[idx], function(
+						chunk_array) {
+						var script_str = (new TextDecoder)
+							.decode(chunk_array[0]);
+						var script = document
+							.createElement('script');
+						script.onload = function() {
+							console.log("loaded : " +
+								m_options.plugin_paths[idx]);
+							if (create_plugin) {
+								var plugin = create_plugin(self);
+								m_plugins.push(plugin);
+								create_plugin = null;
+							}
+							if (idx + 1 < m_options.plugin_paths.length) {
+								load_plugin(idx + 1);
+							} else {
+								for (var i = 0; i < m_plugins.length; i++) {
+									if (m_plugins[i].init_options) {
+										m_plugins[i]
+											.init_options(m_options[m_plugins[i].name] || {});
+									}
+								}
+								if (callback) {
+									callback();
+								}
+							}
+						};
+						console.log("loding : " +
+							m_options.plugin_paths[idx]);
+						var blob = new Blob(chunk_array, {
+							type: "text/javascript"
+						});
+						var url = window.URL || window.webkitURL;
+						script.src = url.createObjectURL(blob);
+
+						document.head.appendChild(script);
+					});
+			}
+			load_plugin(0);
 		},
 		get_view_quaternion: function() {
-			if (mpu) {
-				return mpu.get_quaternion();
-			} else {
-				return new THREE.Quaternion();
+			return m_view_quat.clone();
+		},
+		set_view_quaternion: function(value) {
+			m_view_quat = value.clone();
+			if(m_view_quat_changed_callback){
+				m_view_quat_changed_callback(m_view_quat, m_view_offset);
 			}
 		},
+		on_view_quat_changed: function(callback) {
+			m_view_quat_changed_callback = callback;
+		},
 		get_view_north: function() {
-			if (mpu) {
-				return mpu.get_north();
-			} else {
-				return 0;
-			}
+			return m_north;
 		},
 		get_fov: function() {
 			return m_view_fov;
@@ -82,17 +146,17 @@ function PluginHost(core) {
 		},
 		set_stereo: function(value) {
 
-			try{
-				if (DeviceMotionEvent 
-						&& DeviceMotionEvent.requestPermission
-						&& typeof DeviceMotionEvent.requestPermission === 'function') {
-					DeviceMotionEvent.requestPermission().then(response => {
-						if (response === 'granted') {
-							console.log("ok");
-						}
-					}).catch(console.error);
-				}
-			} catch {}
+//			try{
+//				if (DeviceMotionEvent 
+//						&& DeviceMotionEvent.requestPermission
+//						&& typeof DeviceMotionEvent.requestPermission === 'function') {
+//					DeviceMotionEvent.requestPermission().then(response => {
+//						if (response === 'granted') {
+//							console.log("ok");
+//						}
+//					}).catch(console.error);
+//				}
+//			} catch {}
 			
 //TODO:				
 //				m_video_handler.setStereoEnabled(value);
@@ -114,19 +178,22 @@ function PluginHost(core) {
 				"AUDIO_DISABLED");
 		},
 		set_view_offset: function(value) {
-			if (view_offset_lock) {
+			if (m_view_offset_lock) {
 				return;
 			}
-			view_offset = value;
+			m_view_offset = value;
 			auto_scroll = false;
+			if(m_view_quat_changed_callback){
+				m_view_quat_changed_callback(m_view_quat, m_view_offset);
+			}
 		},
 		get_view_offset: function() {
-			return view_offset.clone();
+			return m_view_offset.clone();
 		},
 		snap: function() {
 			var key = uuid();
 			self.send_command(SERVER_DOMAIN + "snap " + key);
-			filerequest_list.push({
+			m_filerequest_list.push({
 				filename: 'picam360.jpeg',
 				key: key,
 				callback: function(chunk_array) {
@@ -143,7 +210,7 @@ function PluginHost(core) {
 			if (is_recording) {
 				var key = uuid();
 				self.send_command(SERVER_DOMAIN + "stop_record " + key);
-				filerequest_list.push({
+				m_filerequest_list.push({
 					filename: 'picam360.mp4',
 					key: key,
 					callback: function(chunk_array) {
@@ -167,7 +234,7 @@ function PluginHost(core) {
 			}
 		},
 		log: function(str, level) {
-			if (level && level <= debug) {
+			if (level && level <= m_debug) {
 				console.log(str);
 			}
 		},
@@ -199,7 +266,7 @@ function PluginHost(core) {
 		getFile: function(path, callback) {
 			if (!query['force-local'] && core.connected()) {
 				var key = uuid();
-				filerequest_list.push({
+				m_filerequest_list.push({
 					filename: path,
 					key: key,
 					callback: callback
@@ -216,18 +283,18 @@ function PluginHost(core) {
 			} else {
 				document.getElementById("uiCall").style.display = "none";
 			}
-			for (var i = 0; i < plugins.length; i++) {
-				if (plugins[i].on_refresh_app_menu) {
-					plugins[i].on_refresh_app_menu(app.menu);
+			for (var i = 0; i < m_plugins.length; i++) {
+				if (m_plugins[i].on_refresh_app_menu) {
+					m_plugins[i].on_refresh_app_menu(app.menu);
 				}
 			}
 		},
 		restore_app_menu: function() {
 			app.menu.setMenuPage("menu.html", {
 				callback: function() {
-					for (var i = 0; i < plugins.length; i++) {
-						if (plugins[i].on_restore_app_menu) {
-							plugins[i].on_restore_app_menu(app.menu);
+					for (var i = 0; i < m_plugins.length; i++) {
+						if (m_plugins[i].on_restore_app_menu) {
+							m_plugins[i].on_restore_app_menu(app.menu);
 						}
 					}
 					self.refresh_app_menu();
