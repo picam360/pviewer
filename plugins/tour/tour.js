@@ -93,7 +93,7 @@ var create_plugin = (function() {
 	var m_canvas_texture;
 	
 	function get_view_quat() {
-		var quat = m_plugin_host.get_view_quaternion() || new THREE.Quaternion();
+		var quat = m_plugin_host.get_view_quat() || new THREE.Quaternion();
 		var view_offset_quat = m_plugin_host.get_view_offset() || new THREE.Quaternion();
 		var view_quat = view_offset_quat.multiply(quat);
 		return view_quat;

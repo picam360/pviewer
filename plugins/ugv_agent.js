@@ -338,28 +338,28 @@ var create_plugin = (function() {
 							+ "go2next_menu");
 						break;
 					case "INCREMENT_YAW" :
-						var quat = m_plugin_host.get_view_quaternion();
+						var quat = m_plugin_host.get_view_quat();
 						quat = m_plugin_host.get_view_offset().multiply(quat);
 						var cmd = OMNI_LASER_DOMAIN + "increment_yaw "
 							+ (params[1] ? params[1] : step);
 						m_plugin_host.send_command(cmd);
 						break;
 					case "DECREMENT_YAW" :
-						var quat = m_plugin_host.get_view_quaternion();
+						var quat = m_plugin_host.get_view_quat();
 						quat = m_plugin_host.get_view_offset().multiply(quat);
 						var cmd = OMNI_LASER_DOMAIN + "increment_yaw -"
 							+ (params[1] ? params[1] : step);
 						m_plugin_host.send_command(cmd);
 						break;
 					case "INCREMENT_PITCH" :
-						var quat = m_plugin_host.get_view_quaternion();
+						var quat = m_plugin_host.get_view_quat();
 						quat = m_plugin_host.get_view_offset().multiply(quat);
 						var cmd = OMNI_LASER_DOMAIN + "increment_pitch "
 							+ (params[1] ? params[1] : step);
 						m_plugin_host.send_command(cmd);
 						break;
 					case "DECREMENT_PITCH" :
-						var quat = m_plugin_host.get_view_quaternion();
+						var quat = m_plugin_host.get_view_quat();
 						quat = m_plugin_host.get_view_offset().multiply(quat);
 						var cmd = OMNI_LASER_DOMAIN + "increment_pitch -"
 							+ (params[1] ? params[1] : step);

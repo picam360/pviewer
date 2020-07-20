@@ -124,14 +124,14 @@ var create_plugin = (function() {
 							+ "go2next_menu");
 						break;
 					case "INCREMENT_THRUST" :
-						var quat = m_plugin_host.get_view_quaternion();
+						var quat = m_plugin_host.get_view_quat();
 						quat = m_plugin_host.get_view_offset().multiply(quat);
 						var cmd = ROV_DOMAIN + "increment_thrust 1";
 						cmd += sprintf(" %.3f,%.3f,%.3f,%.3f", quat.x, quat.y, quat.z, quat.w);
 						m_plugin_host.send_command(cmd);
 						break;
 					case "DECREMENT_THRUST" :
-						var quat = m_plugin_host.get_view_quaternion();
+						var quat = m_plugin_host.get_view_quat();
 						quat = m_plugin_host.get_view_offset().multiply(quat);
 						var cmd = ROV_DOMAIN + "increment_thrust -1";
 						cmd += sprintf(" %.3f,%.3f,%.3f,%.3f", quat.x, quat.y, quat.z, quat.w);

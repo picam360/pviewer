@@ -123,13 +123,13 @@ function PluginHost(core, options) {
 			}
 			load_plugin(0);
 		},
-		get_view_quaternion: function() {
+		get_view_quat: function() {
 			return m_view_quat.clone();
 		},
-		set_view_quaternion: function(value) {
+		set_view_quat: function(value) {
 			m_view_quat = value.clone();
 			if(m_view_quat_changed_callback){
-				m_view_quat_changed_callback(m_view_quat, m_view_offset);
+				m_view_quat_changed_callback(m_view_quat.clone(), m_view_offset.clone());
 			}
 		},
 		on_view_quat_changed: function(callback) {
@@ -184,7 +184,7 @@ function PluginHost(core, options) {
 			m_view_offset = value;
 			auto_scroll = false;
 			if(m_view_quat_changed_callback){
-				m_view_quat_changed_callback(m_view_quat, m_view_offset);
+				m_view_quat_changed_callback(m_view_quat.clone(), m_view_offset.clone());
 			}
 		},
 		get_view_offset: function() {
@@ -308,7 +308,7 @@ function PluginHost(core, options) {
 			//TODO:m_video_handler.remove_overlay_object( obj );
 		},
 		load_vpm : function(url) {
-//TODO:				m_vpm_loader = VpmLoader(url, query, m_video_handler.get_view_quaternion, m_image_decoder.decode, (info) => {
+//TODO:				m_vpm_loader = VpmLoader(url, query, m_video_handler.get_view_quat, m_image_decoder.decode, (info) => {
 //					self.send_event('vpm_loader', info);
 //				});
 		},

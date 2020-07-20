@@ -126,11 +126,20 @@ var app = (function() {
 		onDeviceReady: function() {
 			app.receivedEvent('deviceready');
 			app.isDeviceReady = true;
+			
+			if(universalLinks){
+				universalLinks.subscribe(null, app.didLaunchAppFromLink);
+			}
 		},
 
 		// Update DOM on a Received Event
 		receivedEvent: function(id) {
 			console.log('Received Event: ' + id);
+		},
+		
+		//universal link
+		didLaunchAppFromLink: function(eventData) {
+			alert('Did launch application from the link: ' + eventData.url);
 		},
 		
 		connected:function(){
@@ -334,8 +343,8 @@ var app = (function() {
 			self.init_common_options(() => {
 				self.plugin_host = PluginHost(self, m_options);
 				self.plugin_host.init_plugins();
-				self.plugin_host.on_view_quat_changed((view_quat, view_quat_offset) => {
-					var quat = view_quat_offset;
+				self.plugin_host.on_view_quat_changed((view_quat, view_offset_quat) => {
+					var quat = view_offset_quat.multiply(view_quat);
 					m_pstcore._pstcore_set_view_quat(m_pst, quat.x, quat.y, quat.z, quat.w);
 				});
 				
@@ -344,7 +353,7 @@ var app = (function() {
 					if(!m_pstcore || !m_pst){
 						return;
 					}
-					self.plugin_host.set_view_quaternion(quat);
+					self.plugin_host.set_view_quat(quat);
 				});
 
 				m_pstcore = window.PstCoreLoader({

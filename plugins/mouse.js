@@ -69,7 +69,7 @@ var create_plugin = (function() {
 
 			var view_offset_quat = m_plugin_host.get_view_offset()
 				|| new THREE.Quaternion();
-			var view_quat = m_plugin_host.get_view_quaternion()
+			var view_quat = m_plugin_host.get_view_quat()
 				|| new THREE.Quaternion();
 			if (query['view-offset-relative'] == "true") {
 				var quat = view_offset_quat.clone().multiply(view_quat);
