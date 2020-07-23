@@ -2,3 +2,5 @@ config.json*
 .settings
 Debug
 Release
+
+*.map

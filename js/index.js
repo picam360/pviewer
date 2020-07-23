@@ -49,6 +49,10 @@ var app = (function() {
 	var m_menu_visible = false;
 	var m_upstream_info = "";
 	var m_upstream_menu = "";
+
+	var m_pvf_url =
+			"https://vpm.picam360.com/wat_1000kbps/";
+			//"https://storage.granbosque.net/picam360_vpm/biwako_191213";
 	
 	var m_pc = null;
 
@@ -139,6 +143,7 @@ var app = (function() {
 		
 		//universal link
 		didLaunchAppFromLink: function(eventData) {
+			m_pvf_url = eventData.url;
 			alert('Did launch application from the link: ' + eventData.url);
 		},
 		
@@ -375,6 +380,7 @@ var app = (function() {
 								"plugin_paths" : [
 									"plugins/pvf_loader_st.so",
 									"plugins/libde265_decoder_st.so",
+									"plugins/timer_st.so",
 									"plugins/pgl_renderer_st.so",
 								],
 								"window_size" : {
@@ -388,9 +394,7 @@ var app = (function() {
 						const config_json = JSON.stringify(config);
 						m_pstcore.pstcore_init(config_json);
 						
-						const url =
-							"https://storage.granbosque.net/picam360_vpm/biwako_191213";
-						m_pst = m_pstcore.pstcore_start_pvf_loader(url);
+						m_pst = m_pstcore.pstcore_start_pvf_loader(m_pvf_url);
 
 						self.start_animate();
 						
