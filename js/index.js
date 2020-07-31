@@ -51,7 +51,8 @@ var app = (function() {
 	var m_upstream_menu = "";
 
 	var m_pvf_url =
-			"https://vpm.picam360.com/wat_1000kbps/";
+			"https://vpm.picam360.com/wat_1000kbps.pvf";
+			//"https://vpm.picam360.com/wat_1000kbps/";
 			//"https://storage.granbosque.net/picam360_vpm/biwako_191213";
 	
 	var m_pc = null;
