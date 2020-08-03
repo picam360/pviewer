@@ -145,7 +145,7 @@ var app = (function() {
 		//universal link
 		didLaunchAppFromLink: function(eventData) {
 			m_pvf_url = eventData.url;
-			alert('Did launch application from the link: ' + eventData.url);
+			//alert('Did launch application from the link: ' + eventData.url);
 		},
 		
 		connected:function(){
@@ -160,14 +160,16 @@ var app = (function() {
 				this.init_common_options_done = true;
 			}
 			loadFile("common_config.json", function(chunk_array) {
+				var _options = {};
 				try{
 					var txt = (new TextDecoder).decode(chunk_array[0]);
 					if (txt) {
-						m_options = JSON.parse(txt);
+						_options = JSON.parse(txt);
 					}
 				}catch{
-					m_options = {};
+					_options = {};
 				}
+				Object.assign(m_options, _options);
 				if(!m_options.plugin_paths){
 					m_options.plugin_paths = [];
 				}
@@ -195,22 +197,10 @@ var app = (function() {
 					}catch{
 						_options = {};
 					}
-					if (_options.fov && !query.fov) {
-						self.plugin_host.set_fov(_options.fov);
-					}
 					if(_options.plugin_paths){
 						_options.plugin_paths = m_options.plugin_paths.concat(_options.plugin_paths);
 					}
 					Object.assign(m_options, _options);
-					if (m_options.view_offset && !query['view-offset']) {
-						var euler = new THREE.Euler(THREE.Math
-							.degToRad(m_options.view_offset[0]), THREE.Math
-							.degToRad(m_options.view_offset[1]), THREE.Math
-							.degToRad(m_options.view_offset[2]), "YXZ");
-
-						view_offset = new THREE.Quaternion()
-							.setFromEuler(euler);
-					}
 					if (query['plugin_paths']) {
 						var plugin_paths = JSON.parse(query['plugin_paths']);
 						m_options.plugin_paths = m_options.plugin_paths.concat(plugin_paths);
@@ -290,13 +280,101 @@ var app = (function() {
 					});
 				});
 		},
+		update_status_str: function() {
+			var divStatus = document.getElementById("divStatus");
+			if (divStatus) {
+				var status = "";
+				if(m_pstcore && m_pst) {
+					var fps = m_pstcore.pstcore_get_param(m_pst, "pvf_loader", "src_fps");
+					var preload = m_pstcore.pstcore_get_param(m_pst, "pvf_loader", "preload");
+					var bitrate_mbps = m_pstcore.pstcore_get_param(m_pst, "pvf_loader", "bitrate_mbps");
+					var pixelrate_mpps = m_pstcore.pstcore_get_param(m_pst, "libde265_decoder", "pixelrate_mpps");
+					var n_in_bq_d = m_pstcore.pstcore_get_param(m_pst, "libde265_decoder", "n_in_bq");
+					var n_in_bq_r = m_pstcore.pstcore_get_param(m_pst, "pgl_renderer", "n_in_bq");
+					var n_pending = m_pstcore.pstcore_get_param(m_pst, "pgl_renderer", "n_pending");
+					status += "texture<br/>";
+					status += "fps:" + fps + "<br/>";
+					status += "preload:" + preload + "<br/>";
+					status += "bitrate:" + bitrate_mbps + "mbps<br/>";
+					status += "pixelrate:" + pixelrate_mpps + "mpps<br/>";
+					status += "n_in_bq:" + n_in_bq_d + "+" + n_in_bq_r + "<br/>";
+					status += "n_pending:" + n_pending + "<br/>";
+				}
+//				var texture_info = m_video_handler.get_info(); {
+//					status += "texture<br/>";
+//					status += "v-fps:" + texture_info.video_fps.toFixed(3) +
+//						"<br/>";
+//					if(texture_info.offscreen){
+//						status += "o";
+//					}
+//					status += "r-fps:" + texture_info.animate_fps.toFixed(3) +
+//						"<br/>";
+//					if(m_vpm_loader){
+//						//not realtime
+//					}else{
+//						status += "latency:" +
+//							texture_info.latency_msec.toFixed(0) +
+//							"ms<br/>";
+//					}
+//					status += "codec:" + texture_info.codec + "<br/>";
+//					status += "<br/>";
+//				}
+//
+//				if(m_vpm_loader){
+//					var mbps = m_vpm_loader.get_bitrate_mbps();
+//					status += "packet<br/>";
+//					status += "bitrate:" + mbps.toFixed(3) +
+//						"Mbit/s<br/>";
+//					var [preload_act, preload] = m_vpm_loader.get_preload();
+//					status += "preload:" + preload_act + "/" + preload;
+//					status += "<br/>";
+//				} else if(m_pc){
+//					status += "packet<br/>";
+//					status += "bitrate:" + (texture_info.bitrate / 1e6).toFixed(3) +
+//						"Mbit/s<br/>";
+//					status += "<br/>";
+//				}else if(rtp){
+//					var rtp_info = rtp.get_info();
+//					status += "packet<br/>";
+//					status += "bitrate:" + rtp_info.bitrate.toFixed(3) +
+//						"Mbit/s<br/>";
+//					status += "<br/>";
+//				} 
+//
+//				if(m_upstream_info)
+//				{
+//					status += "upstream<br/>";
+//					status += m_upstream_info.replace(/\n/gm, "<br/>");
+//					status += "<br/>";
+//				}
+
+				divStatus.innerHTML = status;
+			}
+		},
 		start_animate: function() {
+			if (m_options.fov) {
+				self.plugin_host.set_fov(m_options.fov);
+			}
+			if (m_options.view_offset) {
+				var euler = new THREE.Euler(THREE.Math
+					.degToRad(m_options.view_offset[0]), THREE.Math
+					.degToRad(m_options.view_offset[1]), THREE.Math
+					.degToRad(m_options.view_offset[2]), "YXZ");
+
+				var quat = new THREE.Quaternion()
+					.setFromEuler(euler);
+				self.plugin_host.set_view_offset(quat);
+			}
+			
 			function redraw() {
 				m_pstcore._pstcore_poll_events();
 				requestAnimationFrame(redraw);
 			}
 			requestAnimationFrame(redraw);
 			
+			setInterval(() => {
+				self.update_status_str();
+			}, 1000);
 		},
 
 		main: function() {
@@ -313,12 +391,7 @@ var app = (function() {
 			}
 			if (query['view-offset']) {
 				var split = query['view-offset'].split(',');
-				var euler = new THREE.Euler(THREE.Math
-					.degToRad(parseFloat(split[0])), THREE.Math
-					.degToRad(parseFloat(split[1])), THREE.Math
-					.degToRad(parseFloat(split[2])), "YXZ");
-
-				view_offset = new THREE.Quaternion().setFromEuler(euler);
+				m_options.view_offset = [split[0], split[1], split[2]];
 			}
 			if (query['fov']) {
 				m_view_fov = parseFloat(query['fov']);
@@ -341,6 +414,9 @@ var app = (function() {
 			}
 			if (query['fpp']) {
 				m_fpp = parseBoolean(query['fpp']);
+			}
+			if (query['pvf']) {
+				m_pvf_url = query['pvf'];
 			}
 
 			m_canvas = document.getElementById('panorama');
@@ -381,7 +457,7 @@ var app = (function() {
 								"plugin_paths" : [
 									"plugins/pvf_loader_st.so",
 									"plugins/libde265_decoder_st.so",
-									"plugins/timer_st.so",
+									//"plugins/timer_st.so",
 									"plugins/pgl_renderer_st.so",
 								],
 								"window_size" : {
@@ -402,6 +478,7 @@ var app = (function() {
 						window.addEventListener('resize', () => {
 							m_pstcore.Browser.setCanvasSize(window.innerWidth, window.innerHeight);
 						}, false);
+						m_pstcore.Browser.setCanvasSize(window.innerWidth, window.innerHeight);
 					},
 					locateFile : function(path, prefix) {
 						return self.base_path + "../lib/pstcore/" + path;
