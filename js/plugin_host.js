@@ -143,26 +143,9 @@ function PluginHost(core, options) {
 		},
 		set_fov: function(value) {
 			m_view_fov = value;
+			core.set_param("pgl_renderer", "fov", value.toString());
 		},
 		set_stereo: function(value) {
-
-//			try{
-//				if (DeviceMotionEvent 
-//						&& DeviceMotionEvent.requestPermission
-//						&& typeof DeviceMotionEvent.requestPermission === 'function') {
-//					DeviceMotionEvent.requestPermission().then(response => {
-//						if (response === 'granted') {
-//							console.log("ok");
-//						}
-//					}).catch(console.error);
-//				}
-//			} catch {}
-			
-//TODO:				
-//				m_video_handler.setStereoEnabled(value);
-//				if(m_video_handler.vr_supported()){
-//					self.set_audio(value);
-//				}
 			self.send_event("PLUGIN_HOST", value ?
 				"STEREO_ENABLED" :
 				"STEREO_DISABLED");
@@ -170,6 +153,8 @@ function PluginHost(core, options) {
 			var cmd = UPSTREAM_DOMAIN;
 			cmd += "set_vstream_param -p stereo=" + (value ? 1 : 0);
 			self.send_command(cmd);
+			
+			core.set_param("pgl_renderer", "stereo", (value ? "1" : "0"));
 		},
 		set_audio: function(value) {
 			m_audio_handler.setAudioEnabled(value);

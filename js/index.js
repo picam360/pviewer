@@ -320,27 +320,6 @@ var app = (function() {
 //					status += "<br/>";
 //				}
 //
-//				if(m_vpm_loader){
-//					var mbps = m_vpm_loader.get_bitrate_mbps();
-//					status += "packet<br/>";
-//					status += "bitrate:" + mbps.toFixed(3) +
-//						"Mbit/s<br/>";
-//					var [preload_act, preload] = m_vpm_loader.get_preload();
-//					status += "preload:" + preload_act + "/" + preload;
-//					status += "<br/>";
-//				} else if(m_pc){
-//					status += "packet<br/>";
-//					status += "bitrate:" + (texture_info.bitrate / 1e6).toFixed(3) +
-//						"Mbit/s<br/>";
-//					status += "<br/>";
-//				}else if(rtp){
-//					var rtp_info = rtp.get_info();
-//					status += "packet<br/>";
-//					status += "bitrate:" + rtp_info.bitrate.toFixed(3) +
-//						"Mbit/s<br/>";
-//					status += "<br/>";
-//				} 
-//
 //				if(m_upstream_info)
 //				{
 //					status += "upstream<br/>";
@@ -351,6 +330,7 @@ var app = (function() {
 				divStatus.innerHTML = status;
 			}
 		},
+		
 		start_animate: function() {
 			if (m_options.fov) {
 				self.plugin_host.set_fov(m_options.fov);
@@ -375,6 +355,20 @@ var app = (function() {
 			setInterval(() => {
 				self.update_status_str();
 			}, 1000);
+		},
+		
+		set_param: function(pst_name, param, value) {
+			if(m_pstcore && m_pst) {
+				m_pstcore.pstcore_set_param(m_pst, pst_name, param, value);
+			}
+		},
+		
+		get_param: function(pst_name, param) {
+			if(m_pstcore && m_pst) {
+				return m_pstcore.pstcore_get_param(m_pst, pst_name, param);
+			}else{
+				return null;
+			}
 		},
 
 		main: function() {
