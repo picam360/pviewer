@@ -370,6 +370,18 @@ var app = (function() {
 				return null;
 			}
 		},
+		
+		update_canvas_size: function() {
+			if(m_pstcore) {
+				m_pstcore.Browser.setCanvasSize(
+						window.innerWidth * window.devicePixelRatio,
+						window.innerHeight * window.devicePixelRatio);
+			}
+			m_canvas.width = window.innerWidth * window.devicePixelRatio;
+			m_canvas.height = window.innerHeight * window.devicePixelRatio;
+			m_canvas.style.width = window.innerWidth + "px";
+			m_canvas.style.height = window.innerHeight + "px";
+		},
 
 		main: function() {
 			app.receivedEvent('main');
@@ -470,9 +482,9 @@ var app = (function() {
 						self.start_animate();
 						
 						window.addEventListener('resize', () => {
-							m_pstcore.Browser.setCanvasSize(window.innerWidth, window.innerHeight);
+							self.update_canvas_size();
 						}, false);
-						m_pstcore.Browser.setCanvasSize(window.innerWidth, window.innerHeight);
+						self.update_canvas_size();
 					},
 					locateFile : function(path, prefix) {
 						return self.base_path + "../lib/pstcore/" + path;
