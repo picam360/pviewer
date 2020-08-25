@@ -331,7 +331,13 @@
 				passive : false
 			} : false);
 
-			app.main();
+			//setTimeout(()=>{
+
+			app.initialize(() => {
+				app.main();
+			});
+
+			//}, 10000);
 		});
 	</script>
 </body>

@@ -67,17 +67,18 @@ var app = (function() {
 			}
 		}
 	}
-	var query = GetQueryString();
+	var m_query = GetQueryString();
 
 	var self = {
 		debug: 0,
 		plugin_host: null,
 		isDeviceReady: false,
 		base_path: "",
+		initialize_callback: null,
 		// Application Constructor
-		initialize: function() {
-			app.receivedEvent('initialize');
-			this.bindEvents();
+		initialize: function(callback) {
+			self.initialize_callback = callback;
+			self.receivedEvent('initialize');
 
 			// window.addEventListener("orientationchange", function() {
 			// alert(window.orientation);
@@ -114,6 +115,14 @@ var app = (function() {
 					return '';
 				}
 			})();
+			
+			if(window.cordova){
+				self.bindEvents();
+			}else{
+				if(self.initialize_callback){
+					self.initialize_callback();
+				}
+			}
 		},
 
 		// Bind Event Listeners
@@ -121,19 +130,32 @@ var app = (function() {
 		// Bind any events that are required on startup. Common events are:
 		// 'load', 'deviceready', 'offline', and 'online'.
 		bindEvents: function() {
-			document.addEventListener('deviceready', this.onDeviceReady, false);
+			document.addEventListener('deviceready', self.onDeviceReady, false);
+
+			//debug
+			//self.applink_vpm({url:"https://vpm.picam360.com/pviewer/?pvf=https%3A%2F%2Fpcdn-akm0.picam360.com%2F201%2Fvideos%2Fmain%2Fhelicopter-5760x2880-30fps%25281%2529.pvf"});
+			//self.applink_park({url:"https://park.picam360.com/watch?v=741"});
 		},
 		// deviceready Event Handler
 		//
 		// The scope of 'this' is the event. In order to call the
 		// 'receivedEvent'
-		// function, we must explicitly call 'app.receivedEvent(...);'
+		// function, we must explicitly call 'self.receivedEvent(...);'
 		onDeviceReady: function() {
-			app.receivedEvent('deviceready');
-			app.isDeviceReady = true;
+			self.receivedEvent('deviceready');
+			self.isDeviceReady = true;
 			
 			if(universalLinks){
-				universalLinks.subscribe(null, app.didLaunchAppFromLink);
+				universalLinks.subscribe("vpm.picam360.com", self.applink_vpm);
+				universalLinks.subscribe("park.picam360.com", self.applink_park);
+			}
+			if(self.initialize_callback){
+				setTimeout(() => {
+					if(self.initialize_callback){
+						self.initialize_callback();
+						self.initialize_callback = null;
+					}
+				}, 1000);//timeout of applink
 			}
 		},
 
@@ -142,10 +164,78 @@ var app = (function() {
 			console.log('Received Event: ' + id);
 		},
 		
-		//universal link
-		didLaunchAppFromLink: function(eventData) {
-			m_pvf_url = eventData.url;
-			//alert('Did launch application from the link: ' + eventData.url);
+		//applink
+		applink_vpm: function(eventData) {
+			console.log("app link : " + eventData.url);
+			//alert(eventData.url);
+			
+			var query_str = eventData.url.split('?')[1];
+			query_str = decodeHTML(query_str);
+			var parameters = query_str.split('&');
+
+			var query = {};
+			for (var i = 0; i < parameters.length; i++) {
+				var pos = parameters[i].indexOf('=');
+
+				var paramName = parameters[i].substring(0, pos);
+				var paramValue = parameters[i].substring(pos + 1);
+				
+				paramName = decodeURIComponent(paramName);
+				paramValue = decodeURIComponent(paramValue);
+
+				if(paramName == "vpm"){
+					paramName = "pvf";
+				}
+				query[paramName] = paramValue;
+			}
+			m_query = query;
+			if(self.initialize_callback){
+				self.initialize_callback();
+				self.initialize_callback = null;
+			}
+		},
+		applink_park: function(eventData) {
+			console.log("app link : " + eventData.url);
+			//alert(eventData.url);
+			if(eventData.url.startsWith("https://park.picam360.com/watch")){
+				var req = new XMLHttpRequest();
+				req.open("get", eventData.url, false);//sync
+				req.send(null);
+				var html = req.response;
+				var iframe_sp = html.indexOf("<iframe");
+				var iframe_ep = html.indexOf(">", iframe_sp) + 1;
+				var iframe_str = html.substring(iframe_sp, iframe_ep);
+				var src_sp = iframe_str.indexOf("src='") + 5;
+				var src_ep = iframe_str.indexOf("'", src_sp);
+				var src_str = iframe_str.substring(src_sp, src_ep);
+				eventData.url = src_str;
+				console.log("app link from park : " + eventData.url);
+			}
+			
+			var query_str = eventData.url.split('?')[1];
+			query_str = decodeHTML(query_str);
+			var parameters = query_str.split('&');
+
+			var query = {};
+			for (var i = 0; i < parameters.length; i++) {
+				var pos = parameters[i].indexOf('=');
+
+				var paramName = parameters[i].substring(0, pos);
+				var paramValue = parameters[i].substring(pos + 1);
+
+				paramName = decodeURIComponent(paramName);
+				paramValue = decodeURIComponent(paramValue);
+
+				if(paramName == "vpm"){
+					paramName = "pvf";
+				}
+				query[paramName] = paramValue;
+			}
+			m_query = query;
+			if(self.initialize_callback){
+				self.initialize_callback();
+				self.initialize_callback = null;
+			}
 		},
 		
 		connected:function(){
@@ -201,8 +291,8 @@ var app = (function() {
 						_options.plugin_paths = m_options.plugin_paths.concat(_options.plugin_paths);
 					}
 					Object.assign(m_options, _options);
-					if (query['plugin_paths']) {
-						var plugin_paths = JSON.parse(query['plugin_paths']);
+					if (m_query['plugin_paths']) {
+						var plugin_paths = JSON.parse(m_query['plugin_paths']);
 						m_options.plugin_paths = m_options.plugin_paths.concat(plugin_paths);
 					}
 					self.init_plugins(callback);
@@ -384,45 +474,45 @@ var app = (function() {
 		},
 
 		main: function() {
-			app.receivedEvent('main');
+			self.receivedEvent('main');
 
 			navigator.getUserMedia = navigator.getUserMedia ||
 				navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
-			if (query['server-url']) {
-				server_url = query['server-url'];
+			if (m_query['server-url']) {
+				server_url = m_query['server-url'];
 			}
-			if (query['default-image-url']) {
-				default_image_url = query['default-image-url'];
+			if (m_query['default-image-url']) {
+				default_image_url = m_query['default-image-url'];
 			}
-			if (query['view-offset']) {
-				var split = query['view-offset'].split(',');
+			if (m_query['view-offset']) {
+				var split = m_query['view-offset'].split(',');
 				m_options.view_offset = [split[0], split[1], split[2]];
 			}
-			if (query['fov']) {
-				m_view_fov = parseFloat(query['fov']);
+			if (m_query['fov']) {
+				m_view_fov = parseFloat(m_query['fov']);
 			}
-			if (query['vertex-type']) {
-				m_vertex_type = query['vertex-type'];
+			if (m_query['vertex-type']) {
+				m_vertex_type = m_query['vertex-type'];
 			}
 
-			if (query['auto-scroll']) {
-				auto_scroll = parseBoolean(query['auto-scroll']);
+			if (m_query['auto-scroll']) {
+				auto_scroll = parseBoolean(m_query['auto-scroll']);
 			}
-			if (query['debug']) {
-				self.debug = parseFloat(query['debug']);
+			if (m_query['debug']) {
+				self.debug = parseFloat(m_query['debug']);
 			}
-			if (query['view-offset-lock']) {
-				view_offset_lock = parseBoolean(query['view-offset-lock']);
+			if (m_query['view-offset-lock']) {
+				view_offset_lock = parseBoolean(m_query['view-offset-lock']);
 			}
-			if (query['afov']) {
-				m_afov = parseBoolean(query['afov']);
+			if (m_query['afov']) {
+				m_afov = parseBoolean(m_query['afov']);
 			}
-			if (query['fpp']) {
-				m_fpp = parseBoolean(query['fpp']);
+			if (m_query['fpp']) {
+				m_fpp = parseBoolean(m_query['fpp']);
 			}
-			if (query['pvf']) {
-				m_pvf_url = query['pvf'];
+			if (m_query['pvf']) {
+				m_pvf_url = m_query['pvf'];
 			}
 
 			m_canvas = document.getElementById('panorama');
@@ -477,7 +567,7 @@ var app = (function() {
 						const config_json = JSON.stringify(config);
 						m_pstcore.pstcore_init(config_json);
 						
-						m_pst = m_pstcore.pstcore_start_pvf_loader(m_pvf_url);
+						m_pst = m_pstcore.pstcore_start_pvf_loader(m_pvf_url, m_query['head-query'], m_query['get-query']);
 
 						self.start_animate();
 						
@@ -497,4 +587,3 @@ var app = (function() {
 })();
 
 app.receivedEvent('load index.js');
-app.initialize();
