@@ -110,8 +110,7 @@ var app = (function() {
 					var path = document.currentScript.src.split('?')[0];
 					var mydir = path.split('/').slice(0, -1).join('/') + '/';
 					return mydir;
-				}
-				catch{
+				}catch(e){
 					return '';
 				}
 			})();
@@ -256,7 +255,7 @@ var app = (function() {
 					if (txt) {
 						_options = JSON.parse(txt);
 					}
-				}catch{
+				}catch(e){
 					_options = {};
 				}
 				Object.assign(m_options, _options);
@@ -284,7 +283,7 @@ var app = (function() {
 						if (txt) {
 							_options = JSON.parse(txt);
 						}
-					}catch{
+					}catch(e){
 						_options = {};
 					}
 					if(_options.plugin_paths){
@@ -422,9 +421,11 @@ var app = (function() {
 		},
 		
 		start_animate: function() {
-			if (m_options.fov) {
+			setTimeout(() => {
+				self.plugin_host.set_stereo(m_options.stereo);
 				self.plugin_host.set_fov(m_options.fov);
-			}
+			}, 500);//wait pgl init
+			
 			if (m_options.view_offset) {
 				var euler = new THREE.Euler(THREE.Math
 					.degToRad(m_options.view_offset[0]), THREE.Math
@@ -490,7 +491,14 @@ var app = (function() {
 				m_options.view_offset = [split[0], split[1], split[2]];
 			}
 			if (m_query['fov']) {
-				m_view_fov = parseFloat(m_query['fov']);
+				m_options.fov = parseFloat(m_query['fov']);
+			}else{
+				m_options.fov = 120;
+			}
+			if (m_query['stereo']) {
+				m_options.stereo = parseBoolean(m_query['stereo']);
+			}else{
+				m_options.stereo = false;
 			}
 			if (m_query['vertex-type']) {
 				m_vertex_type = m_query['vertex-type'];
