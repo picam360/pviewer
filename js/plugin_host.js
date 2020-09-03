@@ -74,54 +74,52 @@ function PluginHost(core, options) {
 		add_watch: function(name, callback) {
 			m_watches[name] = callback;
 		},
-		init_plugins: function(callback) {
-			if (!m_options.plugin_paths || m_options.plugin_paths.length == 0) {
-				if (callback) {
-					callback();
+		init_plugins: function() {
+			return new Promise((fullfill,reject) => {
+				if (!m_options.plugin_paths || m_options.plugin_paths.length == 0) {
+					fullfill();
+					return;
 				}
-				return;
-			}
-			function load_plugin(idx) {
-				self.getFile(m_options.plugin_paths[idx], function(
-						chunk_array) {
-						var script_str = (new TextDecoder)
-							.decode(chunk_array[0]);
-						var script = document
-							.createElement('script');
-						script.onload = function() {
-							console.log("loaded : " +
-								m_options.plugin_paths[idx]);
-							if (create_plugin) {
-								var plugin = create_plugin(self);
-								m_plugins.push(plugin);
-								create_plugin = null;
-							}
-							if (idx + 1 < m_options.plugin_paths.length) {
-								load_plugin(idx + 1);
-							} else {
-								for (var i = 0; i < m_plugins.length; i++) {
-									if (m_plugins[i].init_options) {
-										m_plugins[i]
-											.init_options(m_options[m_plugins[i].name] || {});
+				function load_plugin(idx) {
+					self.getFile(m_options.plugin_paths[idx], function(
+							chunk_array) {
+							var script_str = (new TextDecoder)
+								.decode(chunk_array[0]);
+							var script = document
+								.createElement('script');
+							script.onload = function() {
+								console.log("loaded : " +
+									m_options.plugin_paths[idx]);
+								if (create_plugin) {
+									var plugin = create_plugin(self);
+									m_plugins.push(plugin);
+									create_plugin = null;
+								}
+								if (idx + 1 < m_options.plugin_paths.length) {
+									load_plugin(idx + 1);
+								} else {
+									for (var i = 0; i < m_plugins.length; i++) {
+										if (m_plugins[i].init_options) {
+											m_plugins[i]
+												.init_options(m_options[m_plugins[i].name] || {});
+										}
 									}
+									fullfill();
 								}
-								if (callback) {
-									callback();
-								}
-							}
-						};
-						console.log("loding : " +
-							m_options.plugin_paths[idx]);
-						var blob = new Blob(chunk_array, {
-							type: "text/javascript"
+							};
+							console.log("loding : " +
+								m_options.plugin_paths[idx]);
+							var blob = new Blob(chunk_array, {
+								type: "text/javascript"
+							});
+							var url = window.URL || window.webkitURL;
+							script.src = url.createObjectURL(blob);
+	
+							document.head.appendChild(script);
 						});
-						var url = window.URL || window.webkitURL;
-						script.src = url.createObjectURL(blob);
-
-						document.head.appendChild(script);
-					});
-			}
-			load_plugin(0);
+				}
+				load_plugin(0);
+			});
 		},
 		get_view_quat: function() {
 			return m_view_quat.clone();
@@ -296,6 +294,9 @@ function PluginHost(core, options) {
 //TODO:				m_vpm_loader = VpmLoader(url, query, m_video_handler.get_view_quat, m_image_decoder.decode, (info) => {
 //					self.send_event('vpm_loader', info);
 //				});
+		},
+		is_streaming : function(url) {
+			return core.get_pst() != null;
 		},
 	};
 	return self;

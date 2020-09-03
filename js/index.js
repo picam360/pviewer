@@ -50,10 +50,7 @@ var app = (function() {
 	var m_upstream_info = "";
 	var m_upstream_menu = "";
 
-	var m_pvf_url =
-			"https://vpm.picam360.com/wat_1000kbps.pvf";
-			//"https://vpm.picam360.com/wat_1000kbps/";
-			//"https://storage.granbosque.net/picam360_vpm/biwako_191213";
+	var m_pvf_url = "";
 	
 	var m_pc = null;
 
@@ -130,10 +127,6 @@ var app = (function() {
 		// 'load', 'deviceready', 'offline', and 'online'.
 		bindEvents: function() {
 			document.addEventListener('deviceready', self.onDeviceReady, false);
-
-			//debug
-			//self.applink_vpm({url:"https://vpm.picam360.com/pviewer/?pvf=https%3A%2F%2Fpcdn-akm0.picam360.com%2F201%2Fvideos%2Fmain%2Fhelicopter-5760x2880-30fps%25281%2529.pvf"});
-			//self.applink_park({url:"https://park.picam360.com/watch?v=741"});
 		},
 		// deviceready Event Handler
 		//
@@ -144,9 +137,15 @@ var app = (function() {
 			self.receivedEvent('deviceready');
 			self.isDeviceReady = true;
 			
-			if(universalLinks){
-				universalLinks.subscribe("vpm.picam360.com", self.applink_vpm);
-				universalLinks.subscribe("park.picam360.com", self.applink_park);
+			if(m_query['applink']){
+				if(self.initialize_callback){
+					self.initialize_callback();
+					self.initialize_callback = null;
+				}
+			}else if(universalLinks){
+				universalLinks.subscribe("vpm.picam360.com", self.applink_handler);
+				universalLinks.subscribe("park.picam360.com", self.applink_handler);
+				universalLinks.subscribe("s.360pi.cam", self.applink_handler);
 			}
 			if(self.initialize_callback){
 				setTimeout(() => {
@@ -164,73 +163,13 @@ var app = (function() {
 		},
 		
 		//applink
-		applink_vpm: function(eventData) {
+		applink_handler: function(eventData) {
 			console.log("app link : " + eventData.url);
 			//alert(eventData.url);
-			
-			var query_str = eventData.url.split('?')[1];
-			query_str = decodeHTML(query_str);
-			var parameters = query_str.split('&');
-
-			var query = {};
-			for (var i = 0; i < parameters.length; i++) {
-				var pos = parameters[i].indexOf('=');
-
-				var paramName = parameters[i].substring(0, pos);
-				var paramValue = parameters[i].substring(pos + 1);
-				
-				paramName = decodeURIComponent(paramName);
-				paramValue = decodeURIComponent(paramValue);
-
-				if(paramName == "vpm"){
-					paramName = "pvf";
-				}
-				query[paramName] = paramValue;
+			if(m_query){
+				m_query = {};
 			}
-			m_query = query;
-			if(self.initialize_callback){
-				self.initialize_callback();
-				self.initialize_callback = null;
-			}
-		},
-		applink_park: function(eventData) {
-			console.log("app link : " + eventData.url);
-			//alert(eventData.url);
-			if(eventData.url.startsWith("https://park.picam360.com/watch")){
-				var req = new XMLHttpRequest();
-				req.open("get", eventData.url, false);//sync
-				req.send(null);
-				var html = req.response;
-				var iframe_sp = html.indexOf("<iframe");
-				var iframe_ep = html.indexOf(">", iframe_sp) + 1;
-				var iframe_str = html.substring(iframe_sp, iframe_ep);
-				var src_sp = iframe_str.indexOf("src='") + 5;
-				var src_ep = iframe_str.indexOf("'", src_sp);
-				var src_str = iframe_str.substring(src_sp, src_ep);
-				eventData.url = src_str;
-				console.log("app link from park : " + eventData.url);
-			}
-			
-			var query_str = eventData.url.split('?')[1];
-			query_str = decodeHTML(query_str);
-			var parameters = query_str.split('&');
-
-			var query = {};
-			for (var i = 0; i < parameters.length; i++) {
-				var pos = parameters[i].indexOf('=');
-
-				var paramName = parameters[i].substring(0, pos);
-				var paramValue = parameters[i].substring(pos + 1);
-
-				paramName = decodeURIComponent(paramName);
-				paramValue = decodeURIComponent(paramValue);
-
-				if(paramName == "vpm"){
-					paramName = "pvf";
-				}
-				query[paramName] = paramValue;
-			}
-			m_query = query;
+			m_query['applink'] = eventData.url;
 			if(self.initialize_callback){
 				self.initialize_callback();
 				self.initialize_callback = null;
@@ -243,40 +182,14 @@ var app = (function() {
 
 		init_common_options_done: false,
 		init_common_options: function(callback) {
-			if (this.init_common_options_done) {
-				return;
-			} else {
-				this.init_common_options_done = true;
-			}
-			loadFile("common_config.json", function(chunk_array) {
-				var _options = {};
-				try{
-					var txt = (new TextDecoder).decode(chunk_array[0]);
-					if (txt) {
-						_options = JSON.parse(txt);
-					}
-				}catch(e){
-					_options = {};
+			return new Promise((fullfill,reject) => {
+				if (this.init_common_options_done) {
+					fullfill();
+					return;
+				} else {
+					this.init_common_options_done = true;
 				}
-				Object.assign(m_options, _options);
-				if(!m_options.plugin_paths){
-					m_options.plugin_paths = [];
-				}
-				if(callback){
-					callback();
-				}
-			});
-		},
-		init_options_done: false,
-		init_options: function(callback) {
-			if (this.init_options_done) {
-				return;
-			} else {
-				this.init_options_done = true;
-			}
-			// @data : uint8array
-			self.plugin_host
-				.getFile("config.json", function(chunk_array) {
+				loadFile("common_config.json", function(chunk_array) {
 					var _options = {};
 					try{
 						var txt = (new TextDecoder).decode(chunk_array[0]);
@@ -286,16 +199,41 @@ var app = (function() {
 					}catch(e){
 						_options = {};
 					}
-					if(_options.plugin_paths){
-						_options.plugin_paths = m_options.plugin_paths.concat(_options.plugin_paths);
-					}
 					Object.assign(m_options, _options);
-					if (m_query['plugin_paths']) {
-						var plugin_paths = JSON.parse(m_query['plugin_paths']);
-						m_options.plugin_paths = m_options.plugin_paths.concat(plugin_paths);
+					if(!m_options.plugin_paths){
+						m_options.plugin_paths = [];
 					}
-					self.init_plugins(callback);
+					fullfill();
 				});
+			});
+		},
+		init_options_done: false,
+		init_options: function() {
+			return new Promise((fullfill,reject) => {
+				if (self.init_options_done) {
+					fullfill();
+					return;
+				} else {
+					self.init_options_done = true;
+				}
+				// @data : uint8array
+				loadFile("config.json", function(chunk_array) {
+						var _options = {};
+						try{
+							var txt = (new TextDecoder).decode(chunk_array[0]);
+							if (txt) {
+								_options = JSON.parse(txt);
+							}
+						}catch(e){
+							_options = {};
+						}
+						if(_options.plugin_paths){
+							_options.plugin_paths = m_options.plugin_paths.concat(_options.plugin_paths);
+						}
+						Object.assign(m_options, _options);
+						fullfill();
+					});
+			});
 		},
 
 		init_watch: function() {
@@ -473,6 +411,10 @@ var app = (function() {
 			m_canvas.style.width = window.innerWidth + "px";
 			m_canvas.style.height = window.innerHeight + "px";
 		},
+		
+		get_pst: function() {
+			return m_pst;
+		},
 
 		main: function() {
 			self.receivedEvent('main');
@@ -480,55 +422,122 @@ var app = (function() {
 			navigator.getUserMedia = navigator.getUserMedia ||
 				navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
-			if (m_query['server-url']) {
-				server_url = m_query['server-url'];
-			}
-			if (m_query['default-image-url']) {
-				default_image_url = m_query['default-image-url'];
-			}
-			if (m_query['view-offset']) {
-				var split = m_query['view-offset'].split(',');
-				m_options.view_offset = [split[0], split[1], split[2]];
-			}
-			if (m_query['fov']) {
-				m_options.fov = parseFloat(m_query['fov']);
-			}else{
-				m_options.fov = 120;
-			}
-			if (m_query['stereo']) {
-				m_options.stereo = parseBoolean(m_query['stereo']);
-			}else{
-				m_options.stereo = false;
-			}
-			if (m_query['vertex-type']) {
-				m_vertex_type = m_query['vertex-type'];
-			}
 
-			if (m_query['auto-scroll']) {
-				auto_scroll = parseBoolean(m_query['auto-scroll']);
-			}
-			if (m_query['debug']) {
-				self.debug = parseFloat(m_query['debug']);
-			}
-			if (m_query['view-offset-lock']) {
-				view_offset_lock = parseBoolean(m_query['view-offset-lock']);
-			}
-			if (m_query['afov']) {
-				m_afov = parseBoolean(m_query['afov']);
-			}
-			if (m_query['fpp']) {
-				m_fpp = parseBoolean(m_query['fpp']);
-			}
-			if (m_query['pvf']) {
-				m_pvf_url = m_query['pvf'];
-			}
+			new Promise((fullfill,reject) => {
+				var need_trans = false;
+				if(m_query['applink']){
+					if (m_query['applink'].startsWith("https://park.picam360.com/watch")
+							|| m_query['applink'].startsWith("https://s.360pi.cam"))
+					{
+						need_trans = true;
+					}
+				}
+				if(need_trans){//get pvf url
+					var req = new XMLHttpRequest();
+					req.open("get", m_query['applink'], true);
+					req.onload = function() {
+						var html = req.response;
+						var iframe_sp = html.indexOf("<iframe");
+						var iframe_ep = html.indexOf(">", iframe_sp) + 1;
+						var iframe_str = html.substring(iframe_sp, iframe_ep);
+						var src_sp = iframe_str.indexOf("src='") + 5;
+						var src_ep = iframe_str.indexOf("'", src_sp);
+						var src_str = iframe_str.substring(src_sp, src_ep);
+						m_query['applink'] = src_str;
+						console.log("app link from park : " + m_query['applink']);
+						fullfill();
+					};
+					req.send(null);
+				}else{
+					fullfill();
+				}
+			})
+			.then(() => {
+				return new Promise((fullfill,reject) => {
+					if(m_query['applink']){
+						var query_str = m_query['applink'].split('?')[1];
+						query_str = decodeHTML(query_str);
+						var parameters = query_str.split('&');
+		
+						var query = {};
+						for (var i = 0; i < parameters.length; i++) {
+							var pos = parameters[i].indexOf('=');
+		
+							var paramName = parameters[i].substring(0, pos);
+							var paramValue = parameters[i].substring(pos + 1);
+		
+							paramName = decodeURIComponent(paramName);
+							paramValue = decodeURIComponent(paramValue);
+		
+							if(paramName == "vpm"){
+								paramName = "pvf";
+							}
+							query[paramName] = paramValue;
+						}
+						m_query = query;
+					}
+					fullfill();
+				});
+			})
+			.then(() => {
+				return new Promise((fullfill,reject) => {
+					
+					if (m_query['server-url']) {
+						server_url = m_query['server-url'];
+					}
+					if (m_query['default-image-url']) {
+						default_image_url = m_query['default-image-url'];
+					}
+					if (m_query['view-offset']) {
+						var split = m_query['view-offset'].split(',');
+						m_options.view_offset = [split[0], split[1], split[2]];
+					}
+					if (m_query['fov']) {
+						m_options.fov = parseFloat(m_query['fov']);
+					}else{
+						m_options.fov = 120;
+					}
+					if (m_query['stereo']) {
+						m_options.stereo = parseBoolean(m_query['stereo']);
+					}else{
+						m_options.stereo = false;
+					}
+					if (m_query['vertex-type']) {
+						m_vertex_type = m_query['vertex-type'];
+					}
 
-			m_canvas = document.getElementById('panorama');
-			m_overlay = document.getElementById('overlay');
+					if (m_query['auto-scroll']) {
+						auto_scroll = parseBoolean(m_query['auto-scroll']);
+					}
+					if (m_query['debug']) {
+						self.debug = parseFloat(m_query['debug']);
+					}
+					if (m_query['view-offset-lock']) {
+						view_offset_lock = parseBoolean(m_query['view-offset-lock']);
+					}
+					if (m_query['afov']) {
+						m_afov = parseBoolean(m_query['afov']);
+					}
+					if (m_query['fpp']) {
+						m_fpp = parseBoolean(m_query['fpp']);
+					}
+					if (m_query['pvf']) {
+						m_pvf_url = m_query['pvf'];
+					}
 
-			self.init_common_options(() => {
+					m_canvas = document.getElementById('panorama');
+					m_overlay = document.getElementById('overlay');
+					
+					fullfill();
+				});
+			})
+			.then(self.init_common_options)
+			.then(self.init_options)
+			.then(() => {
 				self.plugin_host = PluginHost(self, m_options);
-				self.plugin_host.init_plugins();
+				return self.plugin_host.init_plugins();
+			})
+			.then(() => {
 				self.plugin_host.on_view_quat_changed((view_quat, view_offset_quat) => {
 					var quat = view_offset_quat.multiply(view_quat);
 					m_pstcore._pstcore_set_view_quat(m_pst, quat.x, quat.y, quat.z, quat.w);
@@ -575,8 +584,11 @@ var app = (function() {
 						const config_json = JSON.stringify(config);
 						m_pstcore.pstcore_init(config_json);
 						
-						m_pst = m_pstcore.pstcore_start_pvf_loader(m_pvf_url, m_query['head-query'], m_query['get-query']);
-
+						if(m_pvf_url){
+							m_pst = m_pstcore.pstcore_start_pvf_loader(m_pvf_url, m_query['head-query'], m_query['get-query']);
+						}else{
+							self.plugin_host.send_event("core", "core.no_pvf");
+						}
 						self.start_animate();
 						
 						window.addEventListener('resize', () => {
