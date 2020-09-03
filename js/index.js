@@ -360,7 +360,7 @@ var app = (function() {
 		
 		start_animate: function() {
 			setTimeout(() => {
-				self.plugin_host.set_stereo(m_options.stereo);
+				self.set_stereo(m_options.stereo);
 				self.plugin_host.set_fov(m_options.fov);
 			}, 500);//wait pgl init
 			
@@ -410,6 +410,30 @@ var app = (function() {
 			m_canvas.height = window.innerHeight * window.devicePixelRatio;
 			m_canvas.style.width = window.innerWidth + "px";
 			m_canvas.style.height = window.innerHeight + "px";
+
+			self.set_stereo(m_options.stereo);
+		},
+		
+		set_stereo: function(value) {
+			m_options.stereo = value;
+
+			if(swStereoView){
+				swStereoView.setChecked(m_options.stereo);
+			}
+			
+			if(m_canvas.width < m_canvas.height){//vertical
+				value = false;
+			}
+			
+			self.plugin_host.send_event("PLUGIN_HOST", value ?
+				"STEREO_ENABLED" :
+				"STEREO_DISABLED");
+
+//			var cmd = UPSTREAM_DOMAIN;
+//			cmd += "set_vstream_param -p stereo=" + (value ? 1 : 0);
+//			self.send_command(cmd);
+			
+			self.set_param("pgl_renderer", "stereo", (value ? "1" : "0"));
 		},
 		
 		get_pst: function() {
@@ -474,7 +498,7 @@ var app = (function() {
 							}
 							query[paramName] = paramValue;
 						}
-						m_query = query;
+						Object.assign(m_query, query);
 					}
 					fullfill();
 				});

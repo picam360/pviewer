@@ -144,15 +144,7 @@ function PluginHost(core, options) {
 			core.set_param("pgl_renderer", "fov", value.toString());
 		},
 		set_stereo: function(value) {
-			self.send_event("PLUGIN_HOST", value ?
-				"STEREO_ENABLED" :
-				"STEREO_DISABLED");
-
-			var cmd = UPSTREAM_DOMAIN;
-			cmd += "set_vstream_param -p stereo=" + (value ? 1 : 0);
-			self.send_command(cmd);
-			
-			core.set_param("pgl_renderer", "stereo", (value ? "1" : "0"));
+			core.set_stereo(value);
 		},
 		set_audio: function(value) {
 			m_audio_handler.setAudioEnabled(value);
