@@ -316,6 +316,8 @@ var app = (function() {
 					var preload = m_pstcore.pstcore_get_param(m_pst, "pvf_loader", "preload");
 					var bitrate_mbps = m_pstcore.pstcore_get_param(m_pst, "pvf_loader", "bitrate_mbps");
 					var pixelrate_mpps = m_pstcore.pstcore_get_param(m_pst, "libde265_decoder", "pixelrate_mpps");
+					var gof_queue_size = m_pstcore.pstcore_get_param(m_pst, "libde265_decoder", "gof_queue_size");
+					var boost_pixelrate_mpps = parseFloat(pixelrate_mpps) * parseFloat(gof_queue_size);
 					var n_in_bq_d = m_pstcore.pstcore_get_param(m_pst, "libde265_decoder", "n_in_bq");
 					var n_in_bq_r = m_pstcore.pstcore_get_param(m_pst, "pgl_renderer", "n_in_bq");
 					var n_pending = m_pstcore.pstcore_get_param(m_pst, "pgl_renderer", "n_pending");
@@ -323,7 +325,7 @@ var app = (function() {
 					status += "fps:" + fps + "<br/>";
 					status += "preload:" + preload + "<br/>";
 					status += "bitrate:" + bitrate_mbps + "mbps<br/>";
-					status += "pixelrate:" + pixelrate_mpps + "mpps<br/>";
+					status += "pixelrate:" + boost_pixelrate_mpps.toFixed(3) + "mpps(" + pixelrate_mpps + ")<br/>";
 					status += "n_in_bq:" + n_in_bq_d + "+" + n_in_bq_r + "<br/>";
 					status += "n_pending:" + n_pending + "<br/>";
 				}
