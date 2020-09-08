@@ -441,14 +441,13 @@ var app = (function() {
 		get_pst: function() {
 			return m_pst;
 		},
-
-		main: function() {
-			self.receivedEvent('main');
-
-			navigator.getUserMedia = navigator.getUserMedia ||
-				navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-
-
+		
+		open_applink: function(url){
+			if(url.indexOf('applink=') >= 0){
+				m_query = GetQueryString(url);
+			}else{
+				m_query['applink'] = url;
+			}
 			new Promise((fullfill,reject) => {
 				var need_trans = false;
 				if(m_query['applink']){
@@ -480,7 +479,7 @@ var app = (function() {
 			})
 			.then(() => {
 				return new Promise((fullfill,reject) => {
-					if(m_query['applink']){
+					if(m_query['applink'] && m_query['applink'].indexOf('?') >= 0){
 						var query_str = m_query['applink'].split('?')[1];
 						query_str = decodeHTML(query_str);
 						var parameters = query_str.split('&');
@@ -549,13 +548,33 @@ var app = (function() {
 					}
 					if (m_query['pvf']) {
 						m_pvf_url = m_query['pvf'];
+					}else{
+						m_pvf_url = "";
 					}
-
-					m_canvas = document.getElementById('panorama');
-					m_overlay = document.getElementById('overlay');
 					
 					fullfill();
 				});
+			})
+			.then(() => {
+				if(m_pvf_url){
+					if(m_pst){
+						//TODO:stop pst
+					}
+					m_pst = m_pstcore.pstcore_start_pvf_loader(m_pvf_url, m_query['head-query'], m_query['get-query']);
+					self.plugin_host.send_event("app", "open_applink");
+				}
+			});
+		},
+
+		main: function() {
+			self.receivedEvent('main');
+
+			navigator.getUserMedia = navigator.getUserMedia ||
+				navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+
+
+			new Promise((fullfill,reject) => {
+				fullfill();
 			})
 			.then(self.init_common_options)
 			.then(self.init_options)
@@ -576,7 +595,10 @@ var app = (function() {
 					}
 					self.plugin_host.set_view_quat(quat);
 				});
-
+				
+				m_canvas = document.getElementById('panorama');
+				m_overlay = document.getElementById('overlay');
+				
 				m_pstcore = window.PstCoreLoader({
 					preRun: [],
 					postRun: [],
@@ -610,11 +632,11 @@ var app = (function() {
 						const config_json = JSON.stringify(config);
 						m_pstcore.pstcore_init(config_json);
 						
-						if(m_pvf_url){
-							m_pst = m_pstcore.pstcore_start_pvf_loader(m_pvf_url, m_query['head-query'], m_query['get-query']);
-						}else{
-							self.plugin_host.send_event("core", "core.no_pvf");
+						if(!m_query['applink']){
+							m_query['applink'] = window.location.href;
 						}
+						self.open_applink(m_query['applink']);
+						
 						self.start_animate();
 						
 						window.addEventListener('resize', () => {

@@ -4,20 +4,22 @@ function parseBoolean(str) {
 	return str == "yes" || str == "on" || str == "true" || str == "1";
 }
 
-function GetQueryString() {
+function GetQueryString(_url) {
+	var url = _url || window.location.search;
+	if(url.indexOf('?') >= 0){
+		url = url.split('?')[1];
+	}
 	var result = {};
-	if (1 < window.location.search.length) {
-		var query = window.location.search.substring(1);
-		var parameters = query.split('&');
+	var query = url;
+	var parameters = query.split('&');
 
-		for (var i = 0; i < parameters.length; i++) {
-			var element = parameters[i].split('=');
+	for (var i = 0; i < parameters.length; i++) {
+		var element = parameters[i].split('=');
 
-			var paramName = decodeURIComponent(element[0]);
-			var paramValue = decodeURIComponent(element[1]);
+		var paramName = decodeURIComponent(element[0]);
+		var paramValue = decodeURIComponent(element[1]);
 
-			result[paramName] = paramValue;
-		}
+		result[paramName] = paramValue;
 	}
 	return result;
 }
@@ -89,4 +91,42 @@ function decodeHTML(str) {
 		.replace(/&gt;/g, '>')
 		.replace(/&lt;/g, '<')
 		.replace(/&amp;/g, '&');
+}
+
+function decodeUtf8(data) {
+	var result = "";
+	var i = 0;
+	var c = 0;
+	var c1 = 0;
+	var c2 = 0;
+	// If we have a BOM skip it
+	if (data.length >= 3 && data[0] === 0xef && data[1] === 0xbb
+		&& data[2] === 0xbf) {
+		i = 3;
+	}
+	while (i < data.length) {
+		c = data[i];
+
+		if (c < 128) {
+			result += String.fromCharCode(c);
+			i++;
+		} else if (c > 191 && c < 224) {
+			if (i + 1 >= data.length) {
+				throw "UTF-8 Decode failed. Two byte character was truncated.";
+			}
+			c2 = data[i + 1];
+			result += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
+			i += 2;
+		} else {
+			if (i + 2 >= data.length) {
+				throw "UTF-8 Decode failed. Multi byte character was truncated.";
+			}
+			c2 = data[i + 1];
+			c3 = data[i + 2];
+			result += String.fromCharCode(((c & 15) << 12)
+				| ((c2 & 63) << 6) | (c3 & 63));
+			i += 3;
+		}
+	}
+	return result;
 }
