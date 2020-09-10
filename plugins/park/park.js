@@ -1,8 +1,6 @@
 var create_plugin = (function() {
 	var m_plugin_host = null;
-	var m_is_init = false;
 	var m_auto_park = true;
-	var m_is_park = false;
 	var m_park_url = "plugins/park/top/Picam360 Park.html";
 
 	function loadFile(path, callback, error_callbackk) {
@@ -25,52 +23,26 @@ var create_plugin = (function() {
 		};
 		req.send(null);
 	}
-
-	function GetQueryString() {
-		var result = {};
-		if (1 < window.location.search.length) {
-			var query = window.location.search.substring(1);
-			var parameters = query.split('&');
-
-			for (var i = 0; i < parameters.length; i++) {
-				var element = parameters[i].split('=');
-
-				var paramName = decodeURIComponent(element[0]);
-				var paramValue = decodeURIComponent(element[1]);
-
-				result[paramName] = paramValue;
-			}
-		}
-		return result;
-	}
-	
-	var m_query = GetQueryString();
-	
-	function init(){
-		if(!m_query['tour']){
-			return;
-		}
-	}
 	
 	return function(plugin_host) {
 		debugger;
 		m_plugin_host = plugin_host;
 
 		function close_park() {
-			if(!m_is_park){
+			var page = app.navi.getCurrentPage();
+			if(page.name != 'park.html'){
 				return;
 			}
-			m_is_park = false;
 			app.navi.popPage();
 		}
 		function open_park() {
-			if(m_is_park){
+			var page = app.navi.getCurrentPage();
+			if(page.name == 'park.html'){
 				return;
 			}
-			m_is_park = true;
 			app.menu.closeMenu();
 			app.navi.pushPage('park.html', {
-				onTransitionEnd : function() {
+				onTransitionEnd : function() {					
 					var iframe = document.getElementById('park_iframe');
 					iframe.src = m_park_url;
 					m_park_url = iframe.src;
@@ -128,10 +100,6 @@ var create_plugin = (function() {
 		
 		var plugin = {
 			init_options : function(options) {
-				if (!m_is_init) {
-					m_is_init = true;
-					init(plugin);
-				}
 			},
 			event_handler : function(sender, event) {
 				if(event == "open_applink"){

@@ -38,7 +38,17 @@ var app = (function() {
 	var m_mpu;
 
 	var server_url = window.location.href.split('?')[0];
-	var m_options = {};
+	var m_options = {
+		"fov" : 120,
+		"stereo" : false,
+		"pst_params" : {
+			"libde265_decoder.sao" : "0",
+			"libde265_decoder.deblocking" : "0",
+			"libde265_decoder.n_threads" : "1",
+			"libde265_decoder.simd" : "0",
+		},
+	};
+	var m_permanent_options = {};
 	var is_recording = false;
 	var p2p_num_of_members = 0;
 	var peer_call = null;
@@ -76,6 +86,14 @@ var app = (function() {
 		initialize: function(callback) {
 			self.initialize_callback = callback;
 			self.receivedEvent('initialize');
+			
+			//localStrage config
+			try{
+				m_permanent_options = JSON.parse(localStorage.getItem('options'));
+			}catch (e){
+				m_permanent_options = {};
+			}
+			Object.assign(m_options, m_permanent_options);
 
 			// window.addEventListener("orientationchange", function() {
 			// alert(window.orientation);
@@ -119,6 +137,10 @@ var app = (function() {
 					self.initialize_callback();
 				}
 			}
+		},
+		
+		save_permanent_options: function() {
+			localStorage.setItem('options', JSON.stringify(m_permanent_options));
 		},
 
 		// Bind Event Listeners
@@ -418,6 +440,8 @@ var app = (function() {
 		
 		set_stereo: function(value) {
 			m_options.stereo = value;
+			m_permanent_options.stereo = value;
+			self.save_permanent_options();
 
 			if(swStereoView){
 				swStereoView.setChecked(m_options.stereo);
@@ -519,13 +543,9 @@ var app = (function() {
 					}
 					if (m_query['fov']) {
 						m_options.fov = parseFloat(m_query['fov']);
-					}else{
-						m_options.fov = 120;
 					}
 					if (m_query['stereo']) {
 						m_options.stereo = parseBoolean(m_query['stereo']);
-					}else{
-						m_options.stereo = false;
 					}
 					if (m_query['vertex-type']) {
 						m_vertex_type = m_query['vertex-type'];
@@ -560,8 +580,15 @@ var app = (function() {
 					if(m_pst){
 						//TODO:stop pst
 					}
-					m_pst = m_pstcore.pstcore_start_pvf_loader(m_pvf_url, m_query['head-query'], m_query['get-query']);
+					m_pst = m_pstcore.pstcore_build_pvf_streamer(m_pvf_url, m_query['head-query'], m_query['get-query']);
+					for(var key in m_options.pst_params){
+						var [pst_name, param] = key.split('.');
+						var value = m_options.pst_params[key];
+						m_pstcore.pstcore_set_param(m_pst, pst_name, param, value);
+					}
+					m_pstcore.pstcore_start_pstreamer(m_pst);
 					self.plugin_host.send_event("app", "open_applink");
+					self.update_canvas_size();
 				}
 			});
 		},
@@ -642,7 +669,6 @@ var app = (function() {
 						window.addEventListener('resize', () => {
 							self.update_canvas_size();
 						}, false);
-						self.update_canvas_size();
 					},
 					locateFile : function(path, prefix) {
 						return self.base_path + "../lib/pstcore/" + path;
