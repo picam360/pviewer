@@ -41,12 +41,10 @@ var app = (function() {
 	var m_options = {
 		"fov" : 120,
 		"stereo" : false,
-		"pst_params" : {
-			"libde265_decoder.sao" : "0",
-			"libde265_decoder.deblocking" : "0",
-			"libde265_decoder.n_threads" : "1",
-			"libde265_decoder.simd" : "0",
-		},
+		"sao" : false,
+		"deblock" : false,
+		"simd" : false,
+		"boost" : false,
 	};
 	var m_permanent_options = {};
 	var is_recording = false;
@@ -61,6 +59,7 @@ var app = (function() {
 	var m_upstream_menu = "";
 
 	var m_pvf_url = "";
+	var m_applink_ready = false;
 	
 	var m_pc = null;
 
@@ -89,7 +88,7 @@ var app = (function() {
 			
 			//localStrage config
 			try{
-				m_permanent_options = JSON.parse(localStorage.getItem('options'));
+				m_permanent_options = JSON.parse(localStorage.getItem('options')) || {};
 			}catch (e){
 				m_permanent_options = {};
 			}
@@ -159,23 +158,14 @@ var app = (function() {
 			self.receivedEvent('deviceready');
 			self.isDeviceReady = true;
 			
-			if(m_query['applink']){
-				if(self.initialize_callback){
-					self.initialize_callback();
-					self.initialize_callback = null;
-				}
-			}else if(universalLinks){
+			if(universalLinks){
 				universalLinks.subscribe("vpm.picam360.com", self.applink_handler);
 				universalLinks.subscribe("park.picam360.com", self.applink_handler);
 				universalLinks.subscribe("s.360pi.cam", self.applink_handler);
 			}
 			if(self.initialize_callback){
-				setTimeout(() => {
-					if(self.initialize_callback){
-						self.initialize_callback();
-						self.initialize_callback = null;
-					}
-				}, 1000);//timeout of applink
+				self.initialize_callback();
+				self.initialize_callback = null;
 			}
 		},
 
@@ -187,15 +177,7 @@ var app = (function() {
 		//applink
 		applink_handler: function(eventData) {
 			console.log("app link : " + eventData.url);
-			//alert(eventData.url);
-			if(m_query){
-				m_query = {};
-			}
-			m_query['applink'] = eventData.url;
-			if(self.initialize_callback){
-				self.initialize_callback();
-				self.initialize_callback = null;
-			}
+			self.open_applink(eventData.url);
 		},
 		
 		connected:function(){
@@ -385,6 +367,9 @@ var app = (function() {
 		start_animate: function() {
 			setTimeout(() => {
 				self.set_stereo(m_options.stereo);
+				self.set_deblock(m_options.deblock);
+				self.set_simd(m_options.simd);
+				self.set_boost(m_options.boost);
 				self.plugin_host.set_fov(m_options.fov);
 			}, 500);//wait pgl init
 			
@@ -462,6 +447,36 @@ var app = (function() {
 			self.set_param("pgl_renderer", "stereo", (value ? "1" : "0"));
 		},
 		
+		set_deblock: function(value) {
+			m_options.deblock = value;
+			m_permanent_options.deblock = value;
+			self.save_permanent_options();
+
+			if(swDeblock){
+				swDeblock.setChecked(value);
+			}
+		},
+		
+		set_simd: function(value) {
+			m_options.simd = value;
+			m_permanent_options.simd = value;
+			self.save_permanent_options();
+
+			if(swSimd){
+				swSimd.setChecked(value);
+			}
+		},
+		
+		set_boost: function(value) {
+			m_options.boost = value;
+			m_permanent_options.boost = value;
+			self.save_permanent_options();
+
+			if(swBoost){
+				swBoost.setChecked(value);
+			}
+		},
+		
 		get_pst: function() {
 			return m_pst;
 		},
@@ -470,7 +485,10 @@ var app = (function() {
 			if(url.indexOf('applink=') >= 0){
 				m_query = GetQueryString(url);
 			}else{
-				m_query['applink'] = url;
+				m_query = {'applink' : url};
+			}
+			if(!m_applink_ready){ //pending
+				return;
 			}
 			new Promise((fullfill,reject) => {
 				var need_trans = false;
@@ -577,18 +595,32 @@ var app = (function() {
 			})
 			.then(() => {
 				if(m_pvf_url){
+					
+					function start_pvf(){
+						m_pst = m_pstcore.pstcore_build_pvf_streamer(m_pvf_url, m_query['head-query'], m_query['get-query']);
+//						for(var key in m_options.pst_params){
+//							var [pst_name, param] = key.split('.');
+//							var value = m_options.pst_params[key];
+//							m_pstcore.pstcore_set_param(m_pst, pst_name, param, value);
+//						}
+						m_pstcore.pstcore_set_param(m_pst, "libde265_decoder", "sao", m_options.sao ? "1" : "0");
+						m_pstcore.pstcore_set_param(m_pst, "libde265_decoder", "deblocking", m_options.deblock ? "1" : "0");
+						m_pstcore.pstcore_set_param(m_pst, "libde265_decoder", "simd", m_options.simd ? "1" : "0");
+						m_pstcore.pstcore_set_param(m_pst, "libde265_decoder", "n_threads", m_options.boost ? "2" : "1");
+						
+						m_pstcore.pstcore_start_pstreamer(m_pst);
+						self.plugin_host.send_event("app", "open_applink");
+						self.update_canvas_size();
+					}
 					if(m_pst){
-						//TODO:stop pst
+						m_pstcore.pstcore_destroy_pstreamer(m_pst);
+						m_pst = null;
+						setTimeout(() => {
+							start_pvf();
+						}, 1000);
+					} else {
+						start_pvf();
 					}
-					m_pst = m_pstcore.pstcore_build_pvf_streamer(m_pvf_url, m_query['head-query'], m_query['get-query']);
-					for(var key in m_options.pst_params){
-						var [pst_name, param] = key.split('.');
-						var value = m_options.pst_params[key];
-						m_pstcore.pstcore_set_param(m_pst, pst_name, param, value);
-					}
-					m_pstcore.pstcore_start_pstreamer(m_pst);
-					self.plugin_host.send_event("app", "open_applink");
-					self.update_canvas_size();
 				}
 			});
 		},
@@ -658,7 +690,8 @@ var app = (function() {
 						}
 						const config_json = JSON.stringify(config);
 						m_pstcore.pstcore_init(config_json);
-						
+
+						m_applink_ready = true;
 						if(!m_query['applink']){
 							m_query['applink'] = window.location.href;
 						}

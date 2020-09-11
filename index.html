@@ -243,7 +243,22 @@
 		align="center"
 	> <ons-col>Stereo</ons-col> <ons-col align="right"> <ons-switch
 		var="swStereoView"
-		onchange="app.plugin_host.set_stereo(swStereoView.isChecked());"
+		onchange="app.set_stereo(swStereoView.isChecked());"
+	></ons-switch> </ons-col> </ons-row></ons-list-item> <ons-list-item class="menu-item"> <ons-row
+	align="center"
+	> <ons-col>Deblock</ons-col> <ons-col align="right"> <ons-switch
+		var="swDeblock"
+		onchange="app.set_deblock(swDeblock.isChecked());"
+	></ons-switch> </ons-col> </ons-row></ons-list-item> <ons-list-item class="menu-item"> <ons-row
+	align="center"
+	> <ons-col>SIMD</ons-col> <ons-col align="right"> <ons-switch
+		var="swSimd"
+		onchange="app.set_simd(swSimd.isChecked());"
+	></ons-switch> </ons-col> </ons-row></ons-list-item> <ons-list-item class="menu-item"> <ons-row
+	align="center"
+	> <ons-col>Boost</ons-col> <ons-col align="right"> <ons-switch
+		var="swBoost"
+		onchange="app.set_boost(swBoost.isChecked());"
 	></ons-switch> </ons-col> </ons-row></ons-list-item> <ons-list-item
 		class="menu-item"
 		id="uiCall"

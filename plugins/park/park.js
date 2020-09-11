@@ -25,7 +25,7 @@ var create_plugin = (function() {
 	}
 	
 	return function(plugin_host) {
-		debugger;
+		//debugger;
 		m_plugin_host = plugin_host;
 
 		function close_park() {
@@ -83,6 +83,9 @@ var create_plugin = (function() {
 		        // Timeout needed because the URL changes immediately after
 		        // the `unload` event is dispatched.
 		        setTimeout(function () {
+			    	if(!iframe || !iframe.contentWindow || !iframe.contentWindow.location){
+			    		return;
+			    	}
 		            callback(iframe.contentWindow.location.href, pre_src);
 		        }, 0);
 		    };
