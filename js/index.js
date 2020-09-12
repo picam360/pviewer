@@ -74,12 +74,20 @@ var app = (function() {
 		}
 	}
 	var m_query = GetQueryString();
-
+	
 	var self = {
 		debug: 0,
 		plugin_host: null,
 		isDeviceReady: false,
-		base_path: "",
+		base_path: (function() {
+			try{
+				var path = document.currentScript.src.split('?')[0];
+				var mydir = path.split('/').slice(0, -1).join('/') + '/';
+				return mydir;
+			}catch(e){
+				return '';
+			}
+		})(),
 		initialize_callback: null,
 		// Application Constructor
 		initialize: function(callback) {
@@ -118,16 +126,6 @@ var app = (function() {
 						alert("no handler : " + args['function']);
 				}
 			});
-			
-			self.base_path = (function() {
-				try{
-					var path = document.currentScript.src.split('?')[0];
-					var mydir = path.split('/').slice(0, -1).join('/') + '/';
-					return mydir;
-				}catch(e){
-					return '';
-				}
-			})();
 			
 			if(window.cordova){
 				self.bindEvents();
