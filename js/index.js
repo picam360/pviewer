@@ -615,7 +615,7 @@ var app = (function() {
 						m_pst = null;
 						setTimeout(() => {
 							start_pvf();
-						}, 1000);
+						}, 0);
 					} else {
 						start_pvf();
 					}
