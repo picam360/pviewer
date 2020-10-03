@@ -317,12 +317,12 @@ var app = (function() {
 					var fps = m_pstcore.pstcore_get_param(m_pst, "pvf_loader", "src_fps");
 					var preload = m_pstcore.pstcore_get_param(m_pst, "pvf_loader", "preload");
 					var bitrate_mbps = m_pstcore.pstcore_get_param(m_pst, "pvf_loader", "bitrate_mbps");
-					var pixelrate_mpps = m_pstcore.pstcore_get_param(m_pst, "libde265_decoder", "pixelrate_mpps");
-					var gof_queue_size = m_pstcore.pstcore_get_param(m_pst, "libde265_decoder", "gof_queue_size");
+					var pixelrate_mpps = m_pstcore.pstcore_get_param(m_pst, "decoder", "pixelrate_mpps");
+					var gof_queue_size = m_pstcore.pstcore_get_param(m_pst, "decoder", "gof_queue_size");
 					var boost_pixelrate_mpps = parseFloat(pixelrate_mpps) * parseFloat(gof_queue_size);
-					var n_in_bq_d = m_pstcore.pstcore_get_param(m_pst, "libde265_decoder", "n_in_bq");
-					var n_in_bq_r = m_pstcore.pstcore_get_param(m_pst, "pgl_renderer", "n_in_bq");
-					var n_pending = m_pstcore.pstcore_get_param(m_pst, "pgl_renderer", "n_pending");
+					var n_in_bq_d = m_pstcore.pstcore_get_param(m_pst, "decoder", "n_in_bq");
+					var n_in_bq_r = m_pstcore.pstcore_get_param(m_pst, "renderer", "n_in_bq");
+					var n_pending = m_pstcore.pstcore_get_param(m_pst, "renderer", "n_pending");
 					status += "texture<br/>";
 					status += "fps:" + fps + "<br/>";
 					status += "preload:" + preload + "<br/>";
@@ -442,7 +442,13 @@ var app = (function() {
 //			cmd += "set_vstream_param -p stereo=" + (value ? 1 : 0);
 //			self.send_command(cmd);
 			
-			self.set_param("pgl_renderer", "stereo", (value ? "1" : "0"));
+			if(value){
+				self.plugin_host.set_fov(95);
+				self.set_param("renderer", "stereo", "1");
+			}else{
+				self.plugin_host.set_fov(120);
+				self.set_param("renderer", "stereo", "0");
+			}
 		},
 		
 		set_deblock: function(value) {
@@ -601,10 +607,10 @@ var app = (function() {
 //							var value = m_options.pst_params[key];
 //							m_pstcore.pstcore_set_param(m_pst, pst_name, param, value);
 //						}
-						m_pstcore.pstcore_set_param(m_pst, "libde265_decoder", "sao", m_options.sao ? "1" : "0");
-						m_pstcore.pstcore_set_param(m_pst, "libde265_decoder", "deblocking", m_options.deblock ? "1" : "0");
-						m_pstcore.pstcore_set_param(m_pst, "libde265_decoder", "simd", m_options.simd ? "1" : "0");
-						m_pstcore.pstcore_set_param(m_pst, "libde265_decoder", "n_threads", m_options.boost ? "2" : "1");
+						m_pstcore.pstcore_set_param(m_pst, "decoder", "sao", m_options.sao ? "1" : "0");
+						m_pstcore.pstcore_set_param(m_pst, "decoder", "deblocking", m_options.deblock ? "1" : "0");
+						m_pstcore.pstcore_set_param(m_pst, "decoder", "simd", m_options.simd ? "1" : "0");
+						m_pstcore.pstcore_set_param(m_pst, "decoder", "n_threads", m_options.boost ? "2" : "1");
 						
 						m_pstcore.pstcore_start_pstreamer(m_pst);
 						self.plugin_host.send_event("app", "open_applink");

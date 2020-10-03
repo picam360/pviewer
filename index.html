@@ -168,7 +168,12 @@
 			fixed-width="false"
 		></ons-icon> </ons-toolbar-button>
 	</div>
-	</ons-toolbar> <ons-list id="menu_list"> <ons-list-item class="menu-item">
+	</ons-toolbar>
+
+    <ons-list id="menu_list"> 
+    
+    <!--
+	<ons-list-item class="menu-item">
 	<div
 		class="button-bar"
 		style="width: 240px;"
@@ -219,7 +224,8 @@
 			<button class="button-bar__button">Deselect</button>
 		</div>
 	</div>
-	</ons-list-item> <ons-list-item class="menu-item"> <ons-row
+	</ons-list-item>
+	<ons-list-item class="menu-item"> <ons-row
 		align="center"
 	> <ons-col align="center"> <ons-button
 		valign="middle"
@@ -239,7 +245,10 @@
 	> <ons-col>Audio</ons-col> <ons-col align="right"> <ons-switch
 		var="swAudioPlay"
 		onchange="app.plugin_host.set_audio(swAudioPlay.isChecked());"
-	></ons-switch> </ons-col> </ons-row></ons-list-item> <ons-list-item class="menu-item"> <ons-row
+	></ons-switch> </ons-col> </ons-row></ons-list-item>
+    -->
+	
+	<ons-list-item class="menu-item"> <ons-row
 		align="center"
 	> <ons-col>Stereo</ons-col> <ons-col align="right"> <ons-switch
 		var="swStereoView"

@@ -141,7 +141,7 @@ function PluginHost(core, options) {
 		},
 		set_fov: function(value) {
 			m_view_fov = value;
-			core.set_param("pgl_renderer", "fov", value.toString());
+			core.set_param("renderer", "fov", value.toString());
 		},
 		set_stereo: function(value) {
 			core.set_stereo(value);
