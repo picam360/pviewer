@@ -147,7 +147,7 @@
 <body>
 	<ons-sliding-menu
 		menu-page="menu.html"
-		main-page="main.html"
+		main-page=""
 		side="left"
 		var="app.menu"
 		type="push"
@@ -253,7 +253,9 @@
 	> <ons-col>Stereo</ons-col> <ons-col align="right"> <ons-switch
 		var="swStereoView"
 		onchange="app.set_stereo(swStereoView.isChecked());"
-	></ons-switch> </ons-col> </ons-row></ons-list-item> <ons-list-item class="menu-item"> <ons-row
+	></ons-switch> </ons-col> </ons-row></ons-list-item> 
+    <!--
+    <ons-list-item class="menu-item"> <ons-row
 	align="center"
 	> <ons-col>Deblock</ons-col> <ons-col align="right"> <ons-switch
 		var="swDeblock"
@@ -268,7 +270,9 @@
 	> <ons-col>Boost</ons-col> <ons-col align="right"> <ons-switch
 		var="swBoost"
 		onchange="app.set_boost(swBoost.isChecked());"
-	></ons-switch> </ons-col> </ons-row></ons-list-item> <ons-list-item
+	></ons-switch> </ons-col> </ons-row></ons-list-item>
+    -->
+	<ons-list-item
 		class="menu-item"
 		id="uiCall"
 		style="display : none"
@@ -285,22 +289,24 @@
 		fixed-width="true"
 	></ons-icon> About </ons-list-item></ons-list></ons-page> </ons-template>
 
-	<ons-template id="main.html"> <ons-navigator
-		animation="slide"
-		var="app.navi"
-	> <ons-page>
+	<ons-template id="main.html">
+    <ons-page>
+    <ons-toolbar id="toolbar" class="toolbar">
+	<div class="left">
+		<ons-back-button>Back</ons-back-button>
+	</div>
+	<div class="center">PViewer</div>
+	</ons-toolbar> 
 	<div
 		class="main_view"
 		id="container"
 	>
-		<canvas id="panorama"></canvas>
-		<div id="overlay"></div>
 	</div>
-	</ons-page> </ons-navigator> </ons-template>
+	</ons-page> </ons-template>
 
 	<ons-template id="about.html"> <ons-page> <ons-toolbar>
 	<div class="left">
-		<ons-back-button>戻る</ons-back-button>
+		<ons-back-button>Back</ons-back-button>
 	</div>
 	<div class="center">About</div>
 	</ons-toolbar> <ons-row style="margin-top: 100px; text-align: center;"> <ons-col>

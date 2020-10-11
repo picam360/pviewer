@@ -18,6 +18,8 @@ var app = (function() {
 	
 	// main canvas
 	var m_canvas;
+	// toolbar
+	var m_toolbar;
 	// overlay
 	var m_overlay;
 	var m_menu_str;
@@ -417,7 +419,7 @@ var app = (function() {
 			m_canvas.height = window.innerHeight * window.devicePixelRatio;
 			m_canvas.style.width = window.innerWidth + "px";
 			m_canvas.style.height = window.innerHeight + "px";
-
+			
 			self.set_stereo(m_options.stereo);
 		},
 		
@@ -456,8 +458,8 @@ var app = (function() {
 			m_permanent_options.deblock = value;
 			self.save_permanent_options();
 
-			if(swDeblock){
-				swDeblock.setChecked(value);
+			if(window.swDeblock){
+				window.swDeblock.setChecked(value);
 			}
 		},
 		
@@ -466,8 +468,8 @@ var app = (function() {
 			m_permanent_options.simd = value;
 			self.save_permanent_options();
 
-			if(swSimd){
-				swSimd.setChecked(value);
+			if(window.swSimd){
+				window.swSimd.setChecked(value);
 			}
 		},
 		
@@ -476,8 +478,8 @@ var app = (function() {
 			m_permanent_options.boost = value;
 			self.save_permanent_options();
 
-			if(swBoost){
-				swBoost.setChecked(value);
+			if(window.swBoost){
+				window.swBoost.setChecked(value);
 			}
 		},
 		
@@ -599,7 +601,37 @@ var app = (function() {
 			})
 			.then(() => {
 				if(m_pvf_url){
-					
+					var startTimer = function() {
+						var container = document.getElementById('container');
+						if(container.timer) {
+							clearTimeout(container.timer);
+						}
+						container.timer = setTimeout(() => {
+							if(app.navi && app.navi.getCurrentPage().name == 'main.html'){
+								if(!container.toolbar) {
+									container.toolbar = $('#toolbar').detach();
+								}
+							}
+							container.timer = null;
+						}, 3000);
+					}
+					var mousedownFunc = function(ev) {
+						var container = document.getElementById('container');
+						if(app.navi && app.navi.getCurrentPage().name == 'main.html'){
+							if(container.toolbar) {
+								$('#container').before(container.toolbar);
+								container.toolbar = null;
+							}
+						}
+						startTimer();
+					};
+					function stop_pvf(){
+						document.removeEventListener("touchstart", mousedownFunc);
+						document.removeEventListener("mousedown", mousedownFunc);
+						
+						m_pstcore.pstcore_destroy_pstreamer(m_pst);
+						m_pst = null;
+					}
 					function start_pvf(){
 						m_pst = m_pstcore.pstcore_build_pvf_streamer(m_pvf_url, m_query['head-query'], m_query['get-query']);
 //						for(var key in m_options.pst_params){
@@ -614,16 +646,37 @@ var app = (function() {
 						
 						m_pstcore.pstcore_start_pstreamer(m_pst);
 						self.plugin_host.send_event("app", "open_applink");
+						
+						startTimer();
+						document.addEventListener("touchstart", mousedownFunc);
+						document.addEventListener("mousedown", mousedownFunc);
+						
+						$('#container').append(m_canvas);
 						self.update_canvas_size();
 					}
 					if(m_pst){
-						m_pstcore.pstcore_destroy_pstreamer(m_pst);
-						m_pst = null;
-						setTimeout(() => {
-							start_pvf();
-						}, 0);
-					} else {
-						start_pvf();
+						stop_pvf();
+					}
+					if(app.navi){
+						var page = app.navi.getCurrentPage();
+						if(page.name == 'main.html'){
+							app.navi.popPage();
+						}
+						app.navi.pushPage('main.html', {
+							onTransitionEnd : () => {
+								start_pvf();
+								app.navi.on('postpop', function(e) {
+									if(e.leavePage.name == 'main.html') {
+										app.navi.off('postpop', arguments.callee);
+										stop_pvf();
+									}
+								});
+							}
+						});
+					}else{
+						app.menu.setMainPage('main.html', {
+							callback : start_pvf
+						});
 					}
 				}
 			});
@@ -659,8 +712,9 @@ var app = (function() {
 					self.plugin_host.set_view_quat(quat);
 				});
 				
-				m_canvas = document.getElementById('panorama');
-				m_overlay = document.getElementById('overlay');
+				m_canvas = document.createElement("canvas");
+				//m_canvas = document.getElementById('panorama');
+				//m_overlay = document.getElementById('overlay');
 				
 				m_pstcore = window.PstCoreLoader({
 					preRun: [],

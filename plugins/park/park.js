@@ -27,22 +27,9 @@ var create_plugin = (function() {
 	return function(plugin_host) {
 		//debugger;
 		m_plugin_host = plugin_host;
-
-		function close_park() {
-			var page = app.navi.getCurrentPage();
-			if(page.name != 'park.html'){
-				return;
-			}
-			app.navi.popPage();
-		}
 		function open_park() {
-			var page = app.navi.getCurrentPage();
-			if(page.name == 'park.html'){
-				return;
-			}
-			app.menu.closeMenu();
-			app.navi.pushPage('park.html', {
-				onTransitionEnd : function() {					
+			app.menu.setMainPage('park.html', {
+				callback : function() {					
 					var iframe = document.getElementById('park_iframe');
 					iframe.src = m_park_url;
 					m_park_url = iframe.src;
@@ -63,19 +50,8 @@ var create_plugin = (function() {
 			$('body').append(node);
 			ons.compile(node[0]);
 			
-			if(m_auto_park){
-				open_park();
-			}
+			open_park();
 		});
-		{
-			  var onsListItem = document.createElement("ons-list-item");
-              onsListItem.innerHTML ="Park";
-              onsListItem.onclick = (evt) => {
-            	  open_park();
-              };
-              menu_list.appendChild(onsListItem);
-              ons.compile(onsListItem);
-		}
 		
 		function iframeURLChange(iframe, callback) {
 			var pre_src = iframe.src;
@@ -105,10 +81,6 @@ var create_plugin = (function() {
 			init_options : function(options) {
 			},
 			event_handler : function(sender, event) {
-				if(event == "open_applink"){
-					m_auto_park = false;
-					close_park();
-				}
 			},
 		};
 		return plugin;
