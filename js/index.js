@@ -158,10 +158,10 @@ var app = (function() {
 			self.receivedEvent('deviceready');
 			self.isDeviceReady = true;
 			
-			if(universalLinks){
-				universalLinks.subscribe("vpm.picam360.com", self.applink_handler);
-				universalLinks.subscribe("park.picam360.com", self.applink_handler);
-				universalLinks.subscribe("s.360pi.cam", self.applink_handler);
+			if(window.universalLinks){
+				window.universalLinks.subscribe("vpm.picam360.com", self.applink_handler);
+				window.universalLinks.subscribe("park.picam360.com", self.applink_handler);
+				window.universalLinks.subscribe("s.360pi.cam", self.applink_handler);
 			}
 			if(self.initialize_callback){
 				self.initialize_callback();
@@ -410,7 +410,7 @@ var app = (function() {
 		},
 		
 		update_canvas_size: function() {
-			if(m_pstcore) {
+			if(m_pstcore && m_pstcore.Browser) {
 				m_pstcore.Browser.setCanvasSize(
 						window.innerWidth * window.devicePixelRatio,
 						window.innerHeight * window.devicePixelRatio);
@@ -712,59 +712,94 @@ var app = (function() {
 					self.plugin_host.set_view_quat(quat);
 				});
 				
+				
 				m_canvas = document.createElement("canvas");
 				//m_canvas = document.getElementById('panorama');
 				//m_overlay = document.getElementById('overlay');
 				
-				m_pstcore = window.PstCoreLoader({
-					preRun: [],
-					postRun: [],
-					print: function(msg) {
-						console.log(msg);
-					},
-					printErr: function(e) {
-						console.error(e);
-					},
-					canvas: function() {
-						var e = m_canvas;
-						return e;
-					}(),
-					onRuntimeInitialized : function() {
-						console.log("pstcore initialized");
-						const config = {
-								"plugin_paths" : [
-									"plugins/pvf_loader_st.so",
-									"plugins/libde265_decoder_st.so",
-									//"plugins/timer_st.so",
-									"plugins/pgl_renderer_st.so",
-								],
-								"window_size" : {
-									"width" : window.innerWidth,
-									"height" : window.innerHeight
-								}
-						}
-						if(window.cordova){
-							config.plugin_paths.push("plugins/cordova_binder_st.so");
-						}
-						const config_json = JSON.stringify(config);
-						m_pstcore.pstcore_init(config_json);
+				if (window.cordova && cordova.platformId == 'electron'){
 
-						m_applink_ready = true;
-						if(!m_query['applink']){
-							m_query['applink'] = window.location.href;
-						}
-						self.open_applink(m_query['applink']);
-						
-						self.start_animate();
-						
-						window.addEventListener('resize', () => {
-							self.update_canvas_size();
-						}, false);
-					},
-					locateFile : function(path, prefix) {
-						return self.base_path + "../lib/pstcore/" + path;
-					},
-				});
+					m_pstcore = require('pstcore-js/build/Release/pstcore-js');
+					
+					var config_json = "";
+					config_json += "{\n";
+					config_json += "	\"plugin_paths\" : [\n";
+					config_json += "		\"plugins/pvf_loader_st.so\",\n";
+					config_json += "		\"plugins/libde265_decoder_st.so\",\n";
+					config_json += "		\"plugins/vt_decoder_st.so\",\n";
+					config_json += "		\"plugins/pgl_renderer_st.so\"\n";
+					config_json += "	]\n";
+					config_json += "}\n";
+					m_pstcore.pstcore_init(config_json);
+					
+					//var url = "https://vpm.picam360.com/heli-ki60_2160p.pvf";
+					//m_pstcore.buildPvfStreamer(url);
+					
+					m_pstcore._pstcore_poll_events = m_pstcore.pstcore_poll_events;
+					
+					m_applink_ready = true;
+					if(!m_query['applink']){
+						m_query['applink'] = window.location.href;
+					}
+					self.open_applink(m_query['applink']);
+					
+					self.start_animate();
+					
+					window.addEventListener('resize', () => {
+						self.update_canvas_size();
+					}, false);
+				} else {
+					
+					m_pstcore = window.PstCoreLoader({
+						preRun: [],
+						postRun: [],
+						print: function(msg) {
+							console.log(msg);
+						},
+						printErr: function(e) {
+							console.error(e);
+						},
+						canvas: function() {
+							var e = m_canvas;
+							return e;
+						}(),
+						onRuntimeInitialized : function() {
+							console.log("pstcore initialized");
+							const config = {
+									"plugin_paths" : [
+										"plugins/pvf_loader_st.so",
+										"plugins/libde265_decoder_st.so",
+										//"plugins/timer_st.so",
+										"plugins/pgl_renderer_st.so",
+									],
+									"window_size" : {
+										"width" : window.innerWidth,
+										"height" : window.innerHeight
+									}
+							}
+							if(window.cordova){
+								config.plugin_paths.push("plugins/cordova_binder_st.so");
+							}
+							const config_json = JSON.stringify(config);
+							m_pstcore.pstcore_init(config_json);
+	
+							m_applink_ready = true;
+							if(!m_query['applink']){
+								m_query['applink'] = window.location.href;
+							}
+							self.open_applink(m_query['applink']);
+							
+							self.start_animate();
+							
+							window.addEventListener('resize', () => {
+								self.update_canvas_size();
+							}, false);
+						},
+						locateFile : function(path, prefix) {
+							return self.base_path + "../lib/pstcore/" + path;
+						},
+					});
+				}
 			});
 		},
 	};

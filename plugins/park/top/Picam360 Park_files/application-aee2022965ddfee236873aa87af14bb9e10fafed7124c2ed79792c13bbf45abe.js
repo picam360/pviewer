@@ -6,7 +6,7 @@ function buildTop() {
         s.remove(),
         t.videos.list.forEach(function(t) {
             var e, i = s.cloneNode(!0);
-            (e = i.querySelector("[data-js-video-url]")).href = "/?applink=" + encodeURIComponent(t.links.watch_s),
+            (e = i.querySelector("[data-js-video-url]")).href = "?applink=" + encodeURIComponent(t.links.watch_s),
             (e = i.querySelector("[data-js-video-thumb]")).style.backgroundImage = "url(" + t.links.thumb + ")",
             (e = i.querySelector("[data-js-video-title]")).innerHTML = t.title,
             e.href = t.links.watch_s,
