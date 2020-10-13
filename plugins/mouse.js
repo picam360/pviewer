@@ -32,7 +32,6 @@ var create_plugin = (function() {
 	function init() {
 		var last_mouseup = 0;
 		var down = false;
-		var swipeable = false;
 		var sx = 0, sy = 0;
 		var fov = 120;
 		var mousedownFunc = function(ev) {
@@ -43,8 +42,6 @@ var create_plugin = (function() {
 			down = true;
 			sx = ev.clientX;
 			sy = ev.clientY;
-			swipeable = (sx < 100);
-			app.menu.setSwipeable(swipeable);
 		};
 		var mousemoveFunc = function(ev) {
 			if (ev.type == "touchmove") {
@@ -52,7 +49,7 @@ var create_plugin = (function() {
 				ev.clientY = ev.targetTouches[0].pageY;
 				ev.button = 0;
 			}
-			if (!down || swipeable || ev.button != 0) {
+			if (!down || ev.button != 0) {
 				return;
 			}
 			var dx = -(ev.clientX - sx);

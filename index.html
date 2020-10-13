@@ -37,6 +37,7 @@
 
 <!-- JS dependencies (order matters!) -->
 <script type="text/javascript" src="cordova.js"></script>
+<script src="lib/fastclick/fastclick.js"></script>
 <script src="lib/hammer/hammer.min.js"></script>
 <script src="lib/angular/angular.js"></script>
 <script src="lib/onsen/js/onsenui.js"></script>
@@ -149,11 +150,11 @@
 	<ons-sliding-menu
 		menu-page="menu.html"
 		main-page=""
-		side="left"
+		side="right"
 		var="app.menu"
 		type="push"
 		max-slide-distance="260px"
-		swipeable="true"
+		swipeable="false"
 	> </ons-sliding-menu>
 
 	<ons-template id="menu.html"> <ons-page
@@ -297,6 +298,11 @@
 		<ons-back-button>Back</ons-back-button>
 	</div>
 	<div class="center">PViewer</div>
+	<div class="right">
+		<ons-toolbar-button ng-click="app.menu.toggleMenu()">
+	      <ons-icon icon="ion-navicon" style="font-size: 32px; width: 1em;"></ons-icon>
+	    </ons-toolbar-button>
+	</div>
 	</ons-toolbar> 
 	<div
 		class="main_view"
@@ -305,7 +311,9 @@
 	</div>
 	</ons-page> </ons-template>
 
-	<ons-template id="about.html"> <ons-page> <ons-toolbar>
+	<ons-template id="about.html"> <ons-page>
+ 	<div class="background" style="background-color: black;"></div>
+ 	<ons-toolbar>
 	<div class="left">
 		<ons-back-button>Back</ons-back-button>
 	</div>

@@ -639,6 +639,9 @@ var app = (function() {
 //							var value = m_options.pst_params[key];
 //							m_pstcore.pstcore_set_param(m_pst, pst_name, param, value);
 //						}
+						m_pstcore.pstcore_set_param(m_pst, "renderer", "win_titlebar", "0");
+						m_pstcore.pstcore_set_param(m_pst, "renderer", "win_size", window.outerWidth + "," + window.outerHeight);
+						m_pstcore.pstcore_set_param(m_pst, "renderer", "win_pos", window.screenX + "," + window.screenY);
 						m_pstcore.pstcore_set_param(m_pst, "decoder", "sao", m_options.sao ? "1" : "0");
 						m_pstcore.pstcore_set_param(m_pst, "decoder", "deblocking", m_options.deblock ? "1" : "0");
 						m_pstcore.pstcore_set_param(m_pst, "decoder", "simd", m_options.simd ? "1" : "0");
@@ -720,6 +723,39 @@ var app = (function() {
 				if (window.cordova && cordova.platformId == 'electron'){
 
 					m_pstcore = require('pstcore-js/build/Release/pstcore-js');
+					m_pstcore.win = require('electron').remote.getCurrentWindow();
+					m_pstcore.win_focus_state = 0;
+					m_pstcore.win.on('focus', function() {
+						if(m_pst == null){
+							return;
+						}
+						if(m_pstcore.win_focus_state == 0) {
+							m_pstcore.win_focus_state = 1;
+							m_pstcore.pstcore_set_param(m_pst, "renderer", "win_focus", "1");
+						}
+						if(m_pstcore.win_focus_state == 2) {
+							m_pstcore.win_focus_state = 0;
+						}
+					});
+					$(window).on('resize', function() {
+						if(m_pst == null){
+							return;
+						}
+						m_pstcore.pstcore_set_param(m_pst, "renderer", "win_size", window.outerWidth + "," + window.outerHeight);
+					});
+					setInterval(()=>{
+						if(m_pst == null){
+							return;
+						}
+						m_pstcore.pstcore_set_param(m_pst, "renderer", "win_pos", window.screenX + "," + window.screenY);
+						var win_focus = m_pstcore.pstcore_get_param(m_pst, "renderer", "win_focus");
+						if(win_focus == "1" && !m_pstcore.win.isFocused()){
+							m_pstcore.win_focus_state = 2;
+							m_pstcore.win.focus();
+							//console.log("focus req");
+						}
+						//console.log("focus "+ win_focus);
+					}, 200);
 					
 					var config_json = "";
 					config_json += "{\n";
@@ -736,6 +772,10 @@ var app = (function() {
 					//m_pstcore.buildPvfStreamer(url);
 					
 					m_pstcore._pstcore_poll_events = m_pstcore.pstcore_poll_events;
+					m_pstcore._pstcore_set_view_quat = (pst, x, y, z, w) => {
+						var value = sprintf("%.6f,%.6f,%.6f,%.6f", x, y, z, w);
+						m_pstcore.pstcore_set_param(pst, "", "view_quat", value);
+					}
 					
 					m_applink_ready = true;
 					if(!m_query['applink']){
