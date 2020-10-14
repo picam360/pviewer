@@ -625,9 +625,15 @@ var app = (function() {
 						}
 						startTimer();
 					};
+					var mousemoveFunc = function(ev) {
+						if (ev.clientY < 50) { // title bar
+							mousedownFunc(ev);
+						}
+					};
 					function stop_pvf(){
 						document.removeEventListener("touchstart", mousedownFunc);
 						document.removeEventListener("mousedown", mousedownFunc);
+						document.removeEventListener("mousemove", mousemoveFunc);
 						
 						m_pstcore.pstcore_destroy_pstreamer(m_pst);
 						m_pst = null;
@@ -653,6 +659,7 @@ var app = (function() {
 						startTimer();
 						document.addEventListener("touchstart", mousedownFunc);
 						document.addEventListener("mousedown", mousedownFunc);
+						document.addEventListener("mousemove", mousemoveFunc);
 						
 						$('#container').append(m_canvas);
 						self.update_canvas_size();
