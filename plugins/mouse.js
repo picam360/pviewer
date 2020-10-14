@@ -1,4 +1,6 @@
 var create_plugin = (function() {
+	console.log("mouse.js");
+	
 	var m_plugin_host = null;
 	var m_is_init = false;
 	var abs_pitch = 0;
@@ -32,7 +34,9 @@ var create_plugin = (function() {
 	function init() {
 		var last_mouseup = 0;
 		var down = false;
+		var wsx = 0, wsy = 0;
 		var sx = 0, sy = 0;
+		var ex = 0, ey = 0;
 		var fov = 120;
 		var mousedownFunc = function(ev) {
 			if (ev.type == "touchstart") {
@@ -42,6 +46,10 @@ var create_plugin = (function() {
 			down = true;
 			sx = ev.clientX;
 			sy = ev.clientY;
+			ex = ev.clientX;
+			ey = ev.clientY;
+			wsx = window.window.screenX;
+			wsy = window.window.screenY;
 		};
 		var mousemoveFunc = function(ev) {
 			if (ev.type == "touchmove") {
@@ -52,10 +60,20 @@ var create_plugin = (function() {
 			if (!down || ev.button != 0) {
 				return;
 			}
-			var dx = -(ev.clientX - sx);
-			var dy = -(ev.clientY - sy);
-			sx -= dx;
-			sy -= dy;
+			
+			if (window.cordova && cordova.platformId == 'electron') {
+				if (sy < 50) { // title bar
+					var dx = (window.window.screenX + ev.clientX) - (wsx + sx);
+					var dy = (window.window.screenY + ev.clientY) - (wsy + sy);
+					window.moveTo(wsx + dx, wsy + dy);
+					return;
+				}
+			}
+			
+			var dx = -(ev.clientX - ex);
+			var dy = -(ev.clientY - ey);
+			ex -= dx;
+			ey -= dy;
 
 			if (m_plugin_host) {
 				fov = m_plugin_host.get_fov();
@@ -131,6 +149,19 @@ var create_plugin = (function() {
 		document.addEventListener("mousemove", mousemoveFunc);
 		document.addEventListener("mouseup", mouseupFunc);
 		document.addEventListener("mousewheel", mousewheelFunc);
+		
+		if (window.cordova && cordova.platformId == 'electron') {
+			var electron_win = require('electron').remote.getCurrentWindow();
+			document.addEventListener("dblclick", (ev) => {
+				if (ev.clientY < 50) { // title bar
+					if(electron_win.isMaximized()){
+						electron_win.unmaximize();
+					}else{
+						electron_win.maximize();
+					}
+				}
+			});
+		}
 
 		var _fov = 70;
 		function gestureStartHandler(e) {
