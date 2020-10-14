@@ -739,7 +739,7 @@ var app = (function() {
 					}
 					document.body.addEventListener('drop', function (e) {
 						if(e.dataTransfer.files.length == 0){
-							var url = e.dataTransfer.getData("text");
+							var url = e.dataTransfer.getData("URL");
 							self.open_applink(url);
 						}
 					});
