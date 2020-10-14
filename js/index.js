@@ -639,6 +639,12 @@ var app = (function() {
 						m_pst = null;
 					}
 					function start_pvf(){
+						if(!m_query['head-query']){
+							m_query['head-query'] = "";
+						}
+						if(!m_query['get-query']){
+							m_query['get-query'] = "";
+						}
 						m_pst = m_pstcore.pstcore_build_pvf_streamer(m_pvf_url, m_query['head-query'], m_query['get-query']);
 //						for(var key in m_options.pst_params){
 //							var [pst_name, param] = key.split('.');
@@ -728,6 +734,15 @@ var app = (function() {
 				//m_overlay = document.getElementById('overlay');
 				
 				if (window.cordova && cordova.platformId == 'electron'){
+					document.ondragover = document.ondrop = function (e) {
+					  e.preventDefault()
+					}
+					document.body.addEventListener('drop', function (e) {
+						if(e.dataTransfer.files.length == 0){
+							var url = e.dataTransfer.getData("text");
+							self.open_applink(url);
+						}
+					});
 
 					m_pstcore = require('pstcore-js/build/Release/pstcore-js');
 					m_pstcore.win = require('electron').remote.getCurrentWindow();
