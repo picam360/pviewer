@@ -85,6 +85,9 @@ var app = (function() {
 			try{
 				var path = document.currentScript.src.split('?')[0];
 				var mydir = path.split('/').slice(0, -1).join('/') + '/';
+				if(mydir.startsWith('file://')){
+					mydir = mydir.substr('file://'.length);
+				}
 				return mydir;
 			}catch(e){
 				return '';
@@ -744,19 +747,19 @@ var app = (function() {
 						}
 					});
 
-					m_pstcore = require('pstcore-js/build/Release/pstcore-js');
-					m_pstcore.win = require('electron').remote.getCurrentWindow();
-					m_pstcore.win_focus_state = 0;
-					m_pstcore.win.on('focus', function() {
+					window.pstcore = require('pstcore-cordova-js');
+					window.pstcore.win = require('electron').remote.getCurrentWindow();
+					window.pstcore.win_focus_state = 0;
+					window.pstcore.win.on('focus', function() {
 						if(m_pst == null){
 							return;
 						}
-						if(m_pstcore.win_focus_state == 0) {
-							m_pstcore.win_focus_state = 1;
+						if(window.pstcore.win_focus_state == 0) {
+							window.pstcore.win_focus_state = 1;
 							m_pstcore.pstcore_set_param(m_pst, "renderer", "win_focus", "1");
 						}
-						if(m_pstcore.win_focus_state == 2) {
-							m_pstcore.win_focus_state = 0;
+						if(window.pstcore.win_focus_state == 2) {
+							window.pstcore.win_focus_state = 0;
 						}
 					});
 					$(window).on('resize', function() {
@@ -771,46 +774,17 @@ var app = (function() {
 						}
 						m_pstcore.pstcore_set_param(m_pst, "renderer", "win_pos", window.screenX + "," + window.screenY);
 						var win_focus = m_pstcore.pstcore_get_param(m_pst, "renderer", "win_focus");
-						if(win_focus == "1" && !m_pstcore.win.isFocused()){
-							m_pstcore.win_focus_state = 2;
-							m_pstcore.win.focus();
+						if(parseInt(win_focus) && !window.pstcore.win.isFocused()){
+							window.pstcore.win_focus_state = 2;
+							window.pstcore.win.focus();
 							//console.log("focus req");
 						}
 						//console.log("focus "+ win_focus);
 					}, 200);
 					
-					var config_json = "";
-					config_json += "{\n";
-					config_json += "	\"plugin_paths\" : [\n";
-					config_json += "		\"plugins/pvf_loader_st.so\",\n";
-					config_json += "		\"plugins/libde265_decoder_st.so\",\n";
-					config_json += "		\"plugins/vt_decoder_st.so\",\n";
-					config_json += "		\"plugins/pgl_renderer_st.so\"\n";
-					config_json += "	]\n";
-					config_json += "}\n";
-					m_pstcore.pstcore_init(config_json);
-					
-					//var url = "https://vpm.picam360.com/heli-ki60_2160p.pvf";
-					//m_pstcore.buildPvfStreamer(url);
-					
-					m_pstcore._pstcore_poll_events = m_pstcore.pstcore_poll_events;
-					m_pstcore._pstcore_set_view_quat = (pst, x, y, z, w) => {
-						var value = sprintf("%.6f,%.6f,%.6f,%.6f", x, y, z, w);
-						m_pstcore.pstcore_set_param(pst, "", "view_quat", value);
-					}
-					
-					m_applink_ready = true;
-					if(!m_query['applink']){
-						m_query['applink'] = window.location.href;
-					}
-					self.open_applink(m_query['applink']);
-					
-					self.start_animate();
-					
-					window.addEventListener('resize', () => {
-						self.update_canvas_size();
-					}, false);
-				} else {
+
+				} 
+				{
 					
 					m_pstcore = window.PstCoreLoader({
 						preRun: [],
