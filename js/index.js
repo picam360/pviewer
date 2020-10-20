@@ -325,6 +325,7 @@ var app = (function() {
 					var pixelrate_mpps = m_pstcore.pstcore_get_param(m_pst, "decoder", "pixelrate_mpps");
 					var gof_queue_size = m_pstcore.pstcore_get_param(m_pst, "decoder", "gof_queue_size");
 					var boost_pixelrate_mpps = parseFloat(pixelrate_mpps) * parseFloat(gof_queue_size);
+					var n_in_bq_l = m_pstcore.pstcore_get_param(m_pst, "pvf_loader", "n_in_bq");
 					var n_in_bq_d = m_pstcore.pstcore_get_param(m_pst, "decoder", "n_in_bq");
 					var n_in_bq_r = m_pstcore.pstcore_get_param(m_pst, "renderer", "n_in_bq");
 					var n_pending = m_pstcore.pstcore_get_param(m_pst, "renderer", "n_pending");
@@ -333,7 +334,7 @@ var app = (function() {
 					status += "preload:" + preload + "<br/>";
 					status += "bitrate:" + bitrate_mbps + "mbps<br/>";
 					status += "pixelrate:" + boost_pixelrate_mpps.toFixed(3) + "mpps(" + pixelrate_mpps + ")<br/>";
-					status += "n_in_bq:" + n_in_bq_d + "+" + n_in_bq_r + "<br/>";
+					status += "n_in_bq:" + n_in_bq_l + "+" + n_in_bq_d + "+" + n_in_bq_r + "<br/>";
 					status += "n_pending:" + n_pending + "<br/>";
 				}
 //				var texture_info = m_video_handler.get_info(); {
