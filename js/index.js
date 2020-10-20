@@ -738,15 +738,6 @@ var app = (function() {
 				//m_overlay = document.getElementById('overlay');
 				
 				if (window.cordova && cordova.platformId == 'electron'){
-					document.ondragover = document.ondrop = function (e) {
-					  e.preventDefault()
-					}
-					document.body.addEventListener('drop', function (e) {
-						if(e.dataTransfer.files.length == 0){
-							var url = e.dataTransfer.getData("URL");
-							self.open_applink(url);
-						}
-					});
 
 					window.pstcore = require('pstcore-cordova-js');
 					window.pstcore.win = require('electron').remote.getCurrentWindow();
@@ -831,6 +822,16 @@ var app = (function() {
 							window.addEventListener('resize', () => {
 								self.update_canvas_size();
 							}, false);
+							
+							document.ondragover = document.ondrop = function (e) {
+							  e.preventDefault()
+							}
+							document.body.addEventListener('drop', function (e) {
+								if(e.dataTransfer.files.length == 0){
+									var url = e.dataTransfer.getData("URL");
+									self.open_applink(url);
+								}
+							});
 						},
 						locateFile : function(path, prefix) {
 							return self.base_path + "../lib/pstcore/" + path;
