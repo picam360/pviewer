@@ -605,6 +605,7 @@ var app = (function() {
 			})
 			.then(() => {
 				if(m_pvf_url){
+					m_toolbar = null;
 					var startTimer = function() {
 						var container = document.getElementById('container');
 						if(container.timer) {
@@ -612,19 +613,18 @@ var app = (function() {
 						}
 						container.timer = setTimeout(() => {
 							if(app.navi && app.navi.getCurrentPage().name == 'main.html'){
-								if(!container.toolbar) {
-									container.toolbar = $('#toolbar').detach();
+								if(!m_toolbar) {
+									m_toolbar = $('#toolbar').detach();
 								}
 							}
 							container.timer = null;
 						}, 3000);
 					}
 					var mousedownFunc = function(ev) {
-						var container = document.getElementById('container');
 						if(app.navi && app.navi.getCurrentPage().name == 'main.html'){
-							if(container.toolbar) {
-								$('#container').before(container.toolbar);
-								container.toolbar = null;
+							if(m_toolbar) {
+								$('#container').before(m_toolbar);
+								m_toolbar = null;
 							}
 						}
 						startTimer();
