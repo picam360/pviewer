@@ -4,3 +4,6 @@ Debug
 Release
 
 *.map
+
+.DS_Store
+.snipet
