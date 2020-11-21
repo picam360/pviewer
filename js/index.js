@@ -719,18 +719,21 @@ var app = (function() {
 				return self.plugin_host.init_plugins();
 			})
 			.then(() => {
-				self.plugin_host.on_view_quat_changed((view_quat, view_offset_quat) => {
-					var quat = view_offset_quat.multiply(view_quat);
-					m_pstcore._pstcore_set_view_quat(m_pst, quat.x, quat.y, quat.z, quat.w);
-				});
+				if(m_options["platform"] && m_options["platform"].toUpperCase() != "OCULUS") {
+				}else{
+					self.plugin_host.on_view_quat_changed((view_quat, view_offset_quat) => {
+						var quat = view_offset_quat.multiply(view_quat);
+						m_pstcore._pstcore_set_view_quat(m_pst, quat.x, quat.y, quat.z, quat.w);
+					});
 				
-				m_mpu = MPU();
-				m_mpu.init((quat) => {
-					if(!m_pstcore || !m_pst){
-						return;
-					}
-					self.plugin_host.set_view_quat(quat);
-				});
+					m_mpu = MPU();
+					m_mpu.init((quat) => {
+						if(!m_pstcore || !m_pst){
+							return;
+						}
+						self.plugin_host.set_view_quat(quat);
+					});
+				}
 				
 				
 				m_canvas = document.createElement("canvas");
