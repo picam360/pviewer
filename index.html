@@ -252,7 +252,7 @@
 	
 	<ons-list-item class="menu-item"> <ons-row
 		align="center"
-	> <ons-col>Stereo</ons-col> <ons-col align="right"> <ons-switch
+	> <ons-col>Stereo</ons-col> <ons-col align="right" valign="center"> <ons-switch
 		var="swStereoView"
 		onchange="app.set_stereo(swStereoView.isChecked());"
 	></ons-switch> </ons-col> </ons-row></ons-list-item> 
@@ -286,6 +286,7 @@
 	></ons-switch> </ons-col> </ons-row></ons-list-item> <ons-list-item
 		class="menu-item"
 		ng-click="app.navi.pushPage('about.html');app.menu.closeMenu();"
+		id="menu_list_about"
 	> <ons-icon
 		icon="fa-info-circle"
 		fixed-width="true"

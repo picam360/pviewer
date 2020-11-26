@@ -81,10 +81,8 @@ function PluginHost(core, options) {
 					return;
 				}
 				function load_plugin(idx) {
-					self.getFile(m_options.plugin_paths[idx], function(
-							chunk_array) {
-							var script_str = (new TextDecoder)
-								.decode(chunk_array[0]);
+					self.getFileUrl(m_options.plugin_paths[idx], function(
+							url) {
 							var script = document
 								.createElement('script');
 							script.onload = function() {
@@ -109,11 +107,7 @@ function PluginHost(core, options) {
 							};
 							console.log("loding : " +
 								m_options.plugin_paths[idx]);
-							var blob = new Blob(chunk_array, {
-								type: "text/javascript"
-							});
-							var url = window.URL || window.webkitURL;
-							script.src = url.createObjectURL(blob);
+							script.src = url;
 	
 							document.head.appendChild(script);
 						});
@@ -250,6 +244,28 @@ function PluginHost(core, options) {
 					key);
 			} else {
 				loadFile(path, callback);
+			}
+		},
+		getFileUrl: function(path, callback) {
+			if (!query['force-local'] && core.connected()) {
+				var key = uuid();
+				m_filerequest_list.push({
+					filename: path,
+					key: key,
+					callback: (chunk_array) => {
+						var script_str = (new TextDecoder)
+								.decode(chunk_array[0]);
+						var blob = new Blob(chunk_array, {
+							type: "text/javascript"
+						});
+						var url = window.URL || window.webkitURL;
+						callback(url.createObjectURL(blob));
+					}
+				});
+				self.send_command(SERVER_DOMAIN + "get_file " + path + " " +
+					key);
+			} else {
+				callback(path);
 			}
 		},
 		refresh_app_menu: function() {

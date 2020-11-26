@@ -61,6 +61,7 @@ var app = (function() {
 	var m_upstream_menu = "";
 
 	var m_pvf_url = "";
+	var m_applink = "";
 	var m_applink_ready = false;
 	
 	var m_pc = null;
@@ -491,6 +492,10 @@ var app = (function() {
 			return m_pst;
 		},
 		
+		get_applink: function(){
+			return m_applink;
+		},
+		
 		open_applink: function(url){
 			if(url.indexOf('applink=') >= 0){
 				m_query = GetQueryString(url);
@@ -596,8 +601,10 @@ var app = (function() {
 					}
 					if (m_query['pvf']) {
 						m_pvf_url = m_query['pvf'];
+						m_applink = url;
 					}else{
 						m_pvf_url = "";
+						m_applink = "";
 					}
 					
 					fullfill();
