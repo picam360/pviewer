@@ -488,6 +488,19 @@ var app = (function() {
 			}
 		},
 		
+		alert: function(msg, title) {
+			$( "#dialog-message" ).attr("title", title);
+			$( "#dialog-message-msg" ).html(msg);
+	        $( "#dialog-message" ).dialog({
+	          modal: true,
+	          buttons: {
+	            "OK": function() {
+	              $( this ).dialog( "close" );
+	            }
+	          }
+	        });
+	    },
+		
 		get_pst: function() {
 			return m_pst;
 		},

@@ -51,6 +51,11 @@
 ></script>
 <script
 	type="text/javascript"
+	src="lib/jquery/ui/1.12.1/jquery-ui.min.js"
+></script>
+<link rel="stylesheet" href="lib/jquery/ui/1.12.1/jquery-ui.min.css" />
+<script
+	type="text/javascript"
 	src="lib/three/three.js"
 ></script>
 <script
@@ -325,6 +330,14 @@
 	> <ons-col>
 	<div id="divStatus">status</div>
 	</ons-col> </ons-row></ons-page> </ons-template>
+	
+	
+	<div id="dialog-message" title="タイトル" style="display:none;">
+	  <p>
+	    <span class="ui-icon ui-icon-circle-check" style="float:left; margin:0 7px 50px 0;"></span>
+	    <p id="dialog-message-msg"></p>
+	  </p>
+	</div>
 
 	<script
 		type="text/javascript"

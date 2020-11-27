@@ -565,7 +565,7 @@ var create_plugin = (function() {
 			return startAdvertising();
 		}).then((result) => {
 			console.log(JSON.stringify(result));
-			window.alert("pairing key: " + m_pairing_key);
+			app.alert(m_pairing_key, 'pairing key');
 		}).catch((err) => {
 			console.log("error:", JSON.stringify(err));
 			alert(JSON.stringify(err));
