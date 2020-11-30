@@ -339,16 +339,16 @@ var create_plugin = (function() {
 			var params = {
 				address: address,
 			};
-			//			var timer = setTimeout(() => {
-			//				resolve(null);
-			//			}, 1000);
 			window.bluetoothle.isConnected((result1) => {
 				if (result1.isConnected) {
 					resolve(result1);
 				} else {
-					window.bluetoothle.connect((result2) => {
-						//clearTimeout(timer);
-						resolve(result2);
+					window.bluetoothle.close((result2) => {
+						window.bluetoothle.connect((result3) => {
+							resolve(result3);
+						}, (err) => {
+							reject(err);
+						}, params);
 					}, (err) => {
 						reject(err);
 					}, params);
@@ -442,49 +442,131 @@ var create_plugin = (function() {
 		}, 0);
 	}
 	
-	function startNewPairingCentral(){
-		initialize().then((result) => {
-			return startScan((result) => {
-				console.log(result.address + ":" + JSON.stringify(result.advertisement));
-				connect(result.address).then((result) => {
-					console.log(JSON.stringify(result));
-					return discover(result.address);
-				}).then((result) => {
-					console.log(JSON.stringify(result));
-					var key = window.prompt("pairing key");
-					if (!key) {
-						throw "no pairing key";
-					}
-					var str = key + ":" + m_permanent_options['crypto_key'].public_key;
-					return write(result.address, BLE_CHARACTERISTIC_PUBLIC_KEY,
-						bluetoothle.stringToBytes(str));
-				}).then((result) => {
-					console.log(JSON.stringify(result));
-					return read(result.address, BLE_CHARACTERISTIC_PUBLIC_KEY);
-				}).then(async (result) => {
-					console.log(JSON.stringify(result.bytes));
-					var public_key_exp = window.bluetoothle.bytesToString(result.bytes);
-					var public_key = await keyImport(
-							window.bluetoothle.encodedStringToBytes(public_key_exp), true);
-					var derive_key = await keyDerive(public_key, m_private_key);
-					m_derive_map[result.address] = derive_key;
-					var bonds = m_permanent_options['bonds'] || [];
-					bonds.push(public_key_exp);
-					m_permanent_options['bonds'] = bonds;
-					save_permanent_options();
+	function connectDevice(address, key_required){
+		connect(address).then((result) => {
+			console.log(JSON.stringify(result));
+			return discover(result.address);
+		}).then((result) => {
+			console.log(JSON.stringify(result));
+			var msg = {
+				public_key: m_permanent_options['crypto_key'].public_key,
+			};
+			if(key_required){
+				var key = window.prompt("pairing key");
+				if (!key) {
+					throw "no pairing key";
+				}
+				msg.pairing_key = key;
+			}
+			var bytes = bluetoothle.stringToBytes(JSON.stringify(msg));
+			return write(result.address, BLE_CHARACTERISTIC_PUBLIC_KEY, bytes);
+		}).then((result) => {
+			console.log(JSON.stringify(result));
+			return read(result.address, BLE_CHARACTERISTIC_PUBLIC_KEY);
+		}).then(async (result) => {
+			console.log(JSON.stringify(result.bytes));
+			var public_key_exp = window.bluetoothle.bytesToString(result.bytes);
+			var public_key = await keyImport(
+					window.bluetoothle.encodedStringToBytes(public_key_exp), true);
+			var derive_key = await keyDerive(public_key, m_private_key);
+			m_derive_map[result.address] = derive_key;
+			var bonds = m_permanent_options['bonds'] || [];
+			bonds.push(public_key_exp);
+			m_permanent_options['bonds'] = bonds;
+			save_permanent_options();
 
-					var msg = {
-						cmd: "init",
-					};
-					var bytes = bluetoothle.stringToBytes(JSON.stringify(msg));
-					var bytes_enc = await aesEncrypt(m_derive_map[result.address], bytes);
-					return write(result.address, BLE_CHARACTERISTIC_MSG, bytes_enc);
-				}).then((result) => {
-					console.log(JSON.stringify(result));
+			var msg = {
+				cmd: "init",
+			};
+			var bytes = bluetoothle.stringToBytes(JSON.stringify(msg));
+			var bytes_enc = await aesEncrypt(m_derive_map[result.address], bytes);
+			return write(result.address, BLE_CHARACTERISTIC_MSG, bytes_enc);
+		}).then((result) => {
+			console.log(JSON.stringify(result));
+		}).catch((err) => {
+			console.log("error:", JSON.stringify(err));
+			alert(JSON.stringify(err));
+		});
+	}
+	
+	async function readDevice(req){
+		switch (req.characteristic) {
+		case BLE_CHARACTERISTIC_PUBLIC_KEY:
+			var bytes = bluetoothle.stringToBytes(m_permanent_options['crypto_key'].public_key);
+			respond(req, bytes).then(() => {
+			}).catch((err) => {
+				console.log("error:", JSON.stringify(err));
+				alert(JSON.stringify(err));
+			});
+			break;
+		case BLE_CHARACTERISTIC_MSG:
+			if (m_derive_map[req.address]) {
+				var bytes = await aesEncrypt(m_derive_map[req.address], m_response);
+				respond(req, bytes).then(() => {
 				}).catch((err) => {
 					console.log("error:", JSON.stringify(err));
 					alert(JSON.stringify(err));
 				});
+			}
+			break;
+		}
+	}
+	
+	async function writeDevice(req){
+		var bytes = window.bluetoothle.encodedStringToBytes(req.value);
+		switch (req.characteristic) {
+		case BLE_CHARACTERISTIC_PUBLIC_KEY:
+			var _msg = window.bluetoothle.bytesToString(bytes);
+			var msg = JSON.parse(_msg);
+			if (m_pairing_key) { //pass first responder
+				if (msg.pairing_key == m_pairing_key) {
+					var public_key = await keyImport(
+							window.bluetoothle.encodedStringToBytes(msg.public_key), true);
+					var derive_key = await keyDerive(public_key,
+						m_private_key);
+					m_derive_map[req.address] = derive_key;
+					var bonds = [];
+					bonds[0] = msg.public_key;
+					m_permanent_options['bonds'] = bonds;
+					save_permanent_options();
+				}
+				m_pairing_key = null; //pass first responder
+			} else {
+				if (m_permanent_options['bonds'].indexOf(msg.public_key) >= 0){
+					var public_key = await keyImport(
+							window.bluetoothle.encodedStringToBytes(msg.public_key), true);
+					var derive_key = await keyDerive(public_key,
+						m_private_key);
+					m_derive_map[req.address] = derive_key;
+				}
+			}
+			respond(req, null).then(() => {
+			}).catch((err) => {
+				console.log("error:", JSON.stringify(err));
+				alert(JSON.stringify(err));
+			});
+			break;
+		case BLE_CHARACTERISTIC_MSG:
+			if (m_derive_map[req.address]) {
+				var bytes_dec = await aesDecrypt(m_derive_map[req.address], bytes);
+				var msg = bluetoothle.bytesToString(bytes_dec);
+				console.log(msg);
+				messageHandler(msg);
+			}
+			respond(req, null).then(() => {
+			}).catch((err) => {
+				console.log("error:", JSON.stringify(err));
+				alert(JSON.stringify(err));
+			});
+			break;
+		}
+	}
+	
+	function startNewPairingCentral(){
+		initialize().then((result) => {
+			return startScan((result) => {
+				console.log(result.address + ":" + JSON.stringify(result.advertisement));
+				connectDevice(result.address, true);
 			});
 		}).then((result) => {
 			console.log(JSON.stringify(result));
@@ -496,70 +578,7 @@ var create_plugin = (function() {
 	
 	function startNewPairingPeripheral(){
 		m_pairing_key = ('0000' + Math.floor(Math.random() * 10001)).slice(-4);
-		initializePeripheral(async (req) => { //read
-			switch (req.characteristic) {
-			case BLE_CHARACTERISTIC_PUBLIC_KEY:
-				var bytes = bluetoothle.stringToBytes(m_permanent_options['crypto_key'].public_key);
-				respond(req, bytes).then(() => {
-				}).catch((err) => {
-					console.log("error:", JSON.stringify(err));
-					alert(JSON.stringify(err));
-				});
-				break;
-			case BLE_CHARACTERISTIC_MSG:
-				if (m_derive_map[req.address]) {
-					var bytes = await aesEncrypt(m_derive_map[req.address], m_response);
-					respond(req, bytes).then(() => {
-					}).catch((err) => {
-						console.log("error:", JSON.stringify(err));
-						alert(JSON.stringify(err));
-					});
-				}
-				break;
-			}
-		}, async (req) => { //write
-			var bytes = window.bluetoothle.encodedStringToBytes(req.value);
-			switch (req.characteristic) {
-			case BLE_CHARACTERISTIC_PUBLIC_KEY:
-				if (!m_pairing_key) { //pass first responder
-					return;
-				}
-				var [
-					pairing_key, public_key_exp
-				] = window.bluetoothle.bytesToString(bytes).split(':');
-				if (pairing_key == m_pairing_key) {
-					var public_key = await keyImport(
-							window.bluetoothle.encodedStringToBytes(public_key_exp), true);
-					var derive_key = await keyDerive(public_key,
-						m_private_key);
-					m_derive_map[req.address] = derive_key;
-					var bonds = [];
-					bonds[0] = public_key_exp;
-					m_permanent_options['bonds'] = bonds;
-					save_permanent_options();
-				}
-				respond(req, null).then(() => {
-				}).catch((err) => {
-					console.log("error:", JSON.stringify(err));
-					alert(JSON.stringify(err));
-				});
-				m_pairing_key = null; //pass first responder
-				break;
-			case BLE_CHARACTERISTIC_MSG:
-				if (m_derive_map[req.address]) {
-					var bytes_dec = await aesDecrypt(m_derive_map[req.address], bytes);
-					var msg = bluetoothle.bytesToString(bytes_dec);
-					console.log(msg);
-					messageHandler(msg);
-				}
-				respond(req, null).then(() => {
-				}).catch((err) => {
-					console.log("error:", JSON.stringify(err));
-					alert(JSON.stringify(err));
-				});
-				break;
-			}
-		}).then((result) => {
+		initializePeripheral(readDevice, writeDevice).then((result) => {
 			return addService();
 		}).then((result) => {
 			return startAdvertising();
@@ -576,39 +595,7 @@ var create_plugin = (function() {
 		initialize().then((result) => {
 			return startScan((result) => {
 				console.log(result.address + ":" + JSON.stringify(result.advertisement));
-				connect(result.address).then((result) => {
-					console.log(JSON.stringify(result));
-					return discover(result.address);
-				}).then((result) => {
-					console.log(JSON.stringify(result));
-					return write(result.address, BLE_CHARACTERISTIC_PUBLIC_KEY,
-						bluetoothle.stringToBytes(m_permanent_options['crypto_key'].public_key));
-				}).then((result) => {
-					console.log(JSON.stringify(result));
-					return read(result.address, BLE_CHARACTERISTIC_PUBLIC_KEY);
-				}).then(async (result) => {
-					console.log(JSON.stringify(result.bytes));
-					var public_key_exp = window.bluetoothle.bytesToString(result.bytes);
-					if (m_permanent_options['bonds'].indexOf(public_key_exp) < 0){
-						throw "unknown device";
-					}
-					var public_key = await keyImport(
-							window.bluetoothle.encodedStringToBytes(public_key_exp), true);
-					var derive_key = await keyDerive(public_key, m_private_key);
-					m_derive_map[result.address] = derive_key;
-
-					var msg = {
-						cmd: "init",
-					};
-					var bytes = bluetoothle.stringToBytes(JSON.stringify(msg));
-					var bytes_enc = await aesEncrypt(m_derive_map[result.address], bytes);
-					return write(result.address, BLE_CHARACTERISTIC_MSG, bytes_enc);
-				}).then((result) => {
-					console.log(JSON.stringify(result));
-				}).catch((err) => {
-					console.log("error:", JSON.stringify(err));
-					alert(JSON.stringify(err));
-				});
+				connectDevice(result.address, false);
 			});
 		}).then((result) => {
 			console.log(JSON.stringify(result));
@@ -619,60 +606,7 @@ var create_plugin = (function() {
 	}
 	
 	function startRestorePairingPeripheral(){
-		initializePeripheral(async (req) => { //read
-			switch (req.characteristic) {
-			case BLE_CHARACTERISTIC_PUBLIC_KEY:
-				var bytes = bluetoothle.stringToBytes(m_permanent_options['crypto_key'].public_key);
-				respond(req, bytes).then(() => {
-				}).catch((err) => {
-					console.log("error:", JSON.stringify(err));
-					alert(JSON.stringify(err));
-				});
-				break;
-			case BLE_CHARACTERISTIC_MSG:
-				if (m_derive_map[req.address]) {
-					var bytes = await aesEncrypt(m_derive_map[req.address], m_response);
-					respond(req, bytes).then(() => {
-					}).catch((err) => {
-						console.log("error:", JSON.stringify(err));
-						alert(JSON.stringify(err));
-					});
-				}
-				break;
-			}
-		}, async (req) => { //write
-			var bytes = window.bluetoothle.encodedStringToBytes(req.value);
-			switch (req.characteristic) {
-			case BLE_CHARACTERISTIC_PUBLIC_KEY:
-				var public_key_exp = window.bluetoothle.bytesToString(bytes);
-				if (m_permanent_options['bonds'].indexOf(public_key_exp) >= 0){
-					var public_key = await keyImport(
-							window.bluetoothle.encodedStringToBytes(public_key_exp), true);
-					var derive_key = await keyDerive(public_key,
-						m_private_key);
-					m_derive_map[req.address] = derive_key;
-				}
-				respond(req, null).then(() => {
-				}).catch((err) => {
-					console.log("error:", JSON.stringify(err));
-					alert(JSON.stringify(err));
-				});
-				break;
-			case BLE_CHARACTERISTIC_MSG:
-				if (m_derive_map[req.address]) {
-					var bytes_dec = await aesDecrypt(m_derive_map[req.address], bytes);
-					var msg = bluetoothle.bytesToString(bytes_dec);
-					console.log(msg);
-					messageHandler(msg);
-				}
-				respond(req, null).then(() => {
-				}).catch((err) => {
-					console.log("error:", JSON.stringify(err));
-					alert(JSON.stringify(err));
-				});
-				break;
-			}
-		}).then((result) => {
+		initializePeripheral(readDevice, writeDevice).then((result) => {
 			return addService();
 		}).then((result) => {
 			return startAdvertising();
@@ -770,6 +704,7 @@ var create_plugin = (function() {
 						}
 						for(var address of remove_candidate){
 							delete m_derive_map[address];
+							connectDevice(address, false);
 						}
 						$('#swParing_txt').html("Pairing:" + num);
 					}, 1000);
