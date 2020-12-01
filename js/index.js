@@ -739,7 +739,7 @@ var app = (function() {
 				return self.plugin_host.init_plugins();
 			})
 			.then(() => {
-				if(m_options["platform"] && m_options["platform"].toUpperCase() != "OCULUS") {
+				if(m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS") {
 				}else{
 					self.plugin_host.on_view_quat_changed((view_quat, view_offset_quat) => {
 						var quat = view_offset_quat.multiply(view_quat);
