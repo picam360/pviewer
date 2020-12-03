@@ -42,6 +42,7 @@ var app = (function() {
 	var server_url = window.location.href.split('?')[0];
 	var m_options = {
 		"fov" : 120,
+		"fov_stereo" : 95,
 		"stereo" : false,
 		"sao" : false,
 		"deblock" : false,
@@ -450,10 +451,10 @@ var app = (function() {
 //			self.send_command(cmd);
 			
 			if(value){
-				self.plugin_host.set_fov(95);
+				self.plugin_host.set_fov(m_options.fov_stereo);
 				self.set_param("renderer", "stereo", "1");
 			}else{
-				self.plugin_host.set_fov(120);
+				self.plugin_host.set_fov(m_options.fov);
 				self.set_param("renderer", "stereo", "0");
 			}
 		},
