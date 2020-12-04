@@ -470,17 +470,17 @@ var create_plugin = (function() {
 		connect(address).then((result) => {
 			console.log(JSON.stringify(result));
 			return discover(result.address);
-		}).then((result) => {
+		}).then(async (result) => {
 			console.log(JSON.stringify(result));
 			var msg = {
 				public_key: m_permanent_options['crypto_key'].public_key,
 			};
 			if(key_required){
-				var key = window.prompt("pairing key");
-				if (!key) {
+				var key = await app.prompt("input 4 digits", "pairing key").then((input) => {
+					msg.pairing_key = input;
+				}).catch((err) => {
 					throw "PAIRING_CANCELLED";
-				}
-				msg.pairing_key = key;
+				});
 			}
 			var bytes = bluetoothle.stringToBytes(JSON.stringify(msg));
 			return write(result.address, BLE_CHARACTERISTIC_PUBLIC_KEY, bytes);

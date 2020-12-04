@@ -490,16 +490,42 @@ var app = (function() {
 		},
 		
 		alert: function(msg, title) {
-			$( "#dialog-message" ).attr("title", title);
-			$( "#dialog-message-msg" ).html(msg);
+			var html = '<p>'
+	    			 + '<span class="ui-icon ui-icon-circle-check" style="float:left; margin:0 7px 50px 0;"></span>'
+	    			 + '<p>'+ msg + '</p>'
+	  				 + '</p>';
+			$( "#dialog-message" ).html(html);
 	        $( "#dialog-message" ).dialog({
 	          modal: true,
+			  title: title,
 	          buttons: {
 	            "OK": function() {
 	              $( this ).dialog( "close" );
 	            }
 	          }
 	        });
+	    },
+		
+		prompt: function(msg, title) {
+			return new Promise((resolve, reject) => {
+				var html = '<p>' + msg + '</p>'
+						 + '<input type="text" name="inputtxt" id="inputtxt" value="" />';
+				$( "#dialog-message" ).html(html);
+		        $( "#dialog-message" ).dialog({
+		          modal: true,
+			  	  title: title,
+		          buttons: {
+		            "OK": function() {
+						resolve($( "#inputtxt" ).val());
+		            	$( this ).dialog( "close" );
+		            },
+		            "Cancel": function() {
+						reject("CANCELED");
+		            	$( this ).dialog( "close" );
+		            }
+		          }
+		        });
+			});
 	    },
 		
 		get_pst: function() {
