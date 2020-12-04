@@ -11,9 +11,9 @@ var create_plugin = (function() {
 	var m_pairing_key = null;
 	var m_public_key = null;
 	var m_private_key = null;
-	var m_derive_map = {};
 	var m_response = "";
 	var m_host_applink = "";
+	var m_devices = {}
 	
 
 	function keyGen() {
@@ -339,27 +339,29 @@ var create_plugin = (function() {
 			var params = {
 				address: address,
 			};
-			window.bluetoothle.isConnected((result1) => {
-				if (result1.isConnected) {
-					resolve(result1);
-				} else {
-					window.bluetoothle.close((result2) => {
-						window.bluetoothle.connect((result3) => {
-							resolve(result3);
-						}, (err) => {
-							reject(err);
-						}, params);
-					}, (err) => {
-						reject(err);
-					}, params);
-				}
-			}, (err) => {
-				window.bluetoothle.connect((result2) => {
-					//clearTimeout(timer);
-					resolve(result2);
+			function func(){
+				window.bluetoothle.connect((result) => {
+					m_devices[address].connecting = false;
+					m_devices[address].connected = true;
+					resolve(result);
 				}, (err) => {
 					reject(err);
 				}, params);
+			}
+			window.bluetoothle.isConnected((result1) => {
+				if (result1.isConnected) {
+					m_devices[address].connecting = false;
+					m_devices[address].connected = true;
+					resolve(result1);
+				} else {
+					window.bluetoothle.close((result2) => {
+						func();
+					}, (err) => {
+						func();
+					}, params);
+				}
+			}, (err) => {
+				func();
 			}, params);
 		});
 	}
@@ -369,7 +371,12 @@ var create_plugin = (function() {
 			var params = {
 				address: address,
 			};
+			if(m_devices[address].discovered) {
+				resolve({address});
+				return;
+			}
 			window.bluetoothle.discover((result) => {
+				m_devices[address].discovered = true;
 				resolve(result);
 			}, (err) => {
 				reject(err);
@@ -414,10 +421,9 @@ var create_plugin = (function() {
 			var params = {
 				requestId: req.requestId,
 				address: req.address,
+				offset: req.offset,
+				value: bytes ? bluetoothle.bytesToEncodedString(bytes): null,
 			};
-			if(bytes){
-				params.value = bluetoothle.bytesToEncodedString(bytes);
-			}
 			window.bluetoothle.respond((result) => {
 				resolve(result);
 			}, (err) => {
@@ -443,6 +449,24 @@ var create_plugin = (function() {
 	}
 	
 	function connectDevice(address, key_required){
+		if(m_devices[address]) {
+			if(m_devices[address].connecting
+			 || m_devices[address].connected
+			 || m_devices[address].cancelled){
+				return;
+			}
+		}else{
+			m_devices[address] = {
+				connecting: false,
+				connected: false,
+				discovered: false,
+				cancelled: false,
+				derived_key: null,
+			};
+		}
+		m_devices[address].connecting = true;
+		m_devices[address].connected = false;
+			
 		connect(address).then((result) => {
 			console.log(JSON.stringify(result));
 			return discover(result.address);
@@ -454,7 +478,7 @@ var create_plugin = (function() {
 			if(key_required){
 				var key = window.prompt("pairing key");
 				if (!key) {
-					throw "no pairing key";
+					throw "PAIRING_CANCELLED";
 				}
 				msg.pairing_key = key;
 			}
@@ -469,7 +493,7 @@ var create_plugin = (function() {
 			var public_key = await keyImport(
 					window.bluetoothle.encodedStringToBytes(public_key_exp), true);
 			var derive_key = await keyDerive(public_key, m_private_key);
-			m_derive_map[result.address] = derive_key;
+			m_devices[result.address].derive_key = derive_key;
 			var bonds = m_permanent_options['bonds'] || [];
 			bonds.push(public_key_exp);
 			m_permanent_options['bonds'] = bonds;
@@ -479,37 +503,45 @@ var create_plugin = (function() {
 				cmd: "init",
 			};
 			var bytes = bluetoothle.stringToBytes(JSON.stringify(msg));
-			var bytes_enc = await aesEncrypt(m_derive_map[result.address], bytes);
+			var bytes_enc = await aesEncrypt(m_devices[result.address].derive_key, bytes);
 			return write(result.address, BLE_CHARACTERISTIC_MSG, bytes_enc);
 		}).then((result) => {
 			console.log(JSON.stringify(result));
 		}).catch((err) => {
+			if(err == "PAIRING_CANCELLED"){
+				m_devices[address].cancelled = true;
+			}
 			console.log("error:", JSON.stringify(err));
-			alert(JSON.stringify(err));
+			m_devices[address].connecting = false;
+			m_devices[address].connected = false;
 		});
 	}
 	
 	async function readDevice(req){
+		var bytes = [];
 		switch (req.characteristic) {
 		case BLE_CHARACTERISTIC_PUBLIC_KEY:
-			var bytes = bluetoothle.stringToBytes(m_permanent_options['crypto_key'].public_key);
-			respond(req, bytes).then(() => {
-			}).catch((err) => {
-				console.log("error:", JSON.stringify(err));
-				alert(JSON.stringify(err));
-			});
+			bytes = bluetoothle.stringToBytes(m_permanent_options['crypto_key'].public_key);
 			break;
 		case BLE_CHARACTERISTIC_MSG:
-			if (m_derive_map[req.address]) {
-				var bytes = await aesEncrypt(m_derive_map[req.address], m_response);
-				respond(req, bytes).then(() => {
-				}).catch((err) => {
-					console.log("error:", JSON.stringify(err));
-					alert(JSON.stringify(err));
-				});
+			if (m_devices[req.address].derive_key) {
+				bytes = await aesEncrypt(m_devices[req.address].derive_key, m_response);
 			}
 			break;
 		}
+		var offset = req.offset || 0;
+		if(offset >= bytes.length) {
+			console.log(bytes);
+			bytes = null;
+		}else{
+			bytes = bytes.slice(offset);
+		}
+		console.log(req.offset, req.maximumUpdateValueLength, bytes.length);
+		respond(req, bytes).then(() => {
+		}).catch((err) => {
+			console.log("error:", JSON.stringify(err));
+			alert(JSON.stringify(err));
+		});
 	}
 	
 	async function writeDevice(req){
@@ -524,7 +556,10 @@ var create_plugin = (function() {
 							window.bluetoothle.encodedStringToBytes(msg.public_key), true);
 					var derive_key = await keyDerive(public_key,
 						m_private_key);
-					m_derive_map[req.address] = derive_key;
+					m_devices[req.address] = {
+						connected: true,
+						derive_key: derive_key,
+					};
 					var bonds = [];
 					bonds[0] = msg.public_key;
 					m_permanent_options['bonds'] = bonds;
@@ -537,7 +572,10 @@ var create_plugin = (function() {
 							window.bluetoothle.encodedStringToBytes(msg.public_key), true);
 					var derive_key = await keyDerive(public_key,
 						m_private_key);
-					m_derive_map[req.address] = derive_key;
+					m_devices[req.address] = {
+						connected: true,
+						derive_key: derive_key,
+					};
 				}
 			}
 			respond(req, null).then(() => {
@@ -547,8 +585,8 @@ var create_plugin = (function() {
 			});
 			break;
 		case BLE_CHARACTERISTIC_MSG:
-			if (m_derive_map[req.address]) {
-				var bytes_dec = await aesDecrypt(m_derive_map[req.address], bytes);
+			if (m_devices[req.address] && m_devices[req.address].derive_key) {
+				var bytes_dec = await aesDecrypt(m_devices[req.address].derive_key, bytes);
 				var msg = bluetoothle.bytesToString(bytes_dec);
 				console.log(msg);
 				messageHandler(msg);
@@ -562,11 +600,16 @@ var create_plugin = (function() {
 		}
 	}
 	
-	function startNewPairingCentral(){
+	function startPairingCentral(keyrequired){
 		initialize().then((result) => {
 			return startScan((result) => {
+				if(m_devices[result.address]) {
+					if(m_devices[result.address].connecting || m_devices[result.address].connected){
+						return;
+					}
+				}
 				console.log(result.address + ":" + JSON.stringify(result.advertisement));
-				connectDevice(result.address, true);
+				connectDevice(result.address, keyrequired);
 			});
 		}).then((result) => {
 			console.log(JSON.stringify(result));
@@ -576,42 +619,19 @@ var create_plugin = (function() {
 		});
 	}
 	
-	function startNewPairingPeripheral(){
-		m_pairing_key = ('0000' + Math.floor(Math.random() * 10001)).slice(-4);
+	function startPairingPeripheral(keyrequired){
+		if(keyrequired){
+			m_pairing_key = ('0000' + Math.floor(Math.random() * 10001)).slice(-4);
+		}
 		initializePeripheral(readDevice, writeDevice).then((result) => {
 			return addService();
 		}).then((result) => {
 			return startAdvertising();
 		}).then((result) => {
 			console.log(JSON.stringify(result));
-			app.alert(m_pairing_key, 'pairing key');
-		}).catch((err) => {
-			console.log("error:", JSON.stringify(err));
-			alert(JSON.stringify(err));
-		});
-	}
-	
-	function startRestorePairingCentral(){
-		initialize().then((result) => {
-			return startScan((result) => {
-				console.log(result.address + ":" + JSON.stringify(result.advertisement));
-				connectDevice(result.address, false);
-			});
-		}).then((result) => {
-			console.log(JSON.stringify(result));
-		}).catch((err) => {
-			console.log("error:", JSON.stringify(err));
-			alert(JSON.stringify(err));
-		});
-	}
-	
-	function startRestorePairingPeripheral(){
-		initializePeripheral(readDevice, writeDevice).then((result) => {
-			return addService();
-		}).then((result) => {
-			return startAdvertising();
-		}).then((result) => {
-			console.log(JSON.stringify(result));
+			if(keyrequired){
+				app.alert(m_pairing_key, 'pairing key');
+			}
 		}).catch((err) => {
 			console.log("error:", JSON.stringify(err));
 			alert(JSON.stringify(err));
@@ -619,7 +639,7 @@ var create_plugin = (function() {
 	}
 	
 	function stopPairingCentral(){
-		m_derive_map = {};
+		m_devices = {};
 		m_permanent_options['bonds'] = [];
 		save_permanent_options();
 		
@@ -632,7 +652,7 @@ var create_plugin = (function() {
 	}
 	
 	function stopPairingPeripheral(){
-		m_derive_map = {};
+		m_devices = {};
 		m_permanent_options['bonds'] = [];
 		save_permanent_options();
 		
@@ -677,16 +697,19 @@ var create_plugin = (function() {
 				if(m_permanent_options['bonds'] && m_permanent_options['bonds'].length != 0){
 					restore_pairing = true;
 					if (m_host) { //central
-						startRestorePairingCentral();
+						startPairingCentral(false);
 					} else { //peripheral
-						startRestorePairingPeripheral();
+						startPairingPeripheral(false);
 					}
 				}
 				{ //poling
 					setInterval(async () => {
 						var remove_candidate = [];
 						var num = 0;
-						for(var address in m_derive_map){
+						for(var address in m_devices){
+							if(!m_devices[address].derive_key) {
+								continue;
+							}
 							num++;
 							if(m_host){
 								var msg = {
@@ -694,7 +717,7 @@ var create_plugin = (function() {
 									host_applink: app.get_applink(),
 								};
 								var bytes = bluetoothle.stringToBytes(JSON.stringify(msg));
-								var bytes_enc = await aesEncrypt(m_derive_map[address], bytes);
+								var bytes_enc = await aesEncrypt(m_devices[address].derive_key, bytes);
 								await write(address, BLE_CHARACTERISTIC_MSG, bytes_enc).then((result) => {
 									
 								}).catch((err) => {
@@ -703,7 +726,9 @@ var create_plugin = (function() {
 							}
 						}
 						for(var address of remove_candidate){
-							delete m_derive_map[address];
+							m_devices[address].connecting = false;
+							m_devices[address].connected = false;
+							m_devices[address].derive_key = null;
 							connectDevice(address, false);
 						}
 						$('#swParing_txt').html("Pairing:" + num);
@@ -721,9 +746,9 @@ var create_plugin = (function() {
 					swParing.on("change", (evt) => {
 						if (evt.value) {
 							if (m_host) { //central
-								startNewPairingCentral();
+								startPairingCentral(true);
 							} else { //peripheral
-								startNewPairingPeripheral();
+								startPairingPeripheral(true);
 							}
 						} else { //pairing off
 							if (m_host) {
