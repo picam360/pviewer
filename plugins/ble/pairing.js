@@ -737,7 +737,10 @@ var create_plugin = (function() {
 				addMenuSwitch("swHost", "Host", () => {
 					swHost.setChecked(m_host);
 					swHost.on("change", (evt) => {
-						m_permanent_options["host"] = evt.value;
+						swParing.setChecked(false);//should call swParing.on("change")
+						m_host = evt.value;
+						
+						m_permanent_options["host"] = m_host;
 						save_permanent_options();
 					});
 				});

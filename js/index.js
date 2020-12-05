@@ -509,14 +509,14 @@ var app = (function() {
 		prompt: function(msg, title) {
 			return new Promise((resolve, reject) => {
 				var html = '<p>' + msg + '</p>'
-						 + '<input type="text" name="inputtxt" id="inputtxt" value="" />';
+						 + '<input type="text" name="dialog-message-inputtxt" id="dialog-message-inputtxt" value="" />';
 				$( "#dialog-message" ).html(html);
 		        $( "#dialog-message" ).dialog({
 		          modal: true,
 			  	  title: title,
 		          buttons: {
 		            "OK": function() {
-						resolve($( "#inputtxt" ).val());
+						resolve($( "#dialog-message-inputtxt" ).val());
 		            	$( this ).dialog( "close" );
 		            },
 		            "Cancel": function() {
