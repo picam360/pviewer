@@ -201,7 +201,8 @@ var create_plugin = (function() {
 	function startScan(callback) {
 		return new Promise((resolve, reject) => {
 			var params = {
-				"services": [BLE_SERVICE_UUID]
+				services: [BLE_SERVICE_UUID],
+				allowDuplicates: true
 			}
 			window.bluetoothle.startScan((result) => {
 				switch (result.status) {
@@ -294,14 +295,14 @@ var create_plugin = (function() {
 			var params;
 			if (window.cordova.platformId === "android") {
 				params = {
-					"name": "PViewer",
-					"service": BLE_SERVICE_UUID,
-					"timeout": 180000
+					name: "PViewer",
+					service: BLE_SERVICE_UUID,
+					timeout: 180000
 				};
 			} else {
 				params = {
-					"name": "PViewer",
-					"services": [BLE_SERVICE_UUID],
+					name: "PViewer",
+					services: [BLE_SERVICE_UUID],
 				};
 			}
 			setTimeout(() => {
