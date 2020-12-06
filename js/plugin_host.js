@@ -99,7 +99,7 @@ function PluginHost(core, options) {
 									for (var i = 0; i < m_plugins.length; i++) {
 										if (m_plugins[i].init_options) {
 											m_plugins[i]
-												.init_options(m_options[m_plugins[i].name] || {});
+												.init_options(m_options);
 										}
 									}
 									fullfill();
