@@ -450,12 +450,23 @@ var app = (function() {
 //			cmd += "set_vstream_param -p stereo=" + (value ? 1 : 0);
 //			self.send_command(cmd);
 			
-			if(value){
-				self.plugin_host.set_fov(m_options.fov_stereo);
-				self.set_param("renderer", "stereo", "1");
+			if(!value || (m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS")) {
+				var k = [ 0.000, 0.000 ];
+				var f = [ 1.000, 1.000 ];
+				var str = sprintf("[%f,%f],[%f,%f]", k[0], k[1], f[0], f[1]);
+				self.set_param("renderer", "lens_params", str);
 			}else{
-				self.plugin_host.set_fov(m_options.fov);
+				var k = [ 0.156, 0.441 ];
+				var f = [ 1.300, 1.300 ];
+				var str = sprintf("[%f,%f],[%f,%f]", k[0], k[1], f[0], f[1]);
+				self.set_param("renderer", "lens_params", str);
+			}
+			if(value){
+				self.set_param("renderer", "stereo", "1");
+				self.plugin_host.set_fov(m_options.fov_stereo);
+			}else{
 				self.set_param("renderer", "stereo", "0");
+				self.plugin_host.set_fov(m_options.fov);
 			}
 		},
 		
