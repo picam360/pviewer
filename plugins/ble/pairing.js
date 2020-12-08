@@ -735,22 +735,16 @@ var create_plugin = (function() {
 						$('#swParing_txt').html("Pairing:" + num);
 					}, 1000);
 				}
-				if(options["platform"] && options["platform"].toUpperCase() == "OCULUS") {
-					m_host = false;
-					m_permanent_options["host"] = m_host;
-					save_permanent_options();
-				}else{
-					addMenuSwitch("swHost", "Host", () => {
-						swHost.setChecked(m_host);
-						swHost.on("change", (evt) => {
-							swParing.setChecked(false);//should call swParing.on("change")
-							m_host = evt.value;
-							
-							m_permanent_options["host"] = m_host;
-							save_permanent_options();
-						});
+				addMenuSwitch("swHost", "Host", () => {
+					swHost.setChecked(m_host);
+					swHost.on("change", (evt) => {
+						swParing.setChecked(false);//should call swParing.on("change")
+						m_host = evt.value;
+						
+						m_permanent_options["host"] = m_host;
+						save_permanent_options();
 					});
-				}
+				});
 				addMenuSwitch("swParing", "Paring", () => {
 					swParing.setChecked(restore_pairing);
 					swParing.on("change", (evt) => {
