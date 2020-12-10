@@ -650,6 +650,17 @@ var app = (function() {
 					if (m_query['fpp']) {
 						m_fpp = parseBoolean(m_query['fpp']);
 					}
+					
+					if (m_query['boost']) {
+						m_options.boost = parseBoolean(m_query['boost']);
+					}
+					if (m_query['deblock']) {
+						m_options.deblock = parseBoolean(m_query['deblock']);
+					}
+					if (m_query['simd']) {
+						m_options.simd = parseBoolean(m_query['simd']);
+					}
+					
 					if (m_query['pvf']) {
 						m_pvf_url = m_query['pvf'];
 						m_applink = url;
