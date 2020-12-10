@@ -741,7 +741,9 @@ var app = (function() {
 						document.addEventListener("mousemove", mousemoveFunc);
 						
 						$('#container').append(m_canvas);
-						self.update_canvas_size();
+						setTimeout(() => { //delay
+							self.update_canvas_size();
+						}, 0);
 					}
 					if(m_pst){
 						stop_pvf();
