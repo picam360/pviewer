@@ -212,25 +212,25 @@ function PluginHost(core, options) {
 			// (bln?'1':'0'));
 			m_menu_visible = bln;
 			if(bln){
-				m_overlay.innerHTML = m_menu_str;
+				//m_overlay.innerHTML = m_menu_str;
 			}else{
-				m_overlay.innerHTML = m_info_str;
+				//m_overlay.innerHTML = m_info_str;
 			}
-			if(m_overlay.innerHTML) {
-				m_overlay.style.visibility = "visible";
-			}else{
-				m_overlay.style.visibility = "hidden";
-			}
+			//if(m_overlay.innerHTML) {
+			//	m_overlay.style.visibility = "visible";
+			//}else{
+			//	m_overlay.style.visibility = "hidden";
+			//}
 		},
 		set_menu: function(str) {
 			m_menu_str = str;
-			m_overlay.innerHTML = str;
-			self.set_menu_visible(m_menu_visible);
+			//m_overlay.innerHTML = str;
+			//self.set_menu_visible(m_menu_visible);
 		},
 		set_info: function(str) {
 			m_info_str = str;
-			m_overlay.innerHTML = str;
-			self.set_menu_visible(m_menu_visible);
+			//m_overlay.innerHTML = str;
+			//self.set_menu_visible(m_menu_visible);
 		},
 		getFile: function(path, callback) {
 			if (!query['force-local'] && core.connected()) {
@@ -267,6 +267,18 @@ function PluginHost(core, options) {
 			} else {
 				callback(path);
 			}
+		},
+		loadScript: (url) => {
+			return new Promise((resolve, reject) => {
+				self.getFileUrl("plugins/network/signaling.js", function(url) {
+					var script = document
+						.createElement('script');
+					script.onload = resolve;
+					script.src = url;
+		
+					document.head.appendChild(script);
+				});
+			});
 		},
 		refresh_app_menu: function() {
 			if (p2p_num_of_members >= 2) {

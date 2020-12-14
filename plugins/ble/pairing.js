@@ -477,7 +477,7 @@ var create_plugin = (function() {
 				public_key: m_permanent_options['crypto_key'].public_key,
 			};
 			if(key_required){
-				var key = await app.prompt("input 4 digits", "pairing key").then((input) => {
+				await app.prompt("input 4 digits", "pairing key").then((input) => {
 					msg.pairing_key = input;
 				}).catch((err) => {
 					throw "PAIRING_CANCELLED";
