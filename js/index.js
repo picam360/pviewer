@@ -16,6 +16,8 @@ var app = (function() {
 	var m_pstcore = null;
 	var m_pst = null;
 	
+	var m_filemap = {};
+	
 	// main canvas
 	var m_canvas;
 	// toolbar
@@ -851,7 +853,6 @@ var app = (function() {
 
 				} 
 				{
-					
 					m_pstcore = window.PstCoreLoader({
 						preRun: [],
 						postRun: [],
@@ -901,8 +902,18 @@ var app = (function() {
 							  e.preventDefault()
 							}
 							document.body.addEventListener('drop', function (e) {
+								window.pviewer_get_file = (_file) => {
+									var file = _file.split('?')[0];
+									return m_filemap[file];
+								}
 								if(e.dataTransfer.files.length == 0){
 									var url = e.dataTransfer.getData("URL");
+									self.open_applink(url);
+								}else if(e.dataTransfer.files[0].name.endsWith(".pvf")){
+									var pvf = "pviewer://"+e.dataTransfer.files[0].name;
+									m_filemap[pvf] = e.dataTransfer.files[0];
+									
+									var url = "applink=?pvf=" + encodeURIComponent(pvf);
 									self.open_applink(url);
 								}
 							});
