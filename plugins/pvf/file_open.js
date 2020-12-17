@@ -25,6 +25,7 @@ var create_plugin = (function() {
 	            "Cancel": function() {
 					reject("CANCELED");
 	            	$( this ).dialog( "close" );
+					app.menu.close();
 	            }
 	          }
 	        });

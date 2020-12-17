@@ -1,7 +1,5 @@
 var create_plugin = (function() {
 	var m_plugin_host = null;
-	var m_rtp = null;
-	var m_rtcp = null;
 	var m_cmd2upstream_list = [];
 	var m_timediff_ms = 0;
 	var m_watches = [];
@@ -51,10 +49,12 @@ var create_plugin = (function() {
 	            	};
 					resolve(opt);
 	            	$( this ).dialog( "close" );
+					app.menu.close();
 	            },
 	            "Cancel": function() {
 					reject("CANCELED");
 	            	$( this ).dialog( "close" );
+					app.menu.close();
 	            }
 	          }
 	        });
@@ -196,32 +196,34 @@ var create_plugin = (function() {
 		});
 	}
 	function init_connection(conn) {
-		var is_init = false;
-		var init_con = function() {
-			is_init = true;
-			m_plugin_host.set_info("waiting image...");
-			m_rtp.set_connection(conn);
-			m_rtcp.set_connection(conn);
-		}
-		var timediff_ms = 0;
-		var min_rtt = 0;
-		var ping_cnt = 0;
-		{ // ping
-			var cmd = "<picam360:command id=\"0\" value=\"ping " +
-				new Date().getTime() + "\" />"
-			var pack = m_rtcp.buildpacket(cmd, PT_CMD);
-			m_rtcp.sendpacket(conn, pack);
-		}
-		conn.addEventListener('message', function(data){
-			if(data instanceof MessageEvent){
-				data = data.data;
-			}
-			if (!is_init) {
-				function handle_data(data){
-					var pack = PacketHeader(data);
-					if (pack.GetPayloadType() == PT_STATUS) {
+		var pstcore = app.get_pstcore();
+		var rtp = Rtp(conn);
+		
+		new Promise((resolve, reject) => {
+			conn.attr = {
+				timer: 0,
+				param_pendings: [],
+			};
+			var def = "libde265_decoder name=decoder!pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+			conn.attr.pst = pstcore.pstcore_build_pstreamer(def);
+			
+			//main.html
+			app.start_pst(conn.attr.pst, () => {
+				//start
+				//connection establish sequence
+				var timediff_ms = 0;
+				var min_rtt = 0;
+				var ping_cnt = 0;
+				{ // ping
+					var cmd = "<picam360:command id=\"0\" value=\"ping " +
+						new Date().getTime() + "\" />"
+					var pack = rtp.buildpacket(cmd, PT_CMD);
+					rtp.sendpacket(pack);
+				}
+				rtp.set_callback(function(packet) {
+					if (packet.GetPayloadType() == PT_STATUS) {
 						var str = (new TextDecoder)
-							.decode(new Uint8Array(pack.GetPayload()));
+							.decode(packet.GetPayload());
 						var split = str.split('"');
 						var name = split[1];
 						var value = split[3].split(' ');
@@ -239,40 +241,127 @@ var create_plugin = (function() {
 							if (ping_cnt < 10) {
 								var cmd = "<picam360:command id=\"0\" value=\"ping " +
 									new Date().getTime() + "\" />"
-								var pack = m_rtcp.buildpacket(cmd, PT_CMD);
-								m_rtcp.sendpacket(conn, pack);
+								var pack = rtp.buildpacket(cmd, PT_CMD);
+								rtp.sendpacket(pack);
 								return;
 							} else {
 								var cmd = "<picam360:command id=\"0\" value=\"set_timediff_ms " +
 									timediff_ms + "\" />";
-								var pack = m_rtcp.buildpacket(cmd, PT_CMD);
-								m_rtcp.sendpacket(conn, pack);
-
+								var pack = rtp.buildpacket(cmd, PT_CMD);
+								rtp.sendpacket(pack);
+		
 								console.log("min_rtt=" + min_rtt +
 									":timediff_ms:" +
 									timediff_ms);
 								m_timediff_ms = timediff_ms;
+								resolve();
 							}
 						}
 					}
-					init_con();
+				});
+			}, () =>{
+				//stop
+				clearInterval(conn.attr.timer);
+				rtp.set_callback(null);
+			});
+		}).then(() => {
+			m_plugin_host.set_info("waiting image...");
+			
+//			pstcore.pstcore_add_set_param_done_callback((msg)=>{
+//				//console.log("set_param " + msg);
+//				conn.attr.param_pendings.push(msg);
+//			});
+			
+			conn.attr.timer = setInterval(function() {
+				try{
+					conn.attr.param_pendings.push('["renderer", "n_in_bq", "0"]');
+					if(conn.attr.param_pendings.length > 0) {
+						var msg = "[" + conn.attr.param_pendings.join(',') + "]";
+						var pack = rtp.buildpacket(msg, PT_SET_PARAM);
+						rtp.sendpacket(pack);
+						conn.attr.param_pendings = [];
+					}
+				}catch(err){
+					clearInterval(conn.attr.timer);
 				}
-				if(data instanceof Blob) {
-				    var fr = new FileReader();
-				    fr.onload = function(evt) {
-				      handle_data(evt.target.result);
-				    };
-				    fr.readAsArrayBuffer(data);
-				}else{
-					if (Array.isArray(data)) {
-						for(_data of data){
-							handle_data(_data);
+			}, 1000);
+			// set rtp callback
+			rtp.set_callback(function(packet) {
+				var sequencenumber = packet.GetSequenceNumber();
+				if ((sequencenumber % 100) == 0) {
+					var latency = new Date().getTime() /
+						1000 -
+						(packet.GetTimestamp() + packet.GetSsrc() / 1E6) +
+						self.timediff_ms / 1000;
+					console.log("packet latency : seq=" + sequencenumber +
+						", latency=" + latency + "sec");
+				}
+				if (packet.GetPayloadType() == PT_ENQUEUE) { // enqueue
+					console.log("PT_ENQUEUE");
+					var buff = packet.GetPayload();
+					
+					var size = 0;
+					size += buff[3] << 24;
+					size += buff[2] << 16;
+					size += buff[1] << 8;
+					size += buff[0] << 0;
+					console.log("enqueue:", buff.length, size, buff[4]);
+					
+					pstcore.pstcore_enqueue(conn.attr.pst, buff);
+				} else if (packet.GetPayloadType() == PT_SET_PARAM) { // set_param
+					var str = (new TextDecoder)
+						.decode(packet.GetPayload());
+					var list = JSON.parse(str);
+					for(var ary of list){
+						pstcore.pstcore_set_param(conn.attr.pst, ary[0], ary[1], ary[2]);
+					}
+				} else if (packet.GetPayloadType() == PT_STATUS) { // status
+					var str = (new TextDecoder)
+						.decode(packet.GetPayload());
+					var split = str.split('"');
+					var name = UPSTREAM_DOMAIN + split[1];
+					var value = decodeURIComponent(split[3]);
+					if (m_watches[name]) {
+						m_watches[name](value);
+					}
+				} else if (packet.GetPayloadType() == PT_FILE) { // file
+					var array = packet.GetPayload();
+					var view = new DataView(array.buffer, array.byteOffset);
+					var header_size = view.getUint16(0, false);
+					var header = array.slice(2, 2 + header_size);
+					var header_str = (new TextDecoder).decode(header);
+					var data = array.slice(2 + header_size);
+					var key = "dummy";
+					var seq = 0;
+					var eof = false;
+					var split = header_str.split(" ");
+					for (var i = 0; i < split.length; i++) {
+						var separator = (/[=,\"]/);
+						var _split = split[i].split(separator);
+						if (_split[0] == "key") {
+							key = _split[2];
+						} else if (_split[0] == "seq") {
+							seq = parseInt(_split[2]);
+						} else if (_split[0] == "eof") {
+							eof = _split[2] == "true";
 						}
-					}else{
-						handle_data(data);
+					}
+					for (var i = 0; i < filerequest_list.length; i++) {
+						if (filerequest_list[i].key == key) {
+							if (seq == 0) {
+								filerequest_list[i].chunk_array = [];
+							}
+							filerequest_list[i].chunk_array.push(data);
+							if (eof) {
+								filerequest_list[i]
+									.callback(filerequest_list[i].chunk_array);
+								filerequest_list.splice(i, 1);
+								break;
+							}
+						}
 					}
 				}
-			}
+			});
 		});
 	};
 	
@@ -283,98 +372,10 @@ var create_plugin = (function() {
 		var plugin = {
 			init_options : function(options) {
 				m_plugin_host.loadScript("plugins/network/signaling.js").then(() => {
-					return m_plugin_host.loadScript("plugins/network/m_rtp.js");
-				}).then(() => {
-					return m_plugin_host.loadScript("plugins/network/m_rtcp.js");
+					return m_plugin_host.loadScript("plugins/network/rtp.js");
 				}).then(() => {
 					return addMenuButton("swConnect", "Connect");
 				}).then(() => {
-					m_rtp = Rtp();
-					m_rtcp = Rtcp();
-					// set rtp callback
-					m_rtp.set_callback(function(packet) {
-						var sequencenumber = packet.GetSequenceNumber();
-						if ((sequencenumber % 100) == 0) {
-							var latency = new Date().getTime() /
-								1000 -
-								(packet.GetTimestamp() + packet.GetSsrc() / 1E6) +
-								self.timediff_ms / 1000;
-							console.log("packet latency : seq=" + sequencenumber +
-								", latency=" + latency + "sec");
-						}
-						if (packet.GetPayloadType() == PT_AUDIO_BASE) { // audio
-							if (opus_decoder) {
-								opus_decoder.decode(packet.GetPayload());
-								if (audio_first_packet_s == 0) {
-									var latency = new Date().getTime() /
-										1000 -
-										(packet.GetTimestamp() + packet.GetSsrc() / 1E6) +
-										self.timediff_ms / 1000;
-									console.log("audio_first_packet:latency:" +
-										latency);
-									audio_first_packet_s = new Date().getTime() / 1000;
-								}
-							}
-						} else if (packet.GetPayloadType() == PT_CAM_BASE) { // image
-							m_image_decoder.decode(packet.GetPayload());
-						} else if (packet.GetPayloadType() == PT_STATUS) { // status
-							var str = (new TextDecoder)
-								.decode(new Uint8Array(packet.GetPayload()));
-							var split = str.split('"');
-							var name = UPSTREAM_DOMAIN + split[1];
-							var value = decodeURIComponent(split[3]);
-							if (m_watches[name]) {
-								m_watches[name](value);
-							}
-						} else if (packet.GetPayloadType() == PT_FILE) { // file
-							var array = packet.GetPayload();
-							var view = new DataView(array.buffer, array.byteOffset);
-							var header_size = view.getUint16(0, false);
-							var header = array.slice(2, 2 + header_size);
-							var header_str = (new TextDecoder).decode(header);
-							var data = array.slice(2 + header_size);
-							var key = "dummy";
-							var seq = 0;
-							var eof = false;
-							var split = header_str.split(" ");
-							for (var i = 0; i < split.length; i++) {
-								var separator = (/[=,\"]/);
-								var _split = split[i].split(separator);
-								if (_split[0] == "key") {
-									key = _split[2];
-								} else if (_split[0] == "seq") {
-									seq = parseInt(_split[2]);
-								} else if (_split[0] == "eof") {
-									eof = _split[2] == "true";
-								}
-							}
-							for (var i = 0; i < filerequest_list.length; i++) {
-								if (filerequest_list[i].key == key) {
-									if (seq == 0) {
-										filerequest_list[i].chunk_array = [];
-									}
-									filerequest_list[i].chunk_array.push(data);
-									if (eof) {
-										filerequest_list[i]
-											.callback(filerequest_list[i].chunk_array);
-										filerequest_list.splice(i, 1);
-										break;
-									}
-								}
-							}
-						}
-					});
-					// command to upstream
-					setInterval(function() {
-						if (!m_cmd2upstream_list.length) {
-							return;
-						}
-						var {cmd} = m_cmd2upstream_list.shift();
-						var xml = "<picam360:command id=\"" + app.rtcp_command_id +
-							"\" value=\"" + cmd + "\" />"
-						m_rtcp.sendpacket(m_rtcp.buildpacket(xml, PT_CMD));
-						app.rtcp_command_id++;
-					}, 33); // 30hz
 					swConnect.onclick = async (evt) => {
 						await prompt("input connection info", "connect stream via network").then((opt) => {
 							if(opt.type == "ws"){

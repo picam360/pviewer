@@ -32,19 +32,50 @@ function PacketHeader(pack) {
 		},
 		GetPayload : function() {
 			return new Uint8Array(pack, self.GetHeaderLength(), self
-				.GetPayloadLength());
+				.GetPayloadLength()); //buff, offset, length
 		}
 	};
 	return self;
 }
 
-function Rtp() {
+function Rtp(conn) {
+	if(!conn){
+		return null;
+	}
+
 	var m_bitrate = 0;
 	var m_last_packet_time = Date.now();
-	var m_ws = null;
-	var m_conn = null;
+	var m_conn = conn;
 	var m_callback = null;
-	var m_passthrough_callback = null;
+	var m_sequencenumber = 0;
+	var m_timestamp = 0;
+	var m_src = 0;
+	// copy ArrayBuffer
+	function copy(dst, dst_offset, src, src_offset, len) {
+		new Uint8Array(dst, dst_offset)
+			.set(new Uint8Array(src, src_offset, len));
+	}
+	function string_to_buffer(src) {
+		return (new Uint8Array([].map.call(src, function(c) {
+			return c.charCodeAt(0)
+		}))).buffer;
+	}
+	
+	m_conn.addEventListener('message', function(data){
+		if(data instanceof MessageEvent){
+			data = data.data;
+		}
+		if(data instanceof Blob) {
+			var fr = new FileReader();
+			fr.onload = function(evt) {
+				self.packet_handler(evt.target.result);
+			};
+			fr.readAsArrayBuffer(data);
+		}else{
+			self.packet_handler(data);
+		}
+	});
+	
 	var self = {
 		get_info : function() {
 			var info = {
@@ -81,31 +112,29 @@ function Rtp() {
 		set_callback : function(callback) {
 			m_callback = callback;
 		},
-		set_passthrough_callback : function(callback) {
-			m_passthrough_callback = callback;
-		},
-		set_connection : function(conn) {
-			m_conn = conn;
+		sendpacket : function(pack) {
 			if (!m_conn) {
 				return;
 			}
-			conn.addEventListener('message', function(data){
-				if (conn != m_conn) {
-					return;
-				}
-				if(data instanceof MessageEvent){
-					data = data.data;
-				}
-				if(data instanceof Blob) {
-					var fr = new FileReader();
-					fr.onload = function(evt) {
-						self.packet_handler(evt.target.result);
-					};
-					fr.readAsArrayBuffer(data);
-				}else{
-					self.packet_handler(data);
-				}
-			});
+			m_conn.send(pack);
+		},
+		// @data : ArrayBuffer
+		buildpacket : function(data, pt) {
+			if (typeof data == 'string') {
+				data = string_to_buffer(data);
+			}
+			var pack = new ArrayBuffer(12 + data.byteLength);
+			copy(pack, 12, data, 0, data.byteLength);
+			var view = new DataView(pack);
+			view.setUint8(0, 0, false);
+			view.setUint8(1, pt & 0x7F, false);
+			view.setUint16(2, m_sequencenumber, false);
+			view.setUint32(4, m_timestamp, false);
+			view.setUint32(8, m_src, false);
+
+			m_sequencenumber++;
+
+			return pack;
 		},
 	};
 	return self;

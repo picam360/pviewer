@@ -268,9 +268,9 @@ function PluginHost(core, options) {
 				callback(path);
 			}
 		},
-		loadScript: (url) => {
+		loadScript: (path) => {
 			return new Promise((resolve, reject) => {
-				self.getFileUrl("plugins/network/signaling.js", function(url) {
+				self.getFileUrl(path, function(url) {
 					var script = document
 						.createElement('script');
 					script.onload = resolve;
