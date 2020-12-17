@@ -267,14 +267,13 @@ var create_plugin = (function() {
 		}).then(() => {
 			m_plugin_host.set_info("waiting image...");
 			
-//			pstcore.pstcore_add_set_param_done_callback((msg)=>{
-//				//console.log("set_param " + msg);
-//				conn.attr.param_pendings.push(msg);
-//			});
+			window.connect_on_set_param_done_callback = (msg) => {
+				conn.attr.param_pendings.push(msg);
+			};
+			pstcore.pstcore_add_set_param_done_callback("connect_on_set_param_done_callback");
 			
 			conn.attr.timer = setInterval(function() {
 				try{
-					conn.attr.param_pendings.push('["renderer", "n_in_bq", "0"]');
 					if(conn.attr.param_pendings.length > 0) {
 						var msg = "[" + conn.attr.param_pendings.join(',') + "]";
 						var pack = rtp.buildpacket(msg, PT_SET_PARAM);
@@ -284,7 +283,7 @@ var create_plugin = (function() {
 				}catch(err){
 					clearInterval(conn.attr.timer);
 				}
-			}, 1000);
+			}, 33);
 			// set rtp callback
 			rtp.set_callback(function(packet) {
 				var sequencenumber = packet.GetSequenceNumber();
@@ -297,15 +296,14 @@ var create_plugin = (function() {
 						", latency=" + latency + "sec");
 				}
 				if (packet.GetPayloadType() == PT_ENQUEUE) { // enqueue
-					console.log("PT_ENQUEUE");
 					var buff = packet.GetPayload();
 					
-					var size = 0;
-					size += buff[3] << 24;
-					size += buff[2] << 16;
-					size += buff[1] << 8;
-					size += buff[0] << 0;
-					console.log("enqueue:", buff.length, size, buff[4]);
+//					var size = 0;
+//					size += buff[3] << 24;
+//					size += buff[2] << 16;
+//					size += buff[1] << 8;
+//					size += buff[0] << 0;
+//					console.log("enqueue:", buff.length, size, buff[4]);
 					
 					pstcore.pstcore_enqueue(conn.attr.pst, buff);
 				} else if (packet.GetPayloadType() == PT_SET_PARAM) { // set_param
