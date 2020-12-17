@@ -48,8 +48,7 @@ var create_plugin = (function() {
 		
 		var plugin = {
 			init_options : function(options) {
-				window.pviewer_get_file = (_file) => {
-					var file = _file.split('?')[0];
+				window.pviewer_get_file = (file) => {
 					return m_filemap[file];
 				}
 				addMenuButton("swFile", "File").then(() => {
