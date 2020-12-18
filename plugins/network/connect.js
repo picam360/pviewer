@@ -33,7 +33,7 @@ var create_plugin = (function() {
 					 + '<td><input type="radio" name="dialog-message-type" id="dialog-message-type" value="wrtc" /></td><td>webrtc</td>'
 					 + '</tr>'
 					 + '<tr>'
-					 + '<td/><td>key:<input type="text" name="dialog-message-wrtckey" id="dialog-message-wrtckey" size="25" value="" /></td>'
+					 + '<td/><td>key:<input type="text" name="dialog-message-wrtckey" id="dialog-message-wrtckey" size="25" value="" disabled /></td>'
 					 + '</tr>'
 					 + '</table>';
 			$( "#dialog-message" ).html(html);
@@ -43,7 +43,7 @@ var create_plugin = (function() {
 	          buttons: {
 	            "Connect": function() {
 	            	var opt = {
-	            		type:$( "input:radio[name='dialog-message-type']:checked" ).val(),
+	            		type:$( "input[name='dialog-message-type']:checked" ).val(),
 	            		ws_url:$( "#dialog-message-wsurl" ).val(),
 	            		wrtc_key:$( "#dialog-message-wrtckey" ).val(),
 	            	};
@@ -58,6 +58,18 @@ var create_plugin = (function() {
 	            }
 	          }
 	        });
+			$( "input[name='dialog-message-type']" ).change(() => {
+				switch($( "input[name='dialog-message-type']:checked" ).val()){
+				case "ws":
+					$( "#dialog-message-wsurl" ).prop('disabled', false);
+					$( "#dialog-message-wrtckey" ).prop('disabled', true);
+					break;
+				case "wrtc":
+					$( "#dialog-message-wsurl" ).prop('disabled', true);
+					$( "#dialog-message-wrtckey" ).prop('disabled', false);
+					break;
+				}
+			});
 		});
     }
     
@@ -195,9 +207,19 @@ var create_plugin = (function() {
 			sig.request_offer(p2p_uuid);
 		});
 	}
+	function deinit_connection(conn) {
+		var pstcore = app.get_pstcore();
+		clearInterval(conn.attr.timer);
+		conn.rtp.set_callback(null);
+		conn.close();
+		if(conn.attr.pst){
+			pstcore.pstcore_destroy_pstreamer(conn.attr.pst);
+			conn.attr.pst = 0;
+		}
+	}
 	function init_connection(conn) {
 		var pstcore = app.get_pstcore();
-		var rtp = Rtp(conn);
+		conn.rtp = Rtp(conn);
 		
 		new Promise((resolve, reject) => {
 			conn.attr = {
@@ -218,10 +240,12 @@ var create_plugin = (function() {
 				{ // ping
 					var cmd = "<picam360:command id=\"0\" value=\"ping " +
 						new Date().getTime() + "\" />"
-					var pack = rtp.buildpacket(cmd, PT_CMD);
-					rtp.sendpacket(pack);
+					var pack = conn.rtp.buildpacket(cmd, PT_CMD);
+					conn.rtp.sendpacket(pack);
+					
+					console.log("establish sequence started");
 				}
-				rtp.set_callback(function(packet) {
+				conn.rtp.set_callback(function(packet) {
 					if (packet.GetPayloadType() == PT_STATUS) {
 						var str = (new TextDecoder)
 							.decode(packet.GetPayload());
@@ -242,14 +266,14 @@ var create_plugin = (function() {
 							if (ping_cnt < 10) {
 								var cmd = "<picam360:command id=\"0\" value=\"ping " +
 									new Date().getTime() + "\" />"
-								var pack = rtp.buildpacket(cmd, PT_CMD);
-								rtp.sendpacket(pack);
+								var pack = conn.rtp.buildpacket(cmd, PT_CMD);
+								conn.rtp.sendpacket(pack);
 								return;
 							} else {
 								var cmd = "<picam360:command id=\"0\" value=\"set_timediff_ms " +
 									timediff_ms + "\" />";
-								var pack = rtp.buildpacket(cmd, PT_CMD);
-								rtp.sendpacket(pack);
+								var pack = conn.rtp.buildpacket(cmd, PT_CMD);
+								conn.rtp.sendpacket(pack);
 		
 								console.log("min_rtt=" + min_rtt +
 									":timediff_ms:" +
@@ -262,8 +286,7 @@ var create_plugin = (function() {
 				});
 			}, () =>{
 				//stop
-				clearInterval(conn.attr.timer);
-				rtp.set_callback(null);
+				deinit_connection(conn);
 			});
 		}).then(() => {
 			m_plugin_host.set_info("waiting image...");
@@ -277,22 +300,23 @@ var create_plugin = (function() {
 				try{
 					if(conn.attr.param_pendings.length > 0) {
 						var msg = "[" + conn.attr.param_pendings.join(',') + "]";
-						var pack = rtp.buildpacket(msg, PT_SET_PARAM);
-						rtp.sendpacket(pack);
+						var pack = conn.rtp.buildpacket(msg, PT_SET_PARAM);
+						conn.rtp.sendpacket(pack);
 						conn.attr.param_pendings = [];
 					}
 				}catch(err){
 					clearInterval(conn.attr.timer);
+					conn.close();
 				}
 			}, 33);
 			// set rtp callback
-			rtp.set_callback(function(packet) {
+			conn.rtp.set_callback(function(packet) {
 				var sequencenumber = packet.GetSequenceNumber();
 				if ((sequencenumber % 100) == 0) {
 					var latency = new Date().getTime() /
 						1000 -
 						(packet.GetTimestamp() + packet.GetSsrc() / 1E6) +
-						self.timediff_ms / 1000;
+						m_timediff_ms / 1000;
 					console.log("packet latency : seq=" + sequencenumber +
 						", latency=" + latency + "sec");
 				}
