@@ -203,6 +203,7 @@ var create_plugin = (function() {
 			conn.attr = {
 				timer: 0,
 				param_pendings: [],
+				enqueue_pendings: [],
 			};
 			var def = "libde265_decoder name=decoder!pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
 			conn.attr.pst = pstcore.pstcore_build_pstreamer(def);
@@ -296,16 +297,46 @@ var create_plugin = (function() {
 						", latency=" + latency + "sec");
 				}
 				if (packet.GetPayloadType() == PT_ENQUEUE) { // enqueue
-					var buff = packet.GetPayload();
+					var chunk = packet.GetPayload();
+					var eob = "<eob/>";
 					
-//					var size = 0;
-//					size += buff[3] << 24;
-//					size += buff[2] << 16;
-//					size += buff[1] << 8;
-//					size += buff[0] << 0;
-//					console.log("enqueue:", buff.length, size, buff[4]);
+					if(chunk[0] == eob.charCodeAt(0) &&
+					   chunk[1] == eob.charCodeAt(1) &&
+					   chunk[2] == eob.charCodeAt(2) &&
+					   chunk[3] == eob.charCodeAt(3) &&
+					   chunk[chunk.length - 2] == eob.charCodeAt(4) &&
+					   chunk[chunk.length - 1] == eob.charCodeAt(5)){
+						
+						var buff = null;
+						if(conn.attr.enqueue_pendings.length == 1){
+							buff = conn.attr.enqueue_pendings[0];
+						}else if(conn.attr.enqueue_pendings.length > 1){
+							var len = 0;
+							for (var _chunk of conn.attr.enqueue_pendings) {
+								len += _chunk.length;
+							}
+							var buff = new Uint8Array(len);
+							var cur = 0;
+							for (var _chunk of conn.attr.enqueue_pendings) {
+								buff.set(_chunk, cur);
+								cur += _chunk.length;
+							}
+						}
+						if(buff){
+//							var size = 0;
+//							size += buff[3] << 24;
+//							size += buff[2] << 16;
+//							size += buff[1] << 8;
+//							size += buff[0] << 0;
+//							console.log("enqueue:", buff.length, size, buff[4]);
+
+							pstcore.pstcore_enqueue(conn.attr.pst, buff);
+							conn.attr.enqueue_pendings = [];
+						}
+					}else{
+						conn.attr.enqueue_pendings.push(chunk);
+					}
 					
-					pstcore.pstcore_enqueue(conn.attr.pst, buff);
 				} else if (packet.GetPayloadType() == PT_SET_PARAM) { // set_param
 					var str = (new TextDecoder)
 						.decode(packet.GetPayload());
