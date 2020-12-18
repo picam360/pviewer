@@ -4,6 +4,7 @@ var create_plugin = (function() {
 	var m_timediff_ms = 0;
 	var m_watches = [];
 	var m_options = {};
+	var m_query = GetQueryString();
 		
 	function addMenuButton(name, txt) {
 			return new Promise((resolve, reject) => {
@@ -54,6 +55,12 @@ var create_plugin = (function() {
 	            }
 	          }
 	        });
+			if(m_query['wrtc-key']){
+				$( "#dialog-message-wrtckey" ).val(m_query['wrtc-key']);
+				$( "input[name='dialog-message-type']" ).val(['wrtc']);
+				$( "#dialog-message-wsurl" ).prop('disabled', true);
+				$( "#dialog-message-wrtckey" ).prop('disabled', false);
+			}
 			$( "input[name='dialog-message-type']" ).change(() => {
 				switch($( "input[name='dialog-message-type']:checked" ).val()){
 				case "ws":
@@ -414,6 +421,26 @@ var create_plugin = (function() {
 		});
 	};
 	
+	function open_dialog(){
+		prompt("input connection info", "connect stream via network").then((opt) => {
+			if(opt.type == "ws"){
+				start_ws(opt.ws_url, (socket) => {
+					init_connection(socket);
+				}, () => {
+					//error
+				});
+			}else{
+				start_p2p(opt.wrtc_key, (dc) => {
+					init_connection(dc);
+				}, () => {
+					//error
+				});
+			}
+		}).catch((err) => {
+			throw "CONNECT_CANCELLED";
+		});
+	}
+	
 	return function(plugin_host) {
 		//debugger;
 		m_plugin_host = plugin_host;
@@ -426,25 +453,12 @@ var create_plugin = (function() {
 					return addMenuButton("swConnect", "Connect");
 				}).then(() => {
 					swConnect.onclick = async (evt) => {
-						await prompt("input connection info", "connect stream via network").then((opt) => {
-							if(opt.type == "ws"){
-								start_ws(opt.ws_url, (socket) => {
-									init_connection(socket);
-								}, () => {
-									//error
-								});
-							}else{
-								start_p2p(opt.wrtc_key, (dc) => {
-									init_connection(dc);
-								}, () => {
-									//error
-								});
-							}
-						}).catch((err) => {
-							throw "CONNECT_CANCELLED";
-						});
+						open_dialog();
 					};
 				});
+				if(m_query['wrtc-key']){
+					open_dialog();
+				}
 			},
 			event_handler : function(sender, event) {
 			},
