@@ -825,7 +825,7 @@ var app = (function() {
 				
 				if (window.cordova && cordova.platformId == 'electron'){
 
-					window.pstcore = require('pstcore-cordova-js');
+					window.pstcore = require('./js/pstcore-electron.js');
 					window.pstcore.win = require('electron').remote.getCurrentWindow();
 					window.pstcore.win_focus_state = 0;
 					window.pstcore.win.on('focus', function() {
