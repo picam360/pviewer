@@ -1,0 +1,22 @@
+{
+  "browserWindow": {
+    "height": 600,
+    "webPreferences": {
+      "devTools": false,
+      "nodeIntegration": true,
+      "enableRemoteModule": true
+    },
+    "width": 800,
+    "transparent": true,
+    "backgroundColor": "#00000000",
+    "fullscreen": false,
+    "frame": false
+  },
+  "browserWindowInstance": {
+    "loadURL": {
+      "url": "index.html"
+    }
+  },
+  "scheme": "file",
+  "hostname": "localhost"
+}

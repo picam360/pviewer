@@ -1,0 +1,14 @@
+{
+  "main": "cdv-electron-main.js",
+  "name": "com.picam360.app.pviewer",
+  "displayName": "PViewer",
+  "version": "1.1.0",
+  "description": "A panoramic video viewer",
+  "dependencies": {},
+  "homepage": "https://www.picam360.com",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Picam360 Inc.",
+    "email": "info@picam360.com"
+  }
+}

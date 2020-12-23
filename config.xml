@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.picam360.app.pviewer" version="1.1.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>PViewer</name>
+    <description>
+        A panoramic video viewer
+    </description>
+    <author email="info@picam360.com" href="https://www.picam360.com">
+        Picam360 Inc.
+    </author>
+    <content src="index.html" />
+    <access origin="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <allow-intent href="tel:*" />
+    <allow-intent href="sms:*" />
+    <allow-intent href="mailto:*" />
+    <allow-intent href="geo:*" />
+    <icon src="res/electron/icon.png" />
+    <icon src="res/electron/icon@2x.png" target="installer" />
+    <preference name="AndroidLaunchMode" value="singleInstance" />
+    <preference name="AutoHideSplashScreen" value="true" />
+    <preference name="SplashScreenDelay" value="3000" />
+    <preference name="FadeSplashScreenDuration" value="1000" />
+    <preference name="ElectronSettingsFilePath" value="res/electron/settings.json" />
+</widget>
