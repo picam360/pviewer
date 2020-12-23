@@ -124,41 +124,10 @@ var create_plugin = (function() {
 			m_pc = pc;
 
 			sig.onoffer = function(offer) {
-				var bitrate = 0;
-				var lines = offer.payload.sdp.sdp.split('\r\n');
-				for(var i=0;i<lines.length;i++){
-					// vp9
-					if(lines[i].startsWith('b=AS:')){
-						bitrate = parseInt(lines[i].replace('b=AS:', ''));
-					}
-				}
 				pc.setRemoteDescription(offer.payload.sdp).then(function() {
 					return pc.createAnswer();
 				}).then(function(sdp) {
 					console.log('Created answer.');
-					var lines = sdp.sdp.split('\r\n');
-					for(var i=0;i<lines.length;i++){
-						// stereo
-						if(lines[i].startsWith('a=fmtp:111')){
-							lines[i] = lines[i].replace(
-								/a=fmtp:111/,
-								'a=fmtp:111 stereo=1\r\na=fmtp:111');
-						}
-						// vp9
-						if(lines[i].startsWith('m=video 9')){
-							lines[i] = lines[i].replace(
-									'm=video 9 UDP/TLS/RTP/SAVPF 96 97 98 99 100 101 127',
-									'm=video 9 UDP/TLS/RTP/SAVPF 98 96 97 99 100 101 127');
-						}
-						// bitrate
-						if(lines[i].startsWith('m=video 9')){
-							if (bitrate) {
-								lines[i] = lines[i] + '\r\n' +
-										'b=AS:' + bitrate;
-							}
-						}
-					}
-					sdp.sdp = lines.join('\r\n');
 					
 					pc.setLocalDescription(sdp);
 					sig.answer(offer.src, sdp);
@@ -177,15 +146,7 @@ var create_plugin = (function() {
 					var dc = ev.channel;
 					dc.onopen = function() {
 						console.log("p2p connection established as downstream.");
-						//for(var receiver of m_pc.getReceivers()){
-						//	switch(receiver.track.kind){
-						//		case 'audio':
-						//			break;
-						//		case 'video':
-						//			break;
-						//	}
-						//}
-						dc.addEventListener('close', function(data){
+						dc.addEventListener('close', function(){
 							pc.close();
 						});
 						callback(dc);
