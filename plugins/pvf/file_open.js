@@ -31,6 +31,11 @@ var create_plugin = (function() {
 	        });
 
 			$('#dialog-message-file').on('change', (evt) => {
+						
+				window.pviewer_get_file = (file) => {
+					return m_filemap[file];
+				}
+				
 				var pvf = "pviewer://"+evt.target.files[0].name;
 				m_filemap[pvf] = evt.target.files[0];
 				
@@ -49,9 +54,6 @@ var create_plugin = (function() {
 		
 		var plugin = {
 			init_options : function(options) {
-				window.pviewer_get_file = (file) => {
-					return m_filemap[file];
-				}
 				addMenuButton("swFile", "File").then(() => {
 					swFile.onclick = async (evt) => {
 						await prompt("select pvf file", "file open").then((opt) => {
@@ -62,6 +64,11 @@ var create_plugin = (function() {
 				});
 				document.body.addEventListener('drop', function (e) {
 					if(e.dataTransfer.files[0].name.endsWith(".pvf")){
+						
+						window.pviewer_get_file = (file) => {
+							return m_filemap[file];
+						}
+						
 						var pvf = "pviewer://"+e.dataTransfer.files[0].name;
 						m_filemap[pvf] = e.dataTransfer.files[0];
 						

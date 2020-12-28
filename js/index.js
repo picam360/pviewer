@@ -680,6 +680,30 @@ var app = (function() {
 					if(!m_query['get-query']){
 						m_query['get-query'] = "";
 					}
+					
+					if (m_pvf_url.startsWith("file://") && window.cordova && cordova.platformId == 'electron'){
+						var filepath = m_pvf_url.substr("file://".length);
+						var fs = require('fs');
+						var stat = fs.statSync(filepath);
+						var file =  {
+							size: stat.size,
+							slice: (start, end) => {
+								var len = end - start;
+								var fd = fs.openSync(filepath, 'r');
+								var buff = new Buffer(len);
+								fs.readSync(fd, buff, 0, len, start);
+								fs.closeSync(fd);
+								
+								var fo = new Blob([buff]);
+								return fo;
+							}
+						}
+						window.pviewer_get_file = (_filepath) => {
+							return file;
+						}
+						m_pvf_url = "pviewer://" + filepath;
+					}
+
 					var pst = m_pstcore.pstcore_build_pvf_streamer(m_pvf_url, m_query['head-query'], m_query['get-query']);
 //						for(var key in m_options.pst_params){
 //							var [pst_name, param] = key.split('.');
