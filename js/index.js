@@ -704,12 +704,46 @@ var app = (function() {
 						m_pvf_url = "pviewer://" + filepath;
 					}
 
-					var pst = m_pstcore.pstcore_build_pvf_streamer(m_pvf_url, m_query['head-query'], m_query['get-query']);
-//						for(var key in m_options.pst_params){
-//							var [pst_name, param] = key.split('.');
-//							var value = m_options.pst_params[key];
-//							m_pstcore.pstcore_set_param(pst, pst_name, param, value);
-//						}
+
+					var pst;
+					if (window.cordova) {
+						var def = "pvf_loader ! cordova_binder";
+						pst = m_pstcore.pstcore_build_pstreamer(def);
+						
+						var platform = cordova.platformId;
+						if(platform == 'electron'){
+							platform = process.platform;
+						}
+						
+						var decoder = "libde265_decoder";
+						switch(platform){
+						case "ios":
+							decoder = "vt_decoder";
+							break;
+						case "android":
+							decoder = "mc_decoder";
+							break;
+						case "darwin":
+							decoder = "vt_decoder";
+							break;
+						case "win32":
+							break;
+						case "linux":
+							break;
+						}
+						var binder_def = decoder + " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+						m_pstcore.pstcore_set_param(pst, "cordova_binder", "def", binder_def);//call native pstcore_build_pstreamer
+					} else {
+						var def = "pvf_loader ! libde265_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+						pst = m_pstcore.pstcore_build_pstreamer(def);
+					}
+				
+					m_pstcore.pstcore_set_param(pst, "pvf_loader", "url", m_pvf_url);
+					m_pstcore.pstcore_set_param(pst, "pvf_loader", "head_query",
+							(m_query['head-query'] ? m_query['head-query'] : ""));
+					m_pstcore.pstcore_set_param(pst, "pvf_loader", "get_query",
+							(m_query['get-query'] ? m_query['get-query'] : ""));
+							
 					self.start_pst(pst);
 				}
 			});
@@ -851,34 +885,24 @@ var app = (function() {
 
 					window.pstcore = require('./js/pstcore-electron.js');
 					window.pstcore.win = require('electron').remote.getCurrentWindow();
-					window.pstcore.win_focus_state = 0;
-					window.pstcore.win.on('focus', function() {
-						if(m_pst == null){
-							return;
-						}
-						if(window.pstcore.win_focus_state == 0) {
-							window.pstcore.win_focus_state = 1;
-							m_pstcore.pstcore_set_param(m_pst, "renderer", "win_focus", "1");
-						}
-						if(window.pstcore.win_focus_state == 2) {
-							window.pstcore.win_focus_state = 0;
-						}
-					});
 					$(window).on('resize', function() {
 						if(m_pst == null){
 							return;
 						}
-						m_pstcore.pstcore_set_param(m_pst, "renderer", "win_size", window.outerWidth + "," + window.outerHeight);
+						setTimeout(()=>{
+							m_pstcore.pstcore_set_param(m_pst, "renderer", "win_size", window.outerWidth + "," + window.outerHeight);
+						}, 300);
 					});
 					setInterval(()=>{
 						if(m_pst == null){
 							return;
 						}
-						m_pstcore.pstcore_set_param(m_pst, "renderer", "win_pos", window.screenX + "," + window.screenY);
+						var dev_offset = window.pstcore.win.isDevToolsOpened() ? window.outerWidth : 0;
+						m_pstcore.pstcore_set_param(m_pst, "renderer", "win_pos", (window.screenX + dev_offset) + "," + window.screenY);
 						var win_focus = m_pstcore.pstcore_get_param(m_pst, "renderer", "win_focus");
 						if(parseInt(win_focus) && !window.pstcore.win.isFocused()){
-							window.pstcore.win_focus_state = 2;
-							window.pstcore.win.focus();
+							window.pstcore.win.show();
+							//window.pstcore.win.focus();
 							//console.log("focus req");
 						}
 						//console.log("focus "+ win_focus);
