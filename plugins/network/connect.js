@@ -191,8 +191,39 @@ var create_plugin = (function() {
 				param_pendings: [],
 				enqueue_pendings: [],
 			};
-			var def = "libde265_decoder name=decoder!pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
-			conn.attr.pst = pstcore.pstcore_build_pstreamer(def);
+			var pst;
+			if (window.cordova) {
+				var def = "cordova_binder";
+				pst = pstcore.pstcore_build_pstreamer(def);
+				
+				var platform = cordova.platformId;
+				if(platform == 'electron'){
+					platform = process.platform;
+				}
+				
+				var decoder = "libde265_decoder";
+				switch(platform){
+				case "ios":
+					decoder = "vt_decoder";
+					break;
+				case "android":
+					decoder = "mc_decoder";
+					break;
+				case "darwin":
+					decoder = "vt_decoder";
+					break;
+				case "win32":
+					break;
+				case "linux":
+					break;
+				}
+				var binder_def = decoder + " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+				pstcore.pstcore_set_param(pst, "cordova_binder", "def", binder_def);//call native pstcore_build_pstreamer
+			} else {
+				var def = "libde265_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+				pst = pstcore.pstcore_build_pstreamer(def);
+			}
+			conn.attr.pst = pst;
 			
 			//main.html
 			app.start_pst(conn.attr.pst, () => {
