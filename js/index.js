@@ -882,9 +882,17 @@ var app = (function() {
 				//m_overlay = document.getElementById('overlay');
 				
 				if (window.cordova && cordova.platformId == 'electron'){
+					console = require('electron').remote.require('console');
 
 					window.pstcore = require('./js/pstcore-electron.js');
 					window.pstcore.win = require('electron').remote.getCurrentWindow();
+					window.pstcore.win.on('focus', function() {
+						if(m_pst == null){
+							return;
+						}
+						m_pstcore.pstcore_set_param(m_pst, "renderer", "win_focus", "1");
+						window.pstcore.win.show();
+					});
 					$(window).on('resize', function() {
 						if(m_pst == null){
 							return;
