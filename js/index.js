@@ -715,23 +715,22 @@ var app = (function() {
 							platform = process.platform;
 						}
 						
-						var decoder = "libde265_decoder";
+						var binder_def = "libde265_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
 						switch(platform){
 						case "ios":
-							decoder = "vt_decoder";
+							binder_def = "vt_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
 							break;
 						case "android":
-							decoder = "mc_decoder";
+							binder_def = "mc_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
 							break;
 						case "darwin":
-							decoder = "vt_decoder";
+							binder_def = "vt_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30 bc=1";
 							break;
 						case "win32":
 							break;
 						case "linux":
 							break;
 						}
-						var binder_def = decoder + " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
 						m_pstcore.pstcore_set_param(pst, "cordova_binder", "def", binder_def);//call native pstcore_build_pstreamer
 					} else {
 						var def = "pvf_loader ! libde265_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
