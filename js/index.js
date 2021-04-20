@@ -718,13 +718,13 @@ var app = (function() {
 						var binder_def = "libde265_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
 						switch(platform){
 						case "ios":
-							binder_def = "vt_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30 bc=1";
+							binder_def = "vt_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
 							break;
 						case "android":
-							binder_def = "mc_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30 bc=1";
+							binder_def = "mc_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
 							break;
 						case "darwin":
-							binder_def = "vt_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30 bc=1";
+							binder_def = "vt_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
 							break;
 						case "win32":
 							break;
