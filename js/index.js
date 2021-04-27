@@ -331,6 +331,7 @@ var app = (function() {
 					var n_in_bq_d = m_pstcore.pstcore_get_param(m_pst, "decoder", "n_in_bq");
 					var n_in_bq_r = m_pstcore.pstcore_get_param(m_pst, "renderer", "n_in_bq");
 					var n_pending = m_pstcore.pstcore_get_param(m_pst, "renderer", "n_pending");
+					var latency = m_pstcore.pstcore_get_param(m_pst, "renderer", "latency");
 					status += "texture<br/>";
 					status += "fps:" + fps + "<br/>";
 					status += "preload:" + preload + "<br/>";
@@ -338,6 +339,14 @@ var app = (function() {
 					status += "pixelrate:" + boost_pixelrate_mpps.toFixed(3) + "mpps(" + pixelrate_mpps + ")<br/>";
 					status += "n_in_bq:" + n_in_bq_l + "+" + n_in_bq_d + "+" + n_in_bq_r + "<br/>";
 					status += "n_pending:" + n_pending + "<br/>";
+					if(latency){
+						latency = parseFloat(latency);
+						var timediff = m_pstcore.pstcore_get_param(m_pst, "network", "timediff");
+						if(timediff){
+							latency += parseFloat(timediff);
+						}
+						status += "latency:" + latency.toFixed(3) + "sec<br/>";
+					}
 				}
 //				var texture_info = m_video_handler.get_info(); {
 //					status += "texture<br/>";

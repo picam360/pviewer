@@ -274,6 +274,8 @@ var create_plugin = (function() {
 									":timediff_ms:" +
 									timediff_ms);
 								m_timediff_ms = timediff_ms;
+								pstcore.pstcore_set_param(conn.attr.pst, 
+									"network", "timediff", (timediff_ms/1000).toString());
 								resolve();
 							}
 						}
