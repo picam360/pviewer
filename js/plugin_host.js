@@ -6,7 +6,6 @@ function PluginHost(core, options) {
 	var m_debug = core.debug;
 	var m_plugins = [];
 	var m_watches = [];
-	var m_cmd2upstream_list = [];
 	var m_statuses = [];
 	var m_filerequest_list = [];
 	var m_view_fov = 120;
@@ -28,9 +27,6 @@ function PluginHost(core, options) {
 
 	//public members / functions
 	var self = {
-		get_timediff_ms: function() {
-			return core.timediff_ms;
-		},
 		get_plugin: function(name) {
 			for (var i = 0; i < m_plugins.length; i++) {
 				if (name == m_plugins[i].name) {
@@ -40,23 +36,6 @@ function PluginHost(core, options) {
 			return null;
 		},
 		send_command: function(cmd, update) {
-			if (cmd.indexOf(UPSTREAM_DOMAIN) == 0) {
-				cmd = cmd.substr(UPSTREAM_DOMAIN.length);
-				if(update){
-					for (var i = 0; i < m_cmd2upstream_list.length; i++) {
-						if(m_cmd2upstream_list[i].update){
-							var cmd_s1 = cmd.split(' ')[0];
-							var cmd_s2 = m_cmd2upstream_list[i].cmd.split(' ')[0];
-							if(cmd_s1 == cmd_s2){
-								m_cmd2upstream_list[i] = {cmd, update};
-								return;
-							}
-						}
-					}
-				}
-				m_cmd2upstream_list.push({cmd, update});
-				return;
-			}
 			for (var i = 0; i < m_plugins.length; i++) {
 				if (m_plugins[i].command_handler) {
 					m_plugins[i].command_handler(cmd, update);
@@ -73,6 +52,37 @@ function PluginHost(core, options) {
 		},
 		add_watch: function(name, callback) {
 			m_watches[name] = callback;
+		},
+		add_plugin_from_script: function(name, options, chunk_array, callback) {
+			var script = document
+				.createElement('script');
+			script.onload = function() {
+				console.log("loaded : " + name);
+				if (create_plugin) {
+					var plugin = create_plugin(self);
+					m_plugins.push(plugin);
+					create_plugin = null;
+
+					if(plugin.init_options){
+						plugin.init_options(options[plugin.name] || {});
+					}
+				}
+				if (callback) {
+					callback();
+				}
+			};
+			console.log("loding : " + name);
+			
+			// var blob = new Blob(chunk_array, {
+			// 	type: "text/javascript"
+			// });
+			// script.src = url.createObjectURL(blob);
+
+			//for debug ability
+			var str = (new TextDecoder('utf-8')).decode(chunk_array[0]);
+			script.src = "data:text/javascript;name=" + name + ";base64," + btoa(str);
+
+			document.head.appendChild(script);
 		},
 		init_plugins: function() {
 			return new Promise((fullfill,reject) => {

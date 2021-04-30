@@ -1,6 +1,8 @@
 var create_plugin = (function() {
 	var m_plugin_host = null;
+	var m_plugin = null;
 	var m_cmd2upstream_list = [];
+	var m_filerequest_list = [];
 	var m_timediff_ms = 0;
 	var m_watches = [];
 	var m_options = {};
@@ -60,6 +62,11 @@ var create_plugin = (function() {
 				$( "input[name='dialog-message-type']" ).val(['wrtc']);
 				$( "#dialog-message-wsurl" ).prop('disabled', true);
 				$( "#dialog-message-wrtckey" ).prop('disabled', false);
+			}else if(m_query['ws-url']){
+				$( "#dialog-message-wsurl" ).val(m_query['ws-url']);
+				$( "input[name='dialog-message-type']" ).val(['ws']);
+				$( "#dialog-message-wsurl" ).prop('disabled', false);
+				$( "#dialog-message-wrtckey" ).prop('disabled', true);
 			}
 			$( "input[name='dialog-message-type']" ).change(() => {
 				switch($( "input[name='dialog-message-type']:checked" ).val()){
@@ -301,11 +308,22 @@ var create_plugin = (function() {
 						conn.rtp.sendpacket(pack);
 						conn.attr.param_pendings = [];
 					}
+					if (m_cmd2upstream_list.length > 0) {
+						var {cmd} = m_cmd2upstream_list.shift();
+						var xml = "<picam360:command id=\"" + app.rtcp_command_id +
+							"\" value=\"" + cmd + "\" />"
+						var pack = conn.rtp.buildpacket(xml, PT_CMD);
+						conn.rtp.sendpacket(pack);
+					}
 				}catch(err){
 					clearInterval(conn.attr.timer);
 					conn.close();
 				}
 			}, 33);
+			// command to upstream
+			setInterval(function() {
+				app.rtcp_command_id++;
+			}, 33); // 30hz
 			// set rtp callback
 			conn.rtp.set_callback(function(packet) {
 				var sequencenumber = packet.GetSequenceNumber();
@@ -363,7 +381,28 @@ var create_plugin = (function() {
 						.decode(packet.GetPayload());
 					var list = JSON.parse(str);
 					for(var ary of list){
-						pstcore.pstcore_set_param(conn.attr.pst, ary[0], ary[1], ary[2]);
+						if(ary[0] == "network"){
+							if(ary[1] == "pviewer_config_ext"){
+								var config_ext = JSON.parse(ary[2]);
+								if(config_ext && config_ext["plugin_paths"]){
+									for(var path of config_ext["plugin_paths"]){
+										var key = uuid();
+										m_filerequest_list.push({
+											filename: path,
+											key: key,
+											callback: (path, key, data) => {
+												m_plugin_host.add_plugin_from_script(path, config_ext, data);
+											}
+										});
+										m_plugin.command_handler(UPSTREAM_DOMAIN + "get_file " + path + " " +
+											key);
+									}
+								}
+							}
+
+						}else{
+							pstcore.pstcore_set_param(conn.attr.pst, ary[0], ary[1], ary[2]);
+						}
 					}
 				} else if (packet.GetPayloadType() == PT_STATUS) { // status
 					var str = (new TextDecoder)
@@ -396,16 +435,16 @@ var create_plugin = (function() {
 							eof = _split[2] == "true";
 						}
 					}
-					for (var i = 0; i < filerequest_list.length; i++) {
-						if (filerequest_list[i].key == key) {
+					for (var i = 0; i < m_filerequest_list.length; i++) {
+						if (m_filerequest_list[i].key == key) {
 							if (seq == 0) {
-								filerequest_list[i].chunk_array = [];
+								m_filerequest_list[i].chunk_array = [];
 							}
-							filerequest_list[i].chunk_array.push(data);
+							m_filerequest_list[i].chunk_array.push(data);
 							if (eof) {
-								filerequest_list[i]
-									.callback(filerequest_list[i].chunk_array);
-								filerequest_list.splice(i, 1);
+								m_filerequest_list[i]
+									.callback(m_filerequest_list[i].filename, m_filerequest_list[i].key, m_filerequest_list[i].chunk_array);
+								m_filerequest_list.splice(i, 1);
 								break;
 							}
 						}
@@ -439,7 +478,7 @@ var create_plugin = (function() {
 		//debugger;
 		m_plugin_host = plugin_host;
 		
-		var plugin = {
+		m_plugin = {
 			init_options : function(options) {
 				m_plugin_host.loadScript("plugins/network/signaling.js").then(() => {
 					return m_plugin_host.loadScript("plugins/network/rtp.js");
@@ -453,10 +492,32 @@ var create_plugin = (function() {
 				if(m_query['wrtc-key']){
 					open_dialog();
 				}
+				if(m_query['ws-url']){
+					open_dialog();
+				}
 			},
 			event_handler : function(sender, event) {
 			},
+			command_handler : function(cmd, update) {
+				if (cmd.indexOf(UPSTREAM_DOMAIN) == 0) {
+					cmd = cmd.substr(UPSTREAM_DOMAIN.length);
+					if(update){
+						for (var i = 0; i < m_cmd2upstream_list.length; i++) {
+							if(m_cmd2upstream_list[i].update){
+								var cmd_s1 = cmd.split(' ')[0];
+								var cmd_s2 = m_cmd2upstream_list[i].cmd.split(' ')[0];
+								if(cmd_s1 == cmd_s2){
+									m_cmd2upstream_list[i] = {cmd, update};
+									return;
+								}
+							}
+						}
+					}
+					m_cmd2upstream_list.push({cmd, update});
+					return;
+				}
+			},
 		};
-		return plugin;
+		return m_plugin;
 	}
 })();
