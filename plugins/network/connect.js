@@ -184,6 +184,7 @@ var create_plugin = (function() {
 		conn.rtp.set_callback(null);
 		conn.close();
 		if(conn.attr.pst){
+			pstcore.pstcore_remove_set_param_done_callback(conn.attr.pst, "connect_on_set_param_done_callback");
 			pstcore.pstcore_destroy_pstreamer(conn.attr.pst);
 			conn.attr.pst = 0;
 		}
@@ -296,9 +297,12 @@ var create_plugin = (function() {
 			m_plugin_host.set_info("waiting image...");
 			
 			window.connect_on_set_param_done_callback = (msg) => {
+				if(conn.attr.in_pt_set_param){//prevent loop back
+					return;
+				}
 				conn.attr.param_pendings.push(msg);
 			};
-			pstcore.pstcore_add_set_param_done_callback("connect_on_set_param_done_callback");
+			pstcore.pstcore_add_set_param_done_callback(conn.attr.pst, "connect_on_set_param_done_callback");
 			
 			conn.attr.timer = setInterval(function() {
 				try{
@@ -401,7 +405,9 @@ var create_plugin = (function() {
 							}
 
 						}else{
+							conn.attr.in_pt_set_param = true;
 							pstcore.pstcore_set_param(conn.attr.pst, ary[0], ary[1], ary[2]);
+							conn.attr.in_pt_set_param = false;
 						}
 					}
 				} else if (packet.GetPayloadType() == PT_STATUS) { // status
