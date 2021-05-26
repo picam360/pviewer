@@ -715,7 +715,30 @@ var app = (function() {
 
 
 					var pst;
-					if (window.cordova) {
+					if(!window.PstCoreLoader && window.cordova){
+						var platform = cordova.platformId;
+						if(platform == 'electron'){
+							platform = process.platform;
+						}
+						var decoder = "libde265_decoder";
+						switch(platform){
+						case "ios":
+							decoder = "vt_decoder";
+							break;
+						case "android":
+							decoder = "mc_decoder";
+							break;
+						case "darwin":
+							decoder = "vt_decoder";
+							break;
+						case "win32":
+							break;
+						case "linux":
+							break;
+						}
+						var def = "pvf_loader ! " + decoder +  " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+						pst = m_pstcore.pstcore_build_pstreamer(def);
+					}else if (window.cordova) {
 						var def = "pvf_loader ! cordova_binder";
 						pst = m_pstcore.pstcore_build_pstreamer(def);
 						
@@ -872,7 +895,8 @@ var app = (function() {
 				}else{
 					self.plugin_host.on_view_quat_changed((view_quat, view_offset_quat) => {
 						var quat = view_offset_quat.multiply(view_quat);
-						m_pstcore._pstcore_set_view_quat(m_pst, quat.x, quat.y, quat.z, quat.w);
+						var value = sprintf("%f,%f,%f,%f", quat.x, quat.y, quat.z, quat.w);
+						m_pstcore.pstcore_set_param(m_pst, "", "view_quat", value);
 					});
 				
 					m_mpu = MPU();
@@ -925,8 +949,108 @@ var app = (function() {
 					}, 200);
 					
 
-				} 
-				{
+				}
+				if(!window.PstCoreLoader && window.cordova){
+					m_pstcore = {
+						pstcore_init: function (config_json) {
+							cordova.exec((msg) => {
+								console.log(msg);
+							}, (msg) => {
+								console.log(msg);
+							}, "CDVPstCore", "init_internal", []); // init is reserved
+						},
+						// on_set_param: function (successCallback, errorCallback) {
+						// 	cordova.exec(successCallback, errorCallback, "CDVPstCore", "on_set_param", []);
+						// },
+						pstcore_build_pstreamer: function (def) {
+							cordova.exec((msg) => {
+								console.log(msg);
+							}, (msg) => {
+								console.log(msg);
+							}, "CDVPstCore", "build_pstreamer", [def]);
+							return 1;
+						},
+						pstcore_poll_events: function () {
+							cordova.exec((msg) => {
+								console.log(msg);
+							}, (msg) => {
+								console.log(msg);
+							}, "CDVPstCore", "poll", []);
+						},
+						pstcore_start_pstreamer: function (pst) {
+							cordova.exec((msg) => {
+								console.log(msg);
+							}, (msg) => {
+								console.log(msg);
+							}, "CDVPstCore", "start_pstreamer", [pst]);
+						},
+						pstcore_stop_pstreamer: function (pst) {
+							cordova.exec((msg) => {
+								console.log(msg);
+							}, (msg) => {
+								console.log(msg);
+							}, "CDVPstCore", "stop_pstreamer", [pst]);
+						},
+						pstcore_destroy_pstreamer: function (pst) {
+							cordova.exec((msg) => {
+								console.log(msg);
+							}, (msg) => {
+								console.log(msg);
+							}, "CDVPstCore", "destroy_pstreamer", [pst]);
+						},
+						pstcore_enqueue: function (pst, data) {
+							cordova.exec((msg) => {
+								console.log(msg);
+							}, (msg) => {
+								console.log(msg);
+							}, "CDVPstCore", "enqueue", [pst, data]);
+						},
+						pstcore_set_param: function (pst, pst_name, param, value) {
+							cordova.exec((msg) => {
+								console.log(msg);
+							}, (msg) => {
+								console.log(msg);
+							}, "CDVPstCore", "set_param", [pst, pst_name, param, value]);
+						},
+					};
+					console.log("pstcore initialized");
+					const config = {
+							"plugin_paths" : [
+								"plugins/pvf_loader_st.so",
+								"plugins/libde265_decoder_st.so",
+								//"plugins/timer_st.so",
+								"plugins/pgl_renderer_st.so",
+							],
+							"window_size" : {
+								"width" : window.innerWidth,
+								"height" : window.innerHeight
+							}
+					}
+					const config_json = JSON.stringify(config);
+					m_pstcore.pstcore_init(config_json);
+
+					m_applink_ready = true;
+					if(!m_query['applink']){
+						m_query['applink'] = window.location.href;
+					}
+					self.open_applink(m_query['applink']);
+					
+					self.start_animate();
+					
+					window.addEventListener('resize', () => {
+						self.update_canvas_size();
+					}, false);
+					
+					document.ondragover = document.ondrop = function (e) {
+					  e.preventDefault()
+					}
+					document.body.addEventListener('drop', function (e) {
+						if(e.dataTransfer.files.length == 0){
+							var url = e.dataTransfer.getData("URL");
+							self.open_applink(url);
+						}
+					});
+				}else{
 					m_pstcore = window.PstCoreLoader({
 						preRun: [],
 						postRun: [],
