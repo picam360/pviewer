@@ -97,7 +97,7 @@ var create_plugin = (function() {
 				m_plugin_host.set_info("error : Could not connect : " + event);
 				err_callback();
 			});
-		}catch{
+		}catch(e){
 			err_callback();
 		}
 	}
@@ -200,7 +200,31 @@ var create_plugin = (function() {
 				enqueue_pendings: [],
 			};
 			var pst;
-			if (window.cordova) {
+            if(!window.PstCoreLoader && window.cordova){
+                var platform = cordova.platformId;
+                if(platform == 'electron'){
+                    platform = process.platform;
+                }
+                var decoder = "libde265_decoder";
+                switch(platform){
+                case "ios":
+                    decoder = "vt_decoder";
+                    break;
+                case "android":
+                    decoder = "mc_decoder";
+                    break;
+                case "darwin":
+                    decoder = "vt_decoder";
+                    break;
+                case "win32":
+                    break;
+                case "linux":
+                    break;
+                }
+                var def = decoder +  " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30 mode=speed";
+                //var def = decoder +  " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30 dual_window=1 swap_window=1 mode=speed";
+                pst = pstcore.pstcore_build_pstreamer(def);
+            }else if (window.cordova) {
 				var def = "cordova_binder";
 				pst = pstcore.pstcore_build_pstreamer(def);
 				
@@ -491,14 +515,19 @@ var create_plugin = (function() {
 				}).then(() => {
 					return addMenuButton("swConnect", "Connect");
 				}).then(() => {
-					swConnect.onclick = async (evt) => {
+					swConnect.onclick = (evt) => {
 						open_dialog();
 					};
 				});
+				if(options['wrtc-key']){
+					m_query['wrtc-key'] = options['wrtc-key'];
+				}
+				if(options['ws-url']){
+					m_query['ws-url'] = options['ws-url'];
+				}
 				if(m_query['wrtc-key']){
 					open_dialog();
-				}
-				if(m_query['ws-url']){
+				}else if(m_query['ws-url']){
 					open_dialog();
 				}
 			},

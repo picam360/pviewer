@@ -737,6 +737,7 @@ var app = (function() {
 							break;
 						}
 						var def = "pvf_loader ! " + decoder +  " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+						//var def = "pvf_loader ! " + decoder +  " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30 dual_window=1 swap_window=1 mode=speed";
 						pst = m_pstcore.pstcore_build_pstreamer(def);
 					}else if (window.cordova) {
 						var def = "pvf_loader ! cordova_binder";
@@ -951,6 +952,26 @@ var app = (function() {
 
 				}
 				if(!window.PstCoreLoader && window.cordova){
+				    var n_poll = 0;
+				    var params = {};
+				    setInterval(()=>{
+				        n_poll++;
+				        if((n_poll%2) == 0){
+							cordova.exec((msg) => {
+								//console.log(msg);
+							}, (msg) => {
+								//console.log(msg);
+							}, "CDVPstCore", "poll", null);
+				        }
+				        for(var key in params){
+							cordova.exec((msg) => {
+								//console.log(msg);
+							}, (msg) => {
+								//console.log(msg);
+							}, "CDVPstCore", "set_param", params[key]);
+				        }
+				        params = {};
+				    }, 1000/60);
 					m_pstcore = {
 						pstcore_init: function (config_json) {
 							cordova.exec((msg) => {
@@ -970,11 +991,11 @@ var app = (function() {
 							}, "CDVPstCore", "build_pstreamer", [def]);
 							return 1;
 						},
-						pstcore_poll_events: function () {
+						_pstcore_poll_events: function () {
 							cordova.exec((msg) => {
-								console.log(msg);
+								//console.log(msg);
 							}, (msg) => {
-								console.log(msg);
+								//console.log(msg);
 							}, "CDVPstCore", "poll", []);
 						},
 						pstcore_start_pstreamer: function (pst) {
@@ -1000,18 +1021,26 @@ var app = (function() {
 						},
 						pstcore_enqueue: function (pst, data) {
 							cordova.exec((msg) => {
-								console.log(msg);
+								//console.log(msg);
 							}, (msg) => {
-								console.log(msg);
-							}, "CDVPstCore", "enqueue", [pst, data]);
+								//console.log(msg);
+							}, "CDVPstCore", "enqueue", [pst, data.buffer.slice(data.byteOffset, data.byteLength + data.byteOffset)]);
 						},
 						pstcore_set_param: function (pst, pst_name, param, value) {
+						    params[param] = [pst, pst_name, param, value];
+							//cordova.exec((msg) => {
+							//	//console.log(msg);
+							//}, (msg) => {
+							//	//console.log(msg);
+							//}, "CDVPstCore", "set_param", [pst, pst_name, param, value]);
+						},
+						pstcore_add_set_param_done_callback: function (pst, fn_name) {
 							cordova.exec((msg) => {
-								console.log(msg);
+								window[fn_name](msg);
 							}, (msg) => {
 								console.log(msg);
-							}, "CDVPstCore", "set_param", [pst, pst_name, param, value]);
-						},
+							}, "CDVPstCore", "on_set_param", [pst]);
+                        },
 					};
 					console.log("pstcore initialized");
 					const config = {
