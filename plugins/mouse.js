@@ -189,6 +189,13 @@ var create_plugin = (function() {
 			document
 				.addEventListener("gesturechange", gestureChangeHandler, false);
 			document.addEventListener("gestureend", gestureEndHandler, false);
+		} else {
+            var mc = new Hammer.Manager(document);
+            var pinch = new Hammer.Pinch();
+            mc.add([pinch]);
+            mc.on("pinchstart", gestureStartHandler);
+            mc.on("pinchmove", gestureChangeHandler);
+            mc.on("pinchend", gestureEndHandler);
 		}
 	}
 	return function(plugin_host) {

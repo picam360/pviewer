@@ -360,7 +360,8 @@
 			}
 			document.addEventListener("touchmove", function(event) {
 				if (!app.menu.isMenuOpened()
-					&& app.navi.getCurrentPage().name != "about.html") {
+					&& app.navi.getCurrentPage().name != "about.html"
+					&& event.cancelable !== false) {
 					event.preventDefault();
 				}
 			}, supportsPassive ? {
