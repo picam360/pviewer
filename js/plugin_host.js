@@ -13,7 +13,7 @@ function PluginHost(core, options) {
 	var m_view_offset_lock = false;
 	var m_view_quat = new THREE.Quaternion();
 	var m_north = 0;
-	var m_view_quat_changed_callback = null;
+	var m_view_quat_changed_callbacks = [];
 
 	var query = GetQueryString();
 	
@@ -130,12 +130,12 @@ function PluginHost(core, options) {
 		},
 		set_view_quat: function(value) {
 			m_view_quat = value.clone();
-			if(m_view_quat_changed_callback){
-				m_view_quat_changed_callback(m_view_quat.clone(), m_view_offset.clone());
+			for(var callback of m_view_quat_changed_callbacks){
+				callback(m_view_quat.clone(), m_view_offset.clone());
 			}
 		},
 		on_view_quat_changed: function(callback) {
-			m_view_quat_changed_callback = callback;
+			m_view_quat_changed_callbacks.push(callback);
 		},
 		get_view_north: function() {
 			return m_north;
@@ -162,8 +162,8 @@ function PluginHost(core, options) {
 			}
 			m_view_offset = value;
 			auto_scroll = false;
-			if(m_view_quat_changed_callback){
-				m_view_quat_changed_callback(m_view_quat.clone(), m_view_offset.clone());
+			for(var callback of m_view_quat_changed_callbacks){
+				callback(m_view_quat.clone(), m_view_offset.clone());
 			}
 		},
 		get_view_offset: function() {

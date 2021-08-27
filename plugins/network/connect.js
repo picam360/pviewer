@@ -533,6 +533,7 @@ var create_plugin = (function() {
 				}catch (e){
 					m_permanent_options = {};
 				}
+				var bln_open_dialog = false;
 				Object.assign(options, m_permanent_options);
 				if(m_query['wrtc-key'] == undefined){
 					if(options['wrtc-key']){
@@ -540,6 +541,7 @@ var create_plugin = (function() {
 					}
 				}else{
 					m_permanent_options['default-interface'] = 'wrtc';
+					bln_open_dialog = true;
 				}
 				if(m_query['ws-url'] == undefined){
 					if(options['ws-url']){
@@ -547,10 +549,9 @@ var create_plugin = (function() {
 					}
 				}else{
 					m_permanent_options['default-interface'] = 'ws';
+					bln_open_dialog = true;
 				}
-				if(m_query['wrtc-key']){
-					open_dialog();
-				}else if(m_query['ws-url']){
+				if(bln_open_dialog){
 					open_dialog();
 				}
 			},

@@ -24,6 +24,31 @@ var create_plugin = (function() {
 		return result;
 	}
 
+	function quat_to_yxy(q)
+	{
+		//console.log("quat_to_yxy",q);
+		if(q.x == 0 && q.z == 0){
+			var res = [];
+			res[0] = 2*Math.atan(q.y/q.w);
+			res[1] = 0;
+			res[2] = 0;
+			return res;
+		}else{
+			function twoaxisrot(r11, r12, r21, r31, r32) {
+				//console.log("twoaxisrot",r11, r12, r21, r31, r32);
+				var res = [];
+				res[0] = Math.atan2(r11, r12);
+				res[1] = Math.acos(Math.max(-1.0, Math.min(r21, 1.0)));
+				res[2] = Math.atan2(r31, r32);
+				return res;
+			}
+			var res = twoaxisrot(2 * (q.x * q.y - q.w * q.z), 2 * (q.y * q.z + q.w * q.x),
+					q.w * q.w - q.x * q.x + q.y * q.y - q.z * q.z,
+					2 * (q.x * q.y + q.w * q.z), -2 * (q.y * q.z - q.w * q.x), res);
+			return res;
+		}
+	}
+
 	var query = GetQueryString();
 	if (query['view-offset']) {
 		var split = query['view-offset'].split(',');
@@ -38,6 +63,7 @@ var create_plugin = (function() {
 		var sx = 0, sy = 0;
 		var ex = 0, ey = 0;
 		var fov = 120;
+		var pre_view_offset_quat = null;
 		var mousedownFunc = function(ev) {
 			if (ev.type == "touchstart") {
 				ev.clientX = ev.targetTouches[0].clientX;
@@ -108,6 +134,18 @@ var create_plugin = (function() {
 				// + THREE.Math.radToDeg(diff_euler.z));
 				// }
 			} else {
+				if(pre_view_offset_quat != null && !pre_view_offset_quat.equals(view_offset_quat)){
+					var cur_quat = view_offset_quat.clone().multiply(view_quat.clone());
+					var cur_pu = quat_to_yxy(cur_quat);
+					var ori_pu = quat_to_yxy(view_quat);
+					var yaw = (cur_pu[0] - ori_pu[0])*180.0/Math.PI;
+					var pitch = (cur_pu[1] - ori_pu[1])*180.0/Math.PI;
+					var yaw2 = (cur_pu[2] - ori_pu[2])*180.0/Math.PI;
+					console.log("mouse.js : yaw,pitch,yaw2",yaw,pitch,yaw2);
+		
+					abs_pitch = pitch;
+					abs_yaw = yaw;
+				}
 				abs_pitch = Math.min(Math.max(abs_pitch + pitch_diff, 0), 180);
 				abs_yaw = (abs_yaw - roll_diff) % 360;
 				var euler = new THREE.Euler()
@@ -117,6 +155,7 @@ var create_plugin = (function() {
 				var next_quat = new THREE.Quaternion().setFromEuler(euler);
 				view_offset_quat = next_quat.clone().multiply(view_quat.clone()
 					.conjugate());
+				pre_view_offset_quat = view_offset_quat.clone();
 			}
 			m_plugin_host.set_view_offset(view_offset_quat);
 
