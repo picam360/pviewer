@@ -6,6 +6,7 @@ var create_plugin = (function() {
 	var m_timediff_ms = 0;
 	var m_watches = [];
 	var m_options = {};
+	var m_permanent_options = {};
 	var m_query = GetQueryString();
 		
 	function addMenuButton(name, txt) {
@@ -57,17 +58,6 @@ var create_plugin = (function() {
 	            }
 	          }
 	        });
-			if(m_query['wrtc-key']){
-				$( "#dialog-message-wrtckey" ).val(m_query['wrtc-key']);
-				$( "input[name='dialog-message-type']" ).val(['wrtc']);
-				$( "#dialog-message-wsurl" ).prop('disabled', true);
-				$( "#dialog-message-wrtckey" ).prop('disabled', false);
-			}else if(m_query['ws-url']){
-				$( "#dialog-message-wsurl" ).val(m_query['ws-url']);
-				$( "input[name='dialog-message-type']" ).val(['ws']);
-				$( "#dialog-message-wsurl" ).prop('disabled', false);
-				$( "#dialog-message-wrtckey" ).prop('disabled', true);
-			}
 			$( "input[name='dialog-message-type']" ).change(() => {
 				switch($( "input[name='dialog-message-type']:checked" ).val()){
 				case "ws":
@@ -80,11 +70,26 @@ var create_plugin = (function() {
 					break;
 				}
 			});
+			if(m_query['wrtc-key']){
+				$( "#dialog-message-wrtckey" ).val(m_query['wrtc-key']);
+			}
+			if(m_query['ws-url']){
+				$( "#dialog-message-wsurl" ).val(m_query['ws-url']);
+			}
+			if(m_permanent_options['default-interface'] == 'wrtc'){
+				$( "input[name='dialog-message-type']" ).val(['wrtc']).trigger("change");
+			}else if(m_permanent_options['default-interface'] == 'ws'){
+				$( "input[name='dialog-message-type']" ).val(['ws']).trigger("change");
+			}
 		});
     }
     
     
 	function start_ws(url, callback, err_callback) {
+		m_permanent_options['ws-url'] = url;
+		m_permanent_options['default-interface'] = 'ws';
+		localStorage.setItem('connect_js_options', JSON.stringify(m_permanent_options));
+
 		try{
 			// websocket
 			var ws_url = "ws://" + url.slice(url.indexOf("://")+3);
@@ -103,6 +108,10 @@ var create_plugin = (function() {
 	}
 	
 	function start_p2p(p2p_uuid, callback, err_callback) {
+		m_permanent_options['wrtc-key'] = p2p_uuid;
+		m_permanent_options['default-interface'] = 'wrtc';
+		localStorage.setItem('connect_js_options', JSON.stringify(m_permanent_options));
+
 		var options = {
 			host: SIGNALING_HOST,
 			port: SIGNALING_PORT,
@@ -519,11 +528,25 @@ var create_plugin = (function() {
 						open_dialog();
 					};
 				});
-				if(options['wrtc-key']){
-					m_query['wrtc-key'] = options['wrtc-key'];
+				try{
+					m_permanent_options = JSON.parse(localStorage.getItem('connect_js_options')) || {};
+				}catch (e){
+					m_permanent_options = {};
 				}
-				if(options['ws-url']){
-					m_query['ws-url'] = options['ws-url'];
+				Object.assign(options, m_permanent_options);
+				if(m_query['wrtc-key'] == undefined){
+					if(options['wrtc-key']){
+						m_query['wrtc-key'] = options['wrtc-key'];
+					}
+				}else{
+					m_permanent_options['default-interface'] = 'wrtc';
+				}
+				if(m_query['ws-url'] == undefined){
+					if(options['ws-url']){
+						m_query['ws-url'] = options['ws-url'];
+					}
+				}else{
+					m_permanent_options['default-interface'] = 'ws';
 				}
 				if(m_query['wrtc-key']){
 					open_dialog();
