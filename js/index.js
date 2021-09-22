@@ -1027,7 +1027,7 @@ var app = (function() {
 							}, "CDVPstCore", "enqueue", [pst, data.buffer.slice(data.byteOffset, data.byteLength + data.byteOffset)]);
 						},
 						pstcore_set_param: function (pst, pst_name, param, value) {
-						    params[param] = [pst, pst_name, param, value];
+						    params[pst_name + "." + param] = [pst, pst_name, param, value];
 							//cordova.exec((msg) => {
 							//	//console.log(msg);
 							//}, (msg) => {
