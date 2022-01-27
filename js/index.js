@@ -740,7 +740,7 @@ var app = (function() {
 						//var def = "pvf_loader ! " + decoder +  " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30 dual_window=1 swap_window=1 mode=speed";
 						pst = m_pstcore.pstcore_build_pstreamer(def);
 					}else if (window.cordova) {
-						var def = "pvf_loader ! cordova_binder";
+						var def = "cordova_binder";
 						pst = m_pstcore.pstcore_build_pstreamer(def);
 						
 						var platform = cordova.platformId;
@@ -748,16 +748,16 @@ var app = (function() {
 							platform = process.platform;
 						}
 						
-						var binder_def = "libde265_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+						var binder_def = "pvf_loader ! libde265_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
 						switch(platform){
 						case "ios":
-							binder_def = "vt_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+							binder_def = "pvf_loader ! vt_decoder name=decoder vtbf=1 ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
 							break;
 						case "android":
-							binder_def = "mc_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+							binder_def = "pvf_loader ! mc_decoder name=decoder mcbf=1  ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
 							break;
 						case "darwin":
-							binder_def = "vt_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+							binder_def = "pvf_loader ! vt_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
 							break;
 						case "win32":
 							break;
