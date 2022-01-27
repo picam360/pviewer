@@ -673,7 +673,10 @@ var app = (function() {
 					if (m_query['pvf']) {
 						m_pvf_url = m_query['pvf'];
 						m_applink = url;
-					}else{
+					} else if (m_query['applink'].endsWith('pvf')){
+						m_pvf_url = m_query['applink'];
+						m_applink = url;
+					} else {
 						m_pvf_url = "";
 						m_applink = "";
 					}
