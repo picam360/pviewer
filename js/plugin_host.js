@@ -291,11 +291,12 @@ function PluginHost(core, options) {
 			});
 		},
 		refresh_app_menu: function() {
-			if (p2p_num_of_members >= 2) {
-				document.getElementById("uiCall").style.display = "block";
-			} else {
-				document.getElementById("uiCall").style.display = "none";
-			}
+			//TODO:webrtc call
+			// if (p2p_num_of_members >= 2) {
+			// 	document.getElementById("uiCall").style.display = "block";
+			// } else {
+			// 	document.getElementById("uiCall").style.display = "none";
+			// }
 			for (var i = 0; i < m_plugins.length; i++) {
 				if (m_plugins[i].on_refresh_app_menu) {
 					m_plugins[i].on_refresh_app_menu(app.menu);
@@ -327,6 +328,20 @@ function PluginHost(core, options) {
 		},
 		is_streaming : function(url) {
 			return core.get_pst() != null;
+		},
+		fire_pst_started(pstcore, pst){
+			for (var i = 0; i < m_plugins.length; i++) {
+				if (m_plugins[i].pst_started) {
+					m_plugins[i].pst_started(pstcore, pst);
+				}
+			}
+		},
+		fire_pst_stopped(pstcore, pst){
+			for (var i = 0; i < m_plugins.length; i++) {
+				if (m_plugins[i].pst_stopped) {
+					m_plugins[i].pst_stopped(pstcore, pst);
+				}
+			}
 		},
 	};
 	return self;

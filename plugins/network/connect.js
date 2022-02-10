@@ -521,12 +521,6 @@ var create_plugin = (function() {
 			init_options : function(options) {
 				m_plugin_host.loadScript("plugins/network/signaling.js").then(() => {
 					return m_plugin_host.loadScript("plugins/network/rtp.js");
-				}).then(() => {
-					return addMenuButton("swConnect", "Connect");
-				}).then(() => {
-					swConnect.onclick = (evt) => {
-						open_dialog();
-					};
 				});
 				try{
 					m_permanent_options = JSON.parse(localStorage.getItem('connect_js_options')) || {};
@@ -554,6 +548,13 @@ var create_plugin = (function() {
 				if(bln_open_dialog){
 					open_dialog();
 				}
+			},
+			on_restore_app_menu : function(callback) {
+				addMenuButton("swConnect", "Connect").then(() => {
+					swConnect.onclick = (evt) => {
+						open_dialog();
+					};
+				});
 			},
 			event_handler : function(sender, event) {
 			},

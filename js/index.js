@@ -819,6 +819,8 @@ var app = (function() {
 				document.removeEventListener("mousedown", mousedownFunc);
 				document.removeEventListener("mousemove", mousemoveFunc);
 				
+				self.plugin_host.fire_pst_stopped(m_pstcore, m_pst);
+
 				m_pstcore.pstcore_destroy_pstreamer(m_pst);
 				m_pst = null;
 				
@@ -836,6 +838,8 @@ var app = (function() {
 				m_pstcore.pstcore_set_param(m_pst, "decoder", "simd", m_options.simd ? "1" : "0");
 				m_pstcore.pstcore_set_param(m_pst, "decoder", "n_threads", m_options.boost ? "2" : "1");
 				
+				self.plugin_host.fire_pst_started(m_pstcore, m_pst);
+
 				m_pstcore.pstcore_start_pstreamer(m_pst);
 				self.plugin_host.send_event("app", "open_applink");
 				
@@ -895,6 +899,8 @@ var app = (function() {
 				return self.plugin_host.init_plugins();
 			})
 			.then(() => {
+				self.plugin_host.restore_app_menu();
+				
 				if(m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS") {
 				}else{
 					self.plugin_host.on_view_quat_changed((view_quat, view_offset_quat) => {
