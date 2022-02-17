@@ -54,14 +54,6 @@ var create_plugin = (function() {
 		
 		var plugin = {
 			init_options : function(options) {
-				addMenuButton("swFile", "File").then(() => {
-					swFile.onclick = async (evt) => {
-						await prompt("select pvf file", "file open").then((opt) => {
-						}).catch((err) => {
-							throw "FILE_OPEN_CANCELLED";
-						});
-					};
-				});
 				document.body.addEventListener('drop', function (e) {
 					if(e.dataTransfer.files[0].name.endsWith(".pvf")){
 						
@@ -75,6 +67,16 @@ var create_plugin = (function() {
 						var url = "applink=?pvf=" + encodeURIComponent(pvf);
 						app.open_applink(url);
 					}
+				});
+			},
+			on_restore_app_menu : function(callback) {
+				addMenuButton("swFile", "File").then(() => {
+					swFile.onclick = async (evt) => {
+						await prompt("select pvf file", "file open").then((opt) => {
+						}).catch((err) => {
+							throw "FILE_OPEN_CANCELLED";
+						});
+					};
 				});
 			},
 			event_handler : function(sender, event) {
