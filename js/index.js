@@ -769,7 +769,11 @@ var app = (function() {
 						}
 						m_pstcore.pstcore_set_param(pst, "cordova_binder", "def", binder_def);//call native pstcore_build_pstreamer
 					} else {
-						var def = "pvf_loader ! libde265_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+						var decoder = "libde265_decoder";
+						if('VideoDecoder' in window){
+							decoder = "wc_decoder";
+						}
+						var def = "pvf_loader ! " + decoder + " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
 						pst = m_pstcore.pstcore_build_pstreamer(def);
 					}
 				
@@ -1056,7 +1060,7 @@ var app = (function() {
 							"plugin_paths" : [
 								"plugins/pvf_loader_st.so",
 								"plugins/libde265_decoder_st.so",
-								//"plugins/timer_st.so",
+								"plugins/wc_decoder_st.so",
 								"plugins/pgl_renderer_st.so",
 							],
 							"window_size" : {
@@ -1108,7 +1112,7 @@ var app = (function() {
 									"plugin_paths" : [
 										"plugins/pvf_loader_st.so",
 										"plugins/libde265_decoder_st.so",
-										//"plugins/timer_st.so",
+										"plugins/wc_decoder_st.so",
 										"plugins/pgl_renderer_st.so",
 									],
 									"window_size" : {
