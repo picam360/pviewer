@@ -718,65 +718,50 @@ var app = (function() {
 
 
 					var pst;
+					var platform = "web";
 					if(!window.PstCoreLoader && window.cordova){
-						var platform = cordova.platformId;
+						platform = cordova.platformId;
 						if(platform == 'electron'){
 							platform = process.platform;
 						}
-						var decoder = "libde265_decoder";
-						switch(platform){
-						case "ios":
-							decoder = "vt_decoder";
-							break;
-						case "android":
-							decoder = "mc_decoder";
-							break;
-						case "darwin":
-							decoder = "vt_decoder";
-							break;
-						case "win32":
-							break;
-						case "linux":
-							break;
-						}
-						var def = "pvf_loader ! " + decoder +  " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
-						//var def = "pvf_loader ! " + decoder +  " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30 dual_window=1 swap_window=1 mode=speed";
-						pst = m_pstcore.pstcore_build_pstreamer(def);
+						pst = m_pstcore.pstcore_build_pstreamer("pvf_loader ! splitter");
 					}else if (window.cordova) {
 						var def = "cordova_binder";
 						pst = m_pstcore.pstcore_build_pstreamer(def);
-						
-						var platform = cordova.platformId;
+
+						m_pstcore.pstcore_set_param(pst, "cordova_binder", "def", "pvf_loader ! splitter");//call native pstcore_build_pstreamer
+
+						platform = cordova.platformId;
 						if(platform == 'electron'){
 							platform = process.platform;
 						}
-						
-						var binder_def = "pvf_loader ! libde265_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
-						switch(platform){
-						case "ios":
-							binder_def = "pvf_loader ! vt_decoder name=decoder vtbf=1 ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
-							break;
-						case "android":
-							binder_def = "pvf_loader ! mc_decoder name=decoder mcbf=1  ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
-							break;
-						case "darwin":
-							binder_def = "pvf_loader ! vt_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
-							break;
-						case "win32":
-							break;
-						case "linux":
-							break;
-						}
-						m_pstcore.pstcore_set_param(pst, "cordova_binder", "def", binder_def);//call native pstcore_build_pstreamer
 					} else {
-						var decoder = "libde265_decoder";
-						if('VideoDecoder' in window){
-							decoder = "wc_decoder";
-						}
-						var def = "pvf_loader ! " + decoder + " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
-						pst = m_pstcore.pstcore_build_pstreamer(def);
+						pst = m_pstcore.pstcore_build_pstreamer("pvf_loader ! splitter");
 					}
-				
+					switch(platform){
+					case "ios":
+						m_pstcore.pstcore_set_param(pst, "splitter", "vout0", 
+							"vt_decoder name=decoder vtbf=1 ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30");
+						break;
+					case "android":
+						m_pstcore.pstcore_set_param(pst, "splitter", "vout0", 
+							"mc_decoder name=decoder mcbf=1 ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30");
+						break;
+					case "darwin":
+						m_pstcore.pstcore_set_param(pst, "splitter", "vout0", 
+							"vt_decoder name=decoder vtbf=1 ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30");
+						break;
+					default:
+						m_pstcore.pstcore_set_param(pst, "splitter", "vout0", "composite_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30");
+						m_pstcore.pstcore_set_param(pst, "splitter.vout0.decoder", "h265", "libde265_decoder");
+						if('VideoDecoder' in window){
+							m_pstcore.pstcore_set_param(pst, "splitter.vout0.decoder", "h264", "wc_decoder");
+						}else{
+							m_pstcore.pstcore_set_param(pst, "splitter.vout0.decoder", "h264", "h264bsd_decoder");
+						}
+						break;
+					}
+					m_pstcore.pstcore_set_param(pst, "splitter", "aout0", "opus_decoder ! oal_player");
 					m_pstcore.pstcore_set_param(pst, "pvf_loader", "url", m_pvf_url);
 					m_pstcore.pstcore_set_param(pst, "pvf_loader", "head_query",
 							(m_query['head-query'] ? m_query['head-query'] : ""));
@@ -926,6 +911,24 @@ var app = (function() {
 				m_canvas = document.createElement("canvas");
 				//m_canvas = document.getElementById('panorama');
 				//m_overlay = document.getElementById('overlay');
+
+				const config = {
+					"plugin_paths" : [
+						"plugins/splitter_st.so",
+						"plugins/composite_decoder_st.so",
+						"plugins/opus_decoder_st.so",
+						"plugins/oal_player_st.so",
+						"plugins/pvf_loader_st.so",
+						"plugins/libde265_decoder_st.so",
+						"plugins/h264bsd_decoder_st.so",
+						"plugins/wc_decoder_st.so",
+						"plugins/pgl_renderer_st.so",
+					],
+					"window_size" : {
+						"width" : window.innerWidth,
+						"height" : window.innerHeight
+					}
+				}
 				
 				if (window.cordova && cordova.platformId == 'electron'){
 					console = require('electron').remote.require('console');
@@ -1056,18 +1059,6 @@ var app = (function() {
                         },
 					};
 					console.log("pstcore initialized");
-					const config = {
-							"plugin_paths" : [
-								"plugins/pvf_loader_st.so",
-								"plugins/libde265_decoder_st.so",
-								"plugins/wc_decoder_st.so",
-								"plugins/pgl_renderer_st.so",
-							],
-							"window_size" : {
-								"width" : window.innerWidth,
-								"height" : window.innerHeight
-							}
-					}
 					const config_json = JSON.stringify(config);
 					m_pstcore.pstcore_init(config_json);
 
@@ -1108,18 +1099,6 @@ var app = (function() {
 						}(),
 						onRuntimeInitialized : function() {
 							console.log("pstcore initialized");
-							const config = {
-									"plugin_paths" : [
-										"plugins/pvf_loader_st.so",
-										"plugins/libde265_decoder_st.so",
-										"plugins/wc_decoder_st.so",
-										"plugins/pgl_renderer_st.so",
-									],
-									"window_size" : {
-										"width" : window.innerWidth,
-										"height" : window.innerHeight
-									}
-							}
 							if(window.cordova){
 								config.plugin_paths.push("plugins/cordova_binder_st.so");
 							}
