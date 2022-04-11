@@ -761,7 +761,7 @@ var app = (function() {
 						}
 						break;
 					}
-					m_pstcore.pstcore_set_param(pst, "splitter", "aout0", "opus_decoder ! oal_player sync=splitter.vout0.renderer");
+					m_pstcore.pstcore_set_param(pst, "splitter", "aout0", "opus_decoder name=decoder ! oal_player sync=splitter.vout0.renderer");
 					m_pstcore.pstcore_set_param(pst, "pvf_loader", "url", m_pvf_url);
 					m_pstcore.pstcore_set_param(pst, "pvf_loader", "head_query",
 							(m_query['head-query'] ? m_query['head-query'] : ""));
