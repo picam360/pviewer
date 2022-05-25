@@ -274,8 +274,12 @@ var create_plugin = (function() {
 				var min_rtt = 0;
 				var ping_cnt = 0;
 				{ // ping
-					var cmd = "<picam360:command id=\"0\" value=\"ping " +
-						new Date().getTime() + "\" />"
+					if(m_query['stream-def']){
+						var cmd = "<picam360:command id=\"0\" value=\"stream_def " + m_query['stream-def'] + "\" />";
+						var pack = conn.rtp.buildpacket(cmd, PT_CMD);
+						conn.rtp.sendpacket(pack);
+					}
+					var cmd = "<picam360:command id=\"0\" value=\"ping " + new Date().getTime() + "\" />";
 					var pack = conn.rtp.buildpacket(cmd, PT_CMD);
 					conn.rtp.sendpacket(pack);
 					

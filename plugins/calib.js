@@ -12,8 +12,10 @@ var create_plugin = (function() {
 			"D" : "distortion",
 			"E" : "execute",
 			"G" : "chromatic_aberration",
+			"P" : "set_pattern",
 			"0" : "cam0",
 			"1" : "cam1",
+			"2" : "cam2",
 		};
 		window.onkeydown = function(e) {
 			var key = String.fromCharCode(e.keyCode);
