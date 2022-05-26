@@ -11,6 +11,7 @@ var create_plugin = (function() {
 			"C" : "center",
 			"D" : "distortion",
 			"E" : "execute",
+			"H" : "rectify",
 			"G" : "chromatic_aberration",
 			"P" : "set_pattern",
 			"0" : "cam0",

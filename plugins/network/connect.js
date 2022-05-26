@@ -304,14 +304,12 @@ var create_plugin = (function() {
 							console.log(name + ":" + value + ":rtt=" +
 								rtt);
 							if (ping_cnt < 10) {
-								var cmd = "<picam360:command id=\"0\" value=\"ping " +
-									new Date().getTime() + "\" />"
+								var cmd = "<picam360:command id=\"0\" value=\"ping " +　new Date().getTime() + "\" />";
 								var pack = conn.rtp.buildpacket(cmd, PT_CMD);
 								conn.rtp.sendpacket(pack);
 								return;
 							} else {
-								var cmd = "<picam360:command id=\"0\" value=\"set_timediff_ms " +
-									timediff_ms + "\" />";
+								var cmd = "<picam360:command id=\"0\" value=\"set_timediff_ms " + timediff_ms + "\" />";
 								var pack = conn.rtp.buildpacket(cmd, PT_CMD);
 								conn.rtp.sendpacket(pack);
 		
