@@ -220,7 +220,7 @@ var create_plugin = (function() {
                     decoder = "vt_decoder";
                     break;
                 case "android":
-                    decoder = "mc_decoder";
+                    decoder = "mc_decoder mcbf=1 dup=1";
                     break;
                 case "darwin":
                     decoder = "vt_decoder";
@@ -230,7 +230,7 @@ var create_plugin = (function() {
                 case "linux":
                     break;
                 }
-                var def = decoder +  " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30 mode=speed";
+                var def = decoder +  " name=decoder ! pgl_renderer name=renderer mode=speed format=p2s w=640 h=480 fps=30";
                 //var def = decoder +  " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30 dual_window=1 swap_window=1 mode=speed";
                 pst = pstcore.pstcore_build_pstreamer(def);
             }else if (window.cordova) {
@@ -248,7 +248,7 @@ var create_plugin = (function() {
 					decoder = "vt_decoder";
 					break;
 				case "android":
-					decoder = "mc_decoder";
+					decoder = "mc_decoder mcbf=1 dup=1";
 					break;
 				case "darwin":
 					decoder = "vt_decoder";
@@ -258,7 +258,7 @@ var create_plugin = (function() {
 				case "linux":
 					break;
 				}
-				var binder_def = decoder + " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+				var binder_def = decoder + " name=decoder ! pgl_renderer name=renderer mode=speed format=p2s w=640 h=480 fps=30";
 				pstcore.pstcore_set_param(pst, "cordova_binder", "def", binder_def);//call native pstcore_build_pstreamer
 			} else {
 				var def = "libde265_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
