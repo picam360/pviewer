@@ -208,62 +208,7 @@ var create_plugin = (function() {
                 param_pendings: [],
                 enqueue_pendings: [],
             };
-            var pst;
-            if(!window.PstCoreLoader && window.cordova){
-                var platform = cordova.platformId;
-                if(platform == 'electron'){
-                    platform = process.platform;
-                }
-                var decoder = "libde265_decoder";
-                switch(platform){
-                case "ios":
-                    decoder = "vt_decoder";
-                    break;
-                case "android":
-                    decoder = "mc_decoder mcbf=1 dup=1";
-                    break;
-                case "darwin":
-                    decoder = "vt_decoder";
-                    break;
-                case "win32":
-                    break;
-                case "linux":
-                    break;
-                }
-                var def = "splitter vthrough=1 aout0='opus_decoder ! oal_player' ! " + decoder +  " name=decoder ! pgl_renderer name=renderer mode=speed format=p2s w=640 h=480 fps=30";
-                //var def = decoder +  " name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30 dual_window=1 swap_window=1 mode=speed";
-                pst = pstcore.pstcore_build_pstreamer(def);
-            }else if (window.cordova) {
-                var def = "cordova_binder";
-                pst = pstcore.pstcore_build_pstreamer(def);
-                
-                var platform = cordova.platformId;
-                if(platform == 'electron'){
-                    platform = process.platform;
-                }
-                
-                var decoder = "libde265_decoder";
-                switch(platform){
-                case "ios":
-                    decoder = "vt_decoder";
-                    break;
-                case "android":
-                    decoder = "mc_decoder mcbf=1 dup=1";
-                    break;
-                case "darwin":
-                    decoder = "vt_decoder";
-                    break;
-                case "win32":
-                    break;
-                case "linux":
-                    break;
-                }
-                var binder_def = "splitter vthrough=1 aout0='opus_decoder ! oal_player' ! " + decoder + " name=decoder ! pgl_renderer name=renderer mode=speed format=p2s w=640 h=480 fps=30";
-                pstcore.pstcore_set_param(pst, "cordova_binder", "def", binder_def);//call native pstcore_build_pstreamer
-            } else {
-                var def = "splitter vthrough=1 aout0='opus_decoder ! oal_player' ! " + "libde265_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
-                pst = pstcore.pstcore_build_pstreamer(def);
-            }
+			var pst = app.build_pst("");
             conn.attr.pst = pst;
             
             //main.html

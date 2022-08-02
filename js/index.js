@@ -412,7 +412,10 @@ var app = (function() {
 		
 		set_param: function(pst_name, param, value) {
 			if(m_pstcore && m_pst) {
-				m_pstcore.pstcore_set_param(m_pst, pst_name, param, value);
+				if(m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS"){
+				}else{
+					m_pstcore.pstcore_set_param(m_pst, pst_name, param, value);
+				}
 			}
 		},
 		
@@ -717,51 +720,7 @@ var app = (function() {
 					}
 
 
-					var pst;
-					var platform = "web";
-					if(!window.PstCoreLoader && window.cordova){
-						platform = cordova.platformId;
-						if(platform == 'electron'){
-							platform = process.platform;
-						}
-						pst = m_pstcore.pstcore_build_pstreamer("pvf_loader ! splitter");
-					}else if (window.cordova) {
-						var def = "cordova_binder";
-						pst = m_pstcore.pstcore_build_pstreamer(def);
-
-						m_pstcore.pstcore_set_param(pst, "cordova_binder", "def", "pvf_loader ! splitter");//call native pstcore_build_pstreamer
-
-						platform = cordova.platformId;
-						if(platform == 'electron'){
-							platform = process.platform;
-						}
-					} else {
-						pst = m_pstcore.pstcore_build_pstreamer("pvf_loader ! splitter");
-					}
-					switch(platform){
-					case "ios":
-						m_pstcore.pstcore_set_param(pst, "splitter", "vout0", 
-							"vt_decoder name=decoder vtbf=1 ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30");
-						break;
-					case "android":
-						m_pstcore.pstcore_set_param(pst, "splitter", "vout0", 
-							"mc_decoder name=decoder mcbf=1 ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30");
-						break;
-					case "darwin":
-						m_pstcore.pstcore_set_param(pst, "splitter", "vout0", 
-							"vt_decoder name=decoder vtbf=1 ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30");
-						break;
-					default:
-						m_pstcore.pstcore_set_param(pst, "splitter", "vout0", "composite_decoder name=decoder ! pgl_renderer name=renderer format=p2s w=640 h=480 fps=30");
-						m_pstcore.pstcore_set_param(pst, "splitter.vout0.decoder", "h265", "libde265_decoder");
-						if('VideoDecoder' in window){
-							m_pstcore.pstcore_set_param(pst, "splitter.vout0.decoder", "h264", "wc_decoder");
-						}else{
-							m_pstcore.pstcore_set_param(pst, "splitter.vout0.decoder", "h264", "h264bsd_decoder");
-						}
-						break;
-					}
-					m_pstcore.pstcore_set_param(pst, "splitter", "aout0", "opus_decoder name=decoder ! oal_player sync=splitter.vout0.renderer");
+					var pst = self.build_pst("pvf_loader", true);
 					m_pstcore.pstcore_set_param(pst, "pvf_loader", "url", m_pvf_url);
 					m_pstcore.pstcore_set_param(pst, "pvf_loader", "head_query",
 							(m_query['head-query'] ? m_query['head-query'] : ""));
@@ -771,6 +730,59 @@ var app = (function() {
 					self.start_pst(pst);
 				}
 			});
+		},
+
+		build_pst: (loader, audio_sync) => {
+			var pst;
+			var platform = "web";
+			var splitter = "splitter vthrough=1 aout0='opus_decoder ! oal_player" + (audio_sync ? " sync=renderer" : "") + "'";
+			var renderer = "pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+			if(m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS") {
+				renderer += " mode=speed";
+			}
+			if (window.cordova) {
+				if(window.PstCoreLoader){
+					pst = m_pstcore.pstcore_build_pstreamer("cordova_binder");
+				}
+
+				platform = cordova.platformId;
+				if(platform == 'electron'){
+					platform = process.platform;
+				}
+
+				var decoder = "libde265_decoder name=decoder";
+				switch(platform){
+				case "ios":
+				case "darwin":
+					decoder = "vt_decoder name=decoder vtbf=1";
+					break;
+				case "android":
+					decoder = "mc_decoder name=decoder mcbf=1";
+					break;
+				case "win32":
+					break;
+				case "linux":
+					break;
+				}
+
+				var def = (loader ? loader + " ! " : "") + splitter + " ! " + decoder + " ! " + renderer;
+				if(window.PstCoreLoader){//call native pstcore_build_pstreamer
+					m_pstcore.pstcore_set_param(pst, "cordova_binder", "def", def);
+				}else{
+					pst = m_pstcore.pstcore_build_pstreamer(def);
+				}
+			} else {
+				var decoder = "composite_decoder name=decoder";
+				var def = (loader ? loader + " ! " : "") + splitter + " ! " + decoder + " ! " + renderer;
+				pst = m_pstcore.pstcore_build_pstreamer(def);
+				m_pstcore.pstcore_set_param(pst, "decoder", "h265", "libde265_decoder");
+				if('VideoDecoder' in window){
+					m_pstcore.pstcore_set_param(pst, "decoder", "h264", "wc_decoder");
+				}else{
+					m_pstcore.pstcore_set_param(pst, "decoder", "h264", "h264bsd_decoder");
+				}
+			}
+			return pst;
 		},
 		
 		start_pst: (pst, start_callback, end_callback) => {
@@ -819,13 +831,13 @@ var app = (function() {
 			}
 			function _start_pst(){
 				m_pst = pst;
-				m_pstcore.pstcore_set_param(m_pst, "renderer", "win_titlebar", "0");
-				m_pstcore.pstcore_set_param(m_pst, "renderer", "win_size", window.outerWidth + "," + window.outerHeight);
-				m_pstcore.pstcore_set_param(m_pst, "renderer", "win_pos", window.screenX + "," + window.screenY);
-				m_pstcore.pstcore_set_param(m_pst, "decoder", "sao", m_options.sao ? "1" : "0");
-				m_pstcore.pstcore_set_param(m_pst, "decoder", "deblocking", m_options.deblock ? "1" : "0");
-				m_pstcore.pstcore_set_param(m_pst, "decoder", "simd", m_options.simd ? "1" : "0");
-				m_pstcore.pstcore_set_param(m_pst, "decoder", "n_threads", m_options.boost ? "2" : "1");
+				self.set_param("renderer", "win_titlebar", "0");
+				self.set_param("renderer", "win_size", window.outerWidth + "," + window.outerHeight);
+				self.set_param("renderer", "win_pos", window.screenX + "," + window.screenY);
+				self.set_param("decoder", "sao", m_options.sao ? "1" : "0");
+				self.set_param("decoder", "deblocking", m_options.deblock ? "1" : "0");
+				self.set_param("decoder", "simd", m_options.simd ? "1" : "0");
+				self.set_param("decoder", "n_threads", m_options.boost ? "2" : "1");
 				
 				self.plugin_host.fire_pst_started(m_pstcore, m_pst);
 
@@ -895,7 +907,7 @@ var app = (function() {
 					self.plugin_host.on_view_quat_changed((view_quat, view_offset_quat) => {
 						var quat = view_offset_quat.multiply(view_quat);
 						var value = sprintf("%f,%f,%f,%f", quat.x, quat.y, quat.z, quat.w);
-						m_pstcore.pstcore_set_param(m_pst, "", "view_quat", value);
+						self.set_param("", "view_quat", value);
 					});
 				
 					m_mpu = MPU();
@@ -936,26 +948,17 @@ var app = (function() {
 					window.pstcore = require('./js/pstcore-electron.js');
 					window.pstcore.win = require('electron').remote.getCurrentWindow();
 					window.pstcore.win.on('focus', function() {
-						if(m_pst == null){
-							return;
-						}
-						m_pstcore.pstcore_set_param(m_pst, "renderer", "win_focus", "1");
+						self.set_param("renderer", "win_focus", "1");
 						window.pstcore.win.show();
 					});
 					$(window).on('resize', function() {
-						if(m_pst == null){
-							return;
-						}
 						setTimeout(()=>{
-							m_pstcore.pstcore_set_param(m_pst, "renderer", "win_size", window.outerWidth + "," + window.outerHeight);
+							self.set_param("renderer", "win_size", window.outerWidth + "," + window.outerHeight);
 						}, 300);
 					});
 					setInterval(()=>{
-						if(m_pst == null){
-							return;
-						}
 						var dev_offset = window.pstcore.win.isDevToolsOpened() ? window.outerWidth : 0;
-						m_pstcore.pstcore_set_param(m_pst, "renderer", "win_pos", (window.screenX + dev_offset) + "," + window.screenY);
+						self.set_param("renderer", "win_pos", (window.screenX + dev_offset) + "," + window.screenY);
 						var win_focus = m_pstcore.pstcore_get_param(m_pst, "renderer", "win_focus");
 						if(parseInt(win_focus) && !window.pstcore.win.isFocused()){
 							window.pstcore.win.show();
