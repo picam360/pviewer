@@ -1036,11 +1036,15 @@ var app = (function() {
 							}, "CDVPstCore", "destroy_pstreamer", [pst]);
 						},
 						pstcore_enqueue: function (pst, data) {
-							cordova.exec((msg) => {
-								//console.log(msg);
-							}, (msg) => {
-								//console.log(msg);
-							}, "CDVPstCore", "enqueue", [pst, data.buffer.slice(data.byteOffset, data.byteLength + data.byteOffset)]);
+                            var data2 = null;
+                            if(data != null){
+                                data2 = data.buffer.slice(data.byteOffset, data.byteLength + data.byteOffset);
+                            }
+                            cordova.exec((msg) => {
+                                //console.log(msg);
+                            }, (msg) => {
+                                //console.log(msg);
+                            }, "CDVPstCore", "enqueue", [pst, data2]);
 						},
 						pstcore_set_param: function (pst, pst_name, param, value) {
 						    params[pst_name + "." + param] = [pst, pst_name, param, value];
