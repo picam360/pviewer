@@ -30,20 +30,26 @@ var create_plugin = (function() {
 	          }
 	        });
 
-			$('#dialog-message-file').on('change', (evt) => {
-						
-				window.pviewer_get_file = (file) => {
-					return m_filemap[file];
-				}
+			$('#dialog-message-file').on('change', (e) => {
 				
-				var pvf = "pviewer://"+evt.target.files[0].name;
-				m_filemap[pvf] = evt.target.files[0];
+				var pvf = "";
+				if(window.cordova && cordova.platformId == 'electron'){
+					pvf = "file://"+e.target.files[0].path;
+				}else{
+					window.pviewer_get_file = (file) => {
+						return m_filemap[file];
+					}
+					
+					pvf = "pviewer://"+e.target.files[0].name;
+					m_filemap[pvf] = e.target.files[0];
+				}
 				
 				var url = "applink=?pvf=" + encodeURIComponent(pvf);
 				app.open_applink(url);
 				
 				$( "#dialog-message" ).dialog( "close" );
 				app.menu.close();
+				
 			});
 		});
     }
@@ -57,15 +63,21 @@ var create_plugin = (function() {
 				document.body.addEventListener('drop', function (e) {
 					if(e.dataTransfer.files[0].name.endsWith(".pvf")){
 						
-						window.pviewer_get_file = (file) => {
-							return m_filemap[file];
+						var pvf = "";
+						if(window.cordova && cordova.platformId == 'electron'){
+							pvf = "file://"+e.dataTransfer.files[0].path;
+						}else{
+							window.pviewer_get_file = (file) => {
+								return m_filemap[file];
+							}
+							
+							pvf = "pviewer://"+e.dataTransfer.files[0].name;
+							m_filemap[pvf] = e.dataTransfer.files[0];
 						}
-						
-						var pvf = "pviewer://"+e.dataTransfer.files[0].name;
-						m_filemap[pvf] = e.dataTransfer.files[0];
 						
 						var url = "applink=?pvf=" + encodeURIComponent(pvf);
 						app.open_applink(url);
+
 					}
 				});
 			},
