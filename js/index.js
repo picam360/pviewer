@@ -463,15 +463,17 @@ var app = (function() {
 //			self.send_command(cmd);
 			
 			if(!value || (m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS")) {
-				var k = [ 0.000, 0.000 ];
-				var f = [ 1.000, 1.000 ];
-				var str = sprintf("[%f,%f],[%f,%f]", k[0], k[1], f[0], f[1]);
-				self.set_param("renderer", "lens_params", str);
+				var len_param = {
+					k : [ 0.000, 0.000 ],
+					f : [ 1.000, 1.000 ],
+				};
+				self.set_param("renderer", "lens_params", JSON.stringify(len_param));
 			}else{
-				var k = [ 0.156, 0.441 ];
-				var f = [ 1.300, 1.300 ];
-				var str = sprintf("[%f,%f],[%f,%f]", k[0], k[1], f[0], f[1]);
-				self.set_param("renderer", "lens_params", str);
+				var len_param = {
+					k : [ 0.000, 0.000 ],
+					f : [ 1.000, 1.000 ],
+				};
+				self.set_param("renderer", "lens_params", JSON.stringify(len_param));
 			}
 			if(value){
 				self.set_param("renderer", "stereo", "1");
