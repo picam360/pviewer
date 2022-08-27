@@ -430,11 +430,11 @@ var app = (function() {
 		update_canvas_size: function() {
 			if(m_pstcore && m_pstcore.Browser) {
 				m_pstcore.Browser.setCanvasSize(
-						window.innerWidth,
-						window.innerHeight);
+						window.innerWidth * window.devicePixelRatio,
+						window.innerHeight * window.devicePixelRatio);
 			}
-			m_canvas.width = window.innerWidth;
-			m_canvas.height = window.innerHeight;
+			m_canvas.width = window.innerWidth * window.devicePixelRatio;
+			m_canvas.height = window.innerHeight * window.devicePixelRatio;
 			m_canvas.style.width = window.innerWidth + "px";
 			m_canvas.style.height = window.innerHeight + "px";
 			
@@ -697,7 +697,7 @@ var app = (function() {
 					if(!m_query['get-query']){
 						m_query['get-query'] = "";
 					}
-
+					
 					var pst = self.build_pst("pvf_loader", true);
 					m_pstcore.pstcore_set_param(pst, "pvf_loader", "url", m_pvf_url);
 					m_pstcore.pstcore_set_param(pst, "pvf_loader", "head_query",
@@ -719,6 +719,10 @@ var app = (function() {
 				renderer += " mode=speed";
 			}
 			if (window.cordova) {
+				if(window.PstCoreLoader){
+					var def = (loader ? loader + " ! " : "") + "cordova_binder";
+					pst = m_pstcore.pstcore_build_pstreamer(def);
+				}
 
 				platform = cordova.platformId;
 				if(platform == 'electron'){
@@ -740,9 +744,13 @@ var app = (function() {
 					break;
 				}
 
-				var def = (loader ? loader + " ! " : "") + splitter + " ! " + decoder + " ! " + renderer;
-
-				pst = m_pstcore.pstcore_build_pstreamer(def);
+				if(window.PstCoreLoader){//call native pstcore_build_pstreamer
+					var def = splitter + " ! " + decoder + " ! " + renderer;
+					m_pstcore.pstcore_set_param(pst, "cordova_binder", "def", def);
+				}else{
+					var def = (loader ? loader + " ! " : "") + splitter + " ! " + decoder + " ! " + renderer;
+					pst = m_pstcore.pstcore_build_pstreamer(def);
+				}
 			} else {
 				var decoder = "composite_decoder name=decoder";
 				var def = (loader ? loader + " ! " : "") + splitter + " ! " + decoder + " ! " + renderer;
@@ -991,7 +999,9 @@ var app = (function() {
 						}
 					});
 
-				}else if(window.cordova){
+					window.PstCoreLoader = undefined;
+
+				}else if(!window.PstCoreLoader && window.cordova){
 				    var n_poll = 0;
 				    var params = {};
 				    setInterval(()=>{

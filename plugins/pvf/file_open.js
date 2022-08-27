@@ -33,7 +33,7 @@ var create_plugin = (function() {
 			$('#dialog-message-file').on('change', (e) => {
 				
 				var pvf = "";
-				if(window.cordova && cordova.platformId == 'electron'){
+				if(!window.PstCoreLoader && window.cordova){
 					pvf = "file://"+e.target.files[0].path;
 				}else{
 					window.pviewer_get_file = (file) => {
@@ -64,7 +64,7 @@ var create_plugin = (function() {
 					if(e.dataTransfer.files[0].name.endsWith(".pvf")){
 						
 						var pvf = "";
-						if(window.cordova && cordova.platformId == 'electron'){
+						if(!window.PstCoreLoader && window.cordova){
 							pvf = "file://"+e.dataTransfer.files[0].path;
 						}else{
 							window.pviewer_get_file = (file) => {
