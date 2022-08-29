@@ -282,7 +282,12 @@ var create_plugin = (function() {
                 }
                 conn.attr.param_pendings.push(msg);
             };
-            pstcore.pstcore_add_set_param_done_callback(conn.attr.pst, "connect_on_set_param_done_callback");
+
+            if (window.cordova && cordova.platformId == 'electron'){
+                pstcore.pstcore_add_set_param_done_callback(conn.attr.pst, window.connect_on_set_param_done_callback);
+            }else{
+                pstcore.pstcore_add_set_param_done_callback(conn.attr.pst, "connect_on_set_param_done_callback");
+            }
             
             conn.attr.timer = setInterval(function() {
                 try{
