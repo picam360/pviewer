@@ -197,6 +197,10 @@ var create_plugin = (function() {
             pstcore.pstcore_destroy_pstreamer(conn.attr.pst);
             conn.attr.pst = 0;
         }
+        if(conn.attr.audio_pst){
+            pstcore.pstcore_destroy_pstreamer(conn.attr.audio_pst);
+            conn.attr.audio_pst = 0;
+        }
     }
     function init_connection(conn) {
         var pstcore = app.get_pstcore();
@@ -442,14 +446,14 @@ var create_plugin = (function() {
                 }
             });
             // end set rtp callback
-            if (m_options['mic_enable'] == "true") {//audio
+            if (m_query['mic_enable'] == "true") {//audio
                 var def = "oal_capture name=capture ! opus_encoder";
                 pstcore.pstcore_build_pstreamer(def, (pst) => {
                     conn.attr.audio_pst = pst;
                     pstcore.pstcore_set_dequeue_callback(conn.attr.audio_pst, (data)=>{
                         try{
                             if(data == null){//eob
-                                var pack = conn.rtp.build_packet(new Buffer("<eob/>", 'ascii'), PT_ENQUEUE);
+                                var pack = conn.rtp.buildpacket(new TextEncoder().encode("<eob/>", 'ascii'), PT_ENQUEUE);
                                 conn.rtp.sendpacket(pack);
                             }else{
                                 conn.attr.transmitbytes += data.length;
@@ -458,7 +462,7 @@ var create_plugin = (function() {
                                 var CHUNK_SIZE = MAX_PAYLOAD - conn.PacketHeaderLength;
                                 for(var cur=0;cur<data.length;cur+=CHUNK_SIZE){
                                     var chunk = data.slice(cur, cur + CHUNK_SIZE);
-                                    var pack = conn.rtp.build_packet(chunk, PT_ENQUEUE);
+                                    var pack = conn.rtp.buildpacket(chunk, PT_ENQUEUE);
                                     conn.rtp.sendpacket(pack);
                                 }
                             }
