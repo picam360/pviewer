@@ -238,6 +238,16 @@ var app = (function() {
 						}
 						if(_options.plugin_paths){
 							_options.plugin_paths = m_options.plugin_paths.concat(_options.plugin_paths);
+						}else{
+							_options.plugin_paths = m_options.plugin_paths;
+						}
+						if(m_query['plugin_paths']){
+							try{
+								var plugin_paths = JSON.parse(m_query['plugin_paths']);
+								_options.plugin_paths = _options.plugin_paths.concat(plugin_paths);
+							}catch{
+								console.log("json parse failed", m_query['plugin_paths']);
+							}
 						}
 						Object.assign(m_options, _options);
 						fullfill();
@@ -698,32 +708,21 @@ var app = (function() {
 						m_query['get-query'] = "";
 					}
 					
-					var pst = self.build_pst("pvf_loader", true);
-					m_pstcore.pstcore_set_param(pst, "pvf_loader", "url", m_pvf_url);
-					m_pstcore.pstcore_set_param(pst, "pvf_loader", "head_query",
-							(m_query['head-query'] ? m_query['head-query'] : ""));
-					m_pstcore.pstcore_set_param(pst, "pvf_loader", "get_query",
-							(m_query['get-query'] ? m_query['get-query'] : ""));
-							
-					self.start_pst(pst);
+					self.build_pst("pvf_loader", (pst) => {
+						m_pstcore.pstcore_set_param(pst, "pvf_loader", "url", m_pvf_url);
+						m_pstcore.pstcore_set_param(pst, "pvf_loader", "head_query",
+								(m_query['head-query'] ? m_query['head-query'] : ""));
+						m_pstcore.pstcore_set_param(pst, "pvf_loader", "get_query",
+								(m_query['get-query'] ? m_query['get-query'] : ""));
+								
+						self.start_pst(pst);
+					}, true);
 				}
 			});
 		},
-
-		build_pst: (loader, audio_sync) => {
-			var pst;
+		get_decorder_def: () => {
 			var platform = "web";
-			var splitter = "splitter vthrough=1 aout0='opus_decoder ! oal_player" + (audio_sync ? " sync=renderer" : "") + "'";
-			var renderer = "pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
-			if(m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS") {
-				renderer += " mode=speed";
-			}
 			if (window.cordova) {
-				if(window.PstCoreLoader){
-					var def = (loader ? loader + " ! " : "") + "cordova_binder";
-					pst = m_pstcore.pstcore_build_pstreamer(def);
-				}
-
 				platform = cordova.platformId;
 				if(platform == 'electron'){
 					platform = process.platform;
@@ -743,26 +742,34 @@ var app = (function() {
 				case "linux":
 					break;
 				}
+				return decoder;
+			}else{
+				var h264_decoder = ('VideoDecoder' in window) ? "wc_decoder" : "h264bsd_decoder";
+				var decoder = "composite_decoder name=decoder h265=libde265_decoder h264=" + h264_decoder;
+				return decoder;
+			}
+		},
 
-				if(window.PstCoreLoader){//call native pstcore_build_pstreamer
+		build_pst: (loader, callback, audio_sync) => {
+			var splitter = "splitter vthrough=1 aout0='opus_decoder ! oal_player" + (audio_sync ? " sync=renderer" : "") + "'";
+			var renderer = "pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+			if(m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS") {
+				renderer += " mode=speed";
+			}
+			var decoder = self.get_decorder_def();
+			if (window.cordova && window.PstCoreLoader) {
+				var def = (loader ? loader + " ! " : "") + "cordova_binder";
+				m_pstcore.pstcore_build_pstreamer(def, (pst) => {
 					var def = splitter + " ! " + decoder + " ! " + renderer;
 					m_pstcore.pstcore_set_param(pst, "cordova_binder", "def", def);
-				}else{
-					var def = (loader ? loader + " ! " : "") + splitter + " ! " + decoder + " ! " + renderer;
-					pst = m_pstcore.pstcore_build_pstreamer(def);
-				}
+					callback(pst);
+				});
 			} else {
-				var decoder = "composite_decoder name=decoder";
 				var def = (loader ? loader + " ! " : "") + splitter + " ! " + decoder + " ! " + renderer;
-				pst = m_pstcore.pstcore_build_pstreamer(def);
-				m_pstcore.pstcore_set_param(pst, "decoder", "h265", "libde265_decoder");
-				if('VideoDecoder' in window){
-					m_pstcore.pstcore_set_param(pst, "decoder", "h264", "wc_decoder");
-				}else{
-					m_pstcore.pstcore_set_param(pst, "decoder", "h264", "h264bsd_decoder");
-				}
+				m_pstcore.pstcore_build_pstreamer(def, (pst) => {
+					callback(pst);
+				});
 			}
-			return pst;
 		},
 		
 		start_pst: (pst, start_callback, end_callback) => {
@@ -909,7 +916,9 @@ var app = (function() {
 						"plugins/splitter_st.so",
 						"plugins/composite_decoder_st.so",
 						"plugins/opus_decoder_st.so",
+						"plugins/opus_encoder_st.so",
 						"plugins/oal_player_st.so",
+						"plugins/oal_capture_st.so",
 						"plugins/pvf_loader_st.so",
 						"plugins/libde265_decoder_st.so",
 						"plugins/h264bsd_decoder_st.so",
@@ -919,6 +928,14 @@ var app = (function() {
 					"window_size" : {
 						"width" : window.innerWidth,
 						"height" : window.innerHeight
+					}
+				}
+				if(m_query['pstcore_plugin_paths']){
+					try{
+						var plugin_paths = JSON.parse(m_query['pstcore_plugin_paths']);
+						config.plugin_paths.concat(plugin_paths);
+					}catch{
+						console.log("json parse failed", m_query['plugin_paths']);
 					}
 				}
 				
@@ -1002,6 +1019,10 @@ var app = (function() {
 					window.PstCoreLoader = undefined;
 
 				}else if(!window.PstCoreLoader && window.cordova){
+					//for callback
+					window.pstcore_callbacks = [];
+					window.pstcore_callback_args = [];
+
 				    var n_poll = 0;
 				    var params = {};
 				    setInterval(()=>{
@@ -1033,9 +1054,10 @@ var app = (function() {
 						// on_set_param: function (successCallback, errorCallback) {
 						// 	cordova.exec(successCallback, errorCallback, "CDVPstCore", "on_set_param", []);
 						// },
-						pstcore_build_pstreamer: function (def) {
-							cordova.exec((msg) => {
-								console.log(msg);
+						pstcore_build_pstreamer: function (def, callback) {
+							cordova.exec((pst) => {
+								console.log("pstcore_build_pstreamer succeeded", pst);
+								callback(pst);
 							}, (msg) => {
 								console.log(msg);
 							}, "CDVPstCore", "build_pstreamer", [def]);
@@ -1088,12 +1110,32 @@ var app = (function() {
 							//	//console.log(msg);
 							//}, "CDVPstCore", "set_param", [pst, pst_name, param, value]);
 						},
-						pstcore_add_set_param_done_callback: function (pst, fn_name) {
+						pstcore_add_set_param_done_callback: function (pst, callback) {
+							var idx = window.pstcore_callbacks.length;
+							window.pstcore_callbacks.push((pst_name, param, value) => {
+								callback(pst_name, param, value);
+							});
+							window.pstcore_callback_args.push(null);
+							cordova.exec((pst_name, param, value) => {
+								window.pstcore_callbacks[idx](pst_name, param, value);
+							}, (msg) => {
+								console.log(msg);
+							}, "CDVPstCore", "on_set_param", [pst, idx]);
+                        },
+						//pstcore_set_fill_buffer_done_callback will be pstcore_set_dequeue_callback
+						//pstcore_dequeue need to be called just after pstcore_set_fill_buffer_done_callback
+						//so pstcore_dequeue and pstcore_set_fill_buffer_done_callback should be merged
+						pstcore_set_dequeue_callback: function (pst, callback) {
+							var idx = window.pstcore_callbacks.length;
+							window.pstcore_callbacks.push((origin) => {
+								callback(origin);
+							});
+							window.pstcore_callback_args.push(null);
 							cordova.exec((msg) => {
 								window[fn_name](msg);
 							}, (msg) => {
 								console.log(msg);
-							}, "CDVPstCore", "on_set_param", [pst]);
+							}, "CDVPstCore", "set_dequeue_callback", [pst, idx]);
                         },
 					};
 					console.log("pstcore initialized");

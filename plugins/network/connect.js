@@ -193,7 +193,7 @@ var create_plugin = (function() {
         conn.rtp.set_callback(null);
         conn.close();
         if(conn.attr.pst){
-            pstcore.pstcore_remove_set_param_done_callback(conn.attr.pst, "connect_on_set_param_done_callback");
+            pstcore.pstcore_remove_set_param_done_callback(conn.attr.pst, conn.on_set_param_done_callback);
             pstcore.pstcore_destroy_pstreamer(conn.attr.pst);
             conn.attr.pst = 0;
         }
@@ -201,6 +201,7 @@ var create_plugin = (function() {
     function init_connection(conn) {
         var pstcore = app.get_pstcore();
         conn.rtp = Rtp(conn);
+        conn.PacketHeaderLength = 12;
         
         new Promise((resolve, reject) => {
             conn.attr = {
@@ -208,86 +209,83 @@ var create_plugin = (function() {
                 param_pendings: [],
                 enqueue_pendings: [],
             };
-			var pst = app.build_pst("");
-            conn.attr.pst = pst;
-            
-            //main.html
-            app.start_pst(conn.attr.pst, () => {
-                //start
-                //connection establish sequence
-                var timediff_ms = 0;
-                var min_rtt = 0;
-                var ping_cnt = 0;
-                { // ping
-                    if(m_query['stream-def']){
-                        var cmd = "<picam360:command id=\"0\" value=\"stream_def " + m_query['stream-def'] + "\" />";
+			app.build_pst("", (pst) => {
+                conn.attr.pst = pst;
+                
+                //main.html
+                app.start_pst(conn.attr.pst, () => {
+                    //start
+                    //connection establish sequence
+                    var timediff_ms = 0;
+                    var min_rtt = 0;
+                    var ping_cnt = 0;
+                    { // ping
+                        if(m_query['stream-def']){
+                            var cmd = "<picam360:command id=\"0\" value=\"stream_def " + m_query['stream-def'] + "\" />";
+                            var pack = conn.rtp.buildpacket(cmd, PT_CMD);
+                            conn.rtp.sendpacket(pack);
+                        }
+                        var cmd = "<picam360:command id=\"0\" value=\"ping " + new Date().getTime() + "\" />";
                         var pack = conn.rtp.buildpacket(cmd, PT_CMD);
                         conn.rtp.sendpacket(pack);
+                        
+                        console.log("establish sequence started");
                     }
-                    var cmd = "<picam360:command id=\"0\" value=\"ping " + new Date().getTime() + "\" />";
-                    var pack = conn.rtp.buildpacket(cmd, PT_CMD);
-                    conn.rtp.sendpacket(pack);
-                    
-                    console.log("establish sequence started");
-                }
-                conn.rtp.set_callback(function(packet) {
-                    if (packet.GetPayloadType() == PT_STATUS) {
-                        var str = (new TextDecoder)
-                            .decode(packet.GetPayload());
-                        var split = str.split('"');
-                        var name = split[1];
-                        var value = split[3].split(' ');
-                        if (name == "pong") {
-                            ping_cnt++;
-                            var now = new Date().getTime();
-                            var rtt = now - parseInt(value[0]);
-                            var _timediff_ms = value[1] - (now - rtt / 2);
-                            if (min_rtt == 0 || rtt < min_rtt) {
-                                min_rtt = rtt;
-                                timediff_ms = _timediff_ms;
-                            }
-                            console.log(name + ":" + value + ":rtt=" +
-                                rtt);
-                            if (ping_cnt < 10) {
-                                var cmd = "<picam360:command id=\"0\" value=\"ping " +　new Date().getTime() + "\" />";
-                                var pack = conn.rtp.buildpacket(cmd, PT_CMD);
-                                conn.rtp.sendpacket(pack);
-                                return;
-                            } else {
-                                var cmd = "<picam360:command id=\"0\" value=\"set_timediff_ms " + timediff_ms + "\" />";
-                                var pack = conn.rtp.buildpacket(cmd, PT_CMD);
-                                conn.rtp.sendpacket(pack);
-        
-                                console.log("min_rtt=" + min_rtt +
-                                    ":timediff_ms:" +
-                                    timediff_ms);
-                                m_timediff_ms = timediff_ms;
-                                pstcore.pstcore_set_param(conn.attr.pst,
-                                    "network", "timediff", (timediff_ms/1000).toString());
-                                resolve();
+                    conn.rtp.set_callback(function(packet) {
+                        if (packet.GetPayloadType() == PT_STATUS) {
+                            var str = (new TextDecoder)
+                                .decode(packet.GetPayload());
+                            var split = str.split('"');
+                            var name = split[1];
+                            var value = split[3].split(' ');
+                            if (name == "pong") {
+                                ping_cnt++;
+                                var now = new Date().getTime();
+                                var rtt = now - parseInt(value[0]);
+                                var _timediff_ms = value[1] - (now - rtt / 2);
+                                if (min_rtt == 0 || rtt < min_rtt) {
+                                    min_rtt = rtt;
+                                    timediff_ms = _timediff_ms;
+                                }
+                                console.log(name + ":" + value + ":rtt=" +
+                                    rtt);
+                                if (ping_cnt < 10) {
+                                    var cmd = "<picam360:command id=\"0\" value=\"ping " +　new Date().getTime() + "\" />";
+                                    var pack = conn.rtp.buildpacket(cmd, PT_CMD);
+                                    conn.rtp.sendpacket(pack);
+                                    return;
+                                } else {
+                                    var cmd = "<picam360:command id=\"0\" value=\"set_timediff_ms " + timediff_ms + "\" />";
+                                    var pack = conn.rtp.buildpacket(cmd, PT_CMD);
+                                    conn.rtp.sendpacket(pack);
+            
+                                    console.log("min_rtt=" + min_rtt +
+                                        ":timediff_ms:" +
+                                        timediff_ms);
+                                    m_timediff_ms = timediff_ms;
+                                    pstcore.pstcore_set_param(conn.attr.pst,
+                                        "network", "timediff", (timediff_ms/1000).toString());
+                                    resolve();
+                                }
                             }
                         }
-                    }
+                    });
+                }, () =>{
+                    //stop
+                    deinit_connection(conn);
                 });
-            }, () =>{
-                //stop
-                deinit_connection(conn);
             });
         }).then(() => {
             m_plugin_host.set_info("waiting image...");
             
-            window.connect_on_set_param_done_callback = (msg) => {
+            conn.on_set_param_done_callback = (pst_name, param, value) => {
                 if(conn.attr.in_pt_set_param){//prevent loop back
                     return;
                 }
-                conn.attr.param_pendings.push(msg);
+                conn.attr.param_pendings.push("[\"" + pst_name + "\",\"" + param + "\",\"" + value + "\"]");
             };
-
-            if (window.cordova && cordova.platformId == 'electron'){
-                pstcore.pstcore_add_set_param_done_callback(conn.attr.pst, window.connect_on_set_param_done_callback);
-            }else{
-                pstcore.pstcore_add_set_param_done_callback(conn.attr.pst, "connect_on_set_param_done_callback");
-            }
+            
+            pstcore.pstcore_add_set_param_done_callback(conn.attr.pst, conn.on_set_param_done_callback);
             
             conn.attr.timer = setInterval(function() {
                 try{
@@ -443,6 +441,34 @@ var create_plugin = (function() {
                     }
                 }
             });
+            // end set rtp callback
+            if (m_options['mic_enable'] == "true") {//audio
+                var def = "oal_capture name=capture ! opus_encoder";
+                pstcore.pstcore_build_pstreamer(def, (pst) => {
+                    conn.attr.audio_pst = pst;
+                    pstcore.pstcore_set_dequeue_callback(conn.attr.audio_pst, (data)=>{
+                        try{
+                            if(data == null){//eob
+                                var pack = conn.rtp.build_packet(new Buffer("<eob/>", 'ascii'), PT_ENQUEUE);
+                                conn.rtp.sendpacket(pack);
+                            }else{
+                                conn.attr.transmitbytes += data.length;
+                                //console.log("dequeue " + data.length);
+                                var MAX_PAYLOAD = (conn.getMaxPayload ? conn.getMaxPayload() : 16*1024);//16k is webrtc max
+                                var CHUNK_SIZE = MAX_PAYLOAD - conn.PacketHeaderLength;
+                                for(var cur=0;cur<data.length;cur+=CHUNK_SIZE){
+                                    var chunk = data.slice(cur, cur + CHUNK_SIZE);
+                                    var pack = conn.rtp.build_packet(chunk, PT_ENQUEUE);
+                                    conn.rtp.sendpacket(pack);
+                                }
+                            }
+                        }catch(err){
+                            console.log(err);
+                        }
+                    });
+                    pstcore.pstcore_start_pstreamer(conn.attr.audio_pst);
+                });
+			}
         });
     };
     
