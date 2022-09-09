@@ -390,24 +390,6 @@ var app = (function() {
 		},
 		
 		start_animate: function() {
-			setTimeout(() => {
-				self.set_stereo(m_options.stereo);
-				self.set_deblock(m_options.deblock);
-				self.set_simd(m_options.simd);
-				self.set_boost(m_options.boost);
-				self.plugin_host.set_fov(m_options.fov);
-			}, 500);//wait pgl init
-			
-			if (m_options.view_offset) {
-				var euler = new THREE.Euler(THREE.Math
-					.degToRad(m_options.view_offset[0]), THREE.Math
-					.degToRad(m_options.view_offset[1]), THREE.Math
-					.degToRad(m_options.view_offset[2]), "YXZ");
-
-				var quat = new THREE.Quaternion()
-					.setFromEuler(euler);
-				self.plugin_host.set_view_offset(quat);
-			}
 			
 			function redraw() {
 				m_pstcore._pstcore_poll_events();
@@ -839,6 +821,19 @@ var app = (function() {
 				$('#container').append(m_canvas);
 				setTimeout(() => { //delay
 					self.update_canvas_size();
+					self.set_stereo(m_options.stereo);
+					self.plugin_host.set_fov(m_options.fov);
+				
+					if (m_options.view_offset) {
+						var euler = new THREE.Euler(THREE.Math
+							.degToRad(m_options.view_offset[0]), THREE.Math
+							.degToRad(m_options.view_offset[1]), THREE.Math
+							.degToRad(m_options.view_offset[2]), "YXZ");
+		
+						var quat = new THREE.Quaternion()
+							.setFromEuler(euler);
+						self.plugin_host.set_view_offset(quat);
+					}
 					if(start_callback){
 						start_callback();
 					}
