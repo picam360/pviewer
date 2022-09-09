@@ -800,13 +800,30 @@ var app = (function() {
 			}
 			function _start_pst(){
 				m_pst = pst;
-				self.set_param("renderer", "win_titlebar", "0");
-				self.set_param("renderer", "win_size", window.outerWidth + "," + window.outerHeight);
-				self.set_param("renderer", "win_pos", window.screenX + "," + window.screenY);
-				self.set_param("decoder", "sao", m_options.sao ? "1" : "0");
-				self.set_param("decoder", "deblocking", m_options.deblock ? "1" : "0");
-				self.set_param("decoder", "simd", m_options.simd ? "1" : "0");
-				self.set_param("decoder", "n_threads", m_options.boost ? "2" : "1");
+				{//pre params
+					self.set_param("renderer", "win_titlebar", "0");
+					self.set_param("renderer", "win_size", window.outerWidth + "," + window.outerHeight);
+					self.set_param("renderer", "win_pos", window.screenX + "," + window.screenY);
+					self.set_param("decoder", "sao", m_options.sao ? "1" : "0");
+					self.set_param("decoder", "deblocking", m_options.deblock ? "1" : "0");
+					self.set_param("decoder", "simd", m_options.simd ? "1" : "0");
+					self.set_param("decoder", "n_threads", m_options.boost ? "2" : "1");
+				}
+				setTimeout(() => {
+					self.set_stereo(m_options.stereo);
+					self.plugin_host.set_fov(m_options.fov);
+				
+					if (m_options.view_offset) {
+						var euler = new THREE.Euler(THREE.Math
+							.degToRad(m_options.view_offset[0]), THREE.Math
+							.degToRad(m_options.view_offset[1]), THREE.Math
+							.degToRad(m_options.view_offset[2]), "YXZ");
+		
+						var quat = new THREE.Quaternion()
+							.setFromEuler(euler);
+						self.plugin_host.set_view_offset(quat);
+					}
+				}, 250);//post params
 				
 				self.plugin_host.fire_pst_started(m_pstcore, m_pst);
 
@@ -821,19 +838,6 @@ var app = (function() {
 				$('#container').append(m_canvas);
 				setTimeout(() => { //delay
 					self.update_canvas_size();
-					self.set_stereo(m_options.stereo);
-					self.plugin_host.set_fov(m_options.fov);
-				
-					if (m_options.view_offset) {
-						var euler = new THREE.Euler(THREE.Math
-							.degToRad(m_options.view_offset[0]), THREE.Math
-							.degToRad(m_options.view_offset[1]), THREE.Math
-							.degToRad(m_options.view_offset[2]), "YXZ");
-		
-						var quat = new THREE.Quaternion()
-							.setFromEuler(euler);
-						self.plugin_host.set_view_offset(quat);
-					}
 					if(start_callback){
 						start_callback();
 					}
