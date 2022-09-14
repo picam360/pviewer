@@ -39,14 +39,12 @@ function PacketHeader(pack) {
 }
 
 function Rtp(conn) {
-	if(!conn){
-		return null;
-	}
 
 	var m_bitrate = 0;
 	var m_last_packet_time = Date.now();
 	var m_conn = conn;
 	var m_callback = null;
+	var m_callback_args = null;
 	var m_sequencenumber = 0;
 	var m_timestamp = 0;
 	var m_src = 0;
@@ -61,20 +59,22 @@ function Rtp(conn) {
 		}))).buffer;
 	}
 	
-	m_conn.addEventListener('message', function(data){
-		if(data instanceof MessageEvent){
-			data = data.data;
-		}
-		if(data instanceof Blob) {
-			var fr = new FileReader();
-			fr.onload = function(evt) {
-				self.packet_handler(evt.target.result);
-			};
-			fr.readAsArrayBuffer(data);
-		}else{
-			self.packet_handler(data);
-		}
-	});
+	if(m_conn){
+		m_conn.addEventListener('message', function(data){
+			if(data instanceof MessageEvent){
+				data = data.data;
+			}
+			if(data instanceof Blob) {
+				var fr = new FileReader();
+				fr.onload = function(evt) {
+					self.packet_handler(evt.target.result);
+				};
+				fr.readAsArrayBuffer(data);
+			}else{
+				self.packet_handler(data);
+			}
+		});
+	}
 	
 	var self = {
 		get_info : function() {
@@ -97,7 +97,7 @@ function Rtp(conn) {
 				// });
 				for (var i = 0; i < packets.length; i++) {
 					sum_packet += packets[i].byteLength;
-					m_callback(PacketHeader(packets[i]));
+					m_callback(PacketHeader(packets[i]), m_callback_args);
 				}
 			}
 
@@ -109,8 +109,9 @@ function Rtp(conn) {
 			}
 			m_last_packet_time = packet_time;
 		},
-		set_callback : function(callback) {
+		set_callback : function(callback, args) {
 			m_callback = callback;
+			m_callback_args = args;
 		},
 		sendpacket : function(pack) {
 			if (!m_conn) {

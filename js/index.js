@@ -690,7 +690,8 @@ var app = (function() {
 						m_query['get-query'] = "";
 					}
 					
-					self.build_pst("pvf_loader", (pst) => {
+					var splitter = "splitter vthrough=1 aout0='opus_decoder ! oal_player sync=renderer'";
+					self.build_pst("pvf_loader", splitter, (pst) => {
 						m_pstcore.pstcore_set_param(pst, "pvf_loader", "url", m_pvf_url);
 						m_pstcore.pstcore_set_param(pst, "pvf_loader", "head_query",
 								(m_query['head-query'] ? m_query['head-query'] : ""));
@@ -698,7 +699,7 @@ var app = (function() {
 								(m_query['get-query'] ? m_query['get-query'] : ""));
 								
 						self.start_pst(pst);
-					}, true);
+					});
 				}
 			});
 		},
@@ -732,8 +733,7 @@ var app = (function() {
 			}
 		},
 
-		build_pst: (loader, callback, audio_sync) => {
-			var splitter = "splitter vthrough=1 aout0='opus_decoder ! oal_player" + (audio_sync ? " sync=renderer" : "") + "'";
+		build_pst: (loader, splitter, callback) => {
 			var renderer = "pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
 			if(m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS") {
 				renderer += " mode=speed";
@@ -742,12 +742,12 @@ var app = (function() {
 			if (window.cordova && window.PstCoreLoader) {
 				var def = (loader ? loader + " ! " : "") + "cordova_binder";
 				m_pstcore.pstcore_build_pstreamer(def, (pst) => {
-					var def = splitter + " ! " + decoder + " ! " + renderer;
+					var def = (splitter ? splitter + " ! " : "") + decoder + " ! " + renderer;
 					m_pstcore.pstcore_set_param(pst, "cordova_binder", "def", def);
 					callback(pst);
 				});
 			} else {
-				var def = (loader ? loader + " ! " : "") + splitter + " ! " + decoder + " ! " + renderer;
+				var def = (loader ? loader + " ! " : "") + (splitter ? splitter + " ! " : "") + decoder + " ! " + renderer;
 				m_pstcore.pstcore_build_pstreamer(def, (pst) => {
 					callback(pst);
 				});

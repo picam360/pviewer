@@ -8,6 +8,7 @@ var create_plugin = (function() {
     var m_options = {};
     var m_permanent_options = {};
     var m_query = GetQueryString();
+    var mt_client;
         
     function addMenuButton(name, txt) {
             return new Promise((resolve, reject) => {
@@ -197,9 +198,9 @@ var create_plugin = (function() {
             pstcore.pstcore_destroy_pstreamer(conn.attr.pst);
             conn.attr.pst = 0;
         }
-        if(conn.attr.audio_pst){
-            pstcore.pstcore_destroy_pstreamer(conn.attr.audio_pst);
-            conn.attr.audio_pst = 0;
+        if(conn.attr.mt_pst){
+            pstcore.pstcore_destroy_pstreamer(conn.attr.mt_pst);
+            conn.attr.mt_pst = 0;
         }
     }
     function init_connection(conn) {
@@ -213,7 +214,7 @@ var create_plugin = (function() {
                 param_pendings: [],
                 enqueue_pendings: [],
             };
-			app.build_pst("", (pst) => {
+			app.build_pst("", "", (pst) => {
                 conn.attr.pst = pst;
                 
                 //main.html
@@ -443,35 +444,13 @@ var create_plugin = (function() {
                             }
                         }
                     }
+                }else if(mt_client){
+                    mt_client.handle_packet(packet);
                 }
             });
             // end set rtp callback
-            if (m_query['mic_enable'] == "true") {//audio
-                var def = "oal_capture name=capture ! opus_encoder";
-                pstcore.pstcore_build_pstreamer(def, (pst) => {
-                    conn.attr.audio_pst = pst;
-                    pstcore.pstcore_set_dequeue_callback(conn.attr.audio_pst, (data)=>{
-                        try{
-                            if(data == null){//eob
-                                var pack = conn.rtp.buildpacket(new TextEncoder().encode("<eob/>", 'ascii'), PT_ENQUEUE);
-                                conn.rtp.sendpacket(pack);
-                            }else{
-                                conn.attr.transmitbytes += data.length;
-                                //console.log("dequeue " + data.length);
-                                var MAX_PAYLOAD = (conn.getMaxPayload ? conn.getMaxPayload() : 16*1024);//16k is webrtc max
-                                var CHUNK_SIZE = MAX_PAYLOAD - conn.PacketHeaderLength;
-                                for(var cur=0;cur<data.length;cur+=CHUNK_SIZE){
-                                    var chunk = data.slice(cur, cur + CHUNK_SIZE);
-                                    var pack = conn.rtp.buildpacket(chunk, PT_ENQUEUE);
-                                    conn.rtp.sendpacket(pack);
-                                }
-                            }
-                        }catch(err){
-                            console.log(err);
-                        }
-                    });
-                    pstcore.pstcore_start_pstreamer(conn.attr.audio_pst);
-                });
+            if (m_query['meeting-enable'] == "true") {//meeting
+                mt_client = MeetingClient(conn.rtp);
 			}
         });
     };
