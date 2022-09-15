@@ -62,8 +62,8 @@ var create_plugin = (function() {
                     break;
                 }
             });
-            if(m_query['wrtc-key']){
-                $( "#dialog-message-wrtckey" ).val(m_query['wrtc-key']);
+            if(m_query['host-wrtc-key']){
+                $( "#dialog-message-wrtckey" ).val(m_query['host-wrtc-key']);
             }
             if(m_permanent_options['default-interface'] == 'wrtc'){
                 $( "input[name='dialog-message-type']" ).val(['wrtc']).trigger("change");
@@ -271,7 +271,7 @@ var create_plugin = (function() {
     }
     
     function start_p2p(p2p_uuid, callback, err_callback) {
-        m_permanent_options['wrtc-key'] = p2p_uuid;
+        m_permanent_options['host-wrtc-key'] = p2p_uuid;
         m_permanent_options['default-interface'] = 'wrtc';
         localStorage.setItem(PERMANENT_KEY, JSON.stringify(m_permanent_options));
 
@@ -443,9 +443,9 @@ var create_plugin = (function() {
                 }
                 var bln_open_dialog = false;
                 Object.assign(options, m_permanent_options);
-                if(m_query['wrtc-key'] == undefined){
-                    if(options['wrtc-key']){
-                        m_query['wrtc-key'] = options['wrtc-key'];
+                if(m_query['host-wrtc-key'] == undefined){
+                    if(options['host-wrtc-key']){
+                        m_query['host-wrtc-key'] = options['host-wrtc-key'];
                     }
                 }else{
                     m_permanent_options['default-interface'] = 'wrtc';
