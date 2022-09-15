@@ -170,7 +170,8 @@ function MeetingHost(selfclient_enable) {
 						//rewrite src
 						var pack = packet.GetPacketData();
 						var view = new DataView(pack.buffer);
-						view.setUint32(pack.byteOffset + 8, 128, false);
+						view.setUint32(pack.byteOffset + 8, src, false);
+						//console.log("handle_packet", src);
 						break;
 					}
 				}
@@ -191,7 +192,7 @@ function MeetingHost(selfclient_enable) {
 								_rtp.sendpacket(_packet.GetPacketData());
 							}
 							_rtp.sendpacket(packet.GetPacketData());//eob
-						}catch{
+						}catch(err){
 							self.remove_client(_rtp);
 						}
 					}

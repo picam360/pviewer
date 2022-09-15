@@ -1,4 +1,13 @@
 function PacketHeader(pack) {
+	if(pack instanceof Uint8Array){
+		if(pack.byteOffset > 0){
+			var _pack = new ArrayBuffer(pack.byteLength);
+			new Uint8Array(_pack, 0).set(new Uint8Array(pack, 0, ack.byteLength));
+			pack = _pack;
+		}else{
+			pack = pack.buffer;
+		}
+	}
 	var view = new DataView(pack);
 	var packetlength = view.byteLength;
 	var payloadtype = view.getUint8(1, false) & 0x7F;
