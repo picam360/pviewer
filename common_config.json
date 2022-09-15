@@ -4,6 +4,7 @@
 		"plugins/icade.js",
 		"plugins/pvf/file_open.js",
 		"plugins/network/connect.js",
+		"plugins/network/host.js",
 		"plugins/tour/tour.js"
 	]
 }

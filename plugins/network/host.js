@@ -211,11 +211,12 @@ var create_plugin = (function() {
 
 				conn.attr.timer = setInterval(function() {
 					try{
-						var now = new Date().getTime();
-						if (now - conn.attr.timeout > 60000) {
-							console.log("timeout");
-							throw "TIMEOUT";
-						}
+                        //TODO : need to timeout
+						//var now = new Date().getTime();
+						// if (now - conn.attr.timeout > 60000) {
+						// 	console.log("timeout");
+						// 	throw "TIMEOUT";
+						// }
 						if(conn.attr.param_pendings.length > 0) {
 							var msg = "[" + conn.attr.param_pendings.join(',') + "]";
 							var pack = rtp.buildpacket(msg, PT_SET_PARAM);
@@ -455,8 +456,8 @@ var create_plugin = (function() {
                 }
             },
             on_restore_app_menu : function(callback) {
-                addMenuButton("swMeetingHost", "MeetingHost").then(() => {
-                    swMeetingHost.onclick = (evt) => {
+                addMenuButton("swHost", "Host").then(() => {
+                    swHost.onclick = (evt) => {
                         open_dialog();
                     };
                 });
