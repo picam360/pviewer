@@ -703,9 +703,10 @@ var app = (function() {
 				}
 			});
 		},
-		get_decorder_def: () => {
+		get_decorder_def: (callback) => {
 			var platform = "web";
 			if (window.cordova) {
+
 				platform = cordova.platformId;
 				if(platform == 'electron'){
 					platform = process.platform;
@@ -725,11 +726,30 @@ var app = (function() {
 				case "linux":
 					break;
 				}
-				return decoder;
+				callback(decoder);
+
 			}else{
-				var h264_decoder = ('VideoDecoder' in window) ? "wc_decoder" : "h264bsd_decoder";
-				var decoder = "composite_decoder name=decoder h265=libde265_decoder h264=" + h264_decoder;
-				return decoder;
+				
+				const mediaConfig = {
+					type: 'file',
+					video: {
+						contentType : 'video/mp4;codecs="hev1.1.6.L93.B0"',
+						width: 2048,
+						height: 2048,
+						bitrate: 10000, 
+						framerate: 30,
+					},
+				};
+				navigator.mediaCapabilities.decodingInfo(mediaConfig).then((info) =>{
+					if(info.supported){
+						var decoder = "wc_decoder";
+						callback(decoder);
+					}else{
+						var h264_decoder = ('VideoDecoder' in window) ? "wc_decoder" : "h264bsd_decoder";
+						var decoder = "composite_decoder name=decoder h265=libde265_decoder h264=" + h264_decoder;
+						callback(decoder);
+					}	
+				});
 			}
 		},
 
@@ -738,20 +758,21 @@ var app = (function() {
 			if(m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS") {
 				renderer += " mode=speed";
 			}
-			var decoder = self.get_decorder_def();
-			if (window.cordova && window.PstCoreLoader) {
-				var def = (loader ? loader + " ! " : "") + "cordova_binder";
-				m_pstcore.pstcore_build_pstreamer(def, (pst) => {
-					var def = (splitter ? splitter + " ! " : "") + decoder + " ! " + renderer;
-					m_pstcore.pstcore_set_param(pst, "cordova_binder", "def", def);
-					callback(pst);
-				});
-			} else {
-				var def = (loader ? loader + " ! " : "") + (splitter ? splitter + " ! " : "") + decoder + " ! " + renderer;
-				m_pstcore.pstcore_build_pstreamer(def, (pst) => {
-					callback(pst);
-				});
-			}
+			self.get_decorder_def((decoder) => {
+				if (window.cordova && window.PstCoreLoader) {
+					var def = (loader ? loader + " ! " : "") + "cordova_binder";
+					m_pstcore.pstcore_build_pstreamer(def, (pst) => {
+						var def = (splitter ? splitter + " ! " : "") + decoder + " ! " + renderer;
+						m_pstcore.pstcore_set_param(pst, "cordova_binder", "def", def);
+						callback(pst);
+					});
+				} else {
+					var def = (loader ? loader + " ! " : "") + (splitter ? splitter + " ! " : "") + decoder + " ! " + renderer;
+					m_pstcore.pstcore_build_pstreamer(def, (pst) => {
+						callback(pst);
+					});
+				}
+			});
 		},
 		
 		start_pst: (pst, start_callback, end_callback) => {
@@ -922,6 +943,7 @@ var app = (function() {
 						"plugins/libde265_decoder_st.so",
 						"plugins/h264bsd_decoder_st.so",
 						"plugins/wc_decoder_st.so",
+						"plugins/ms_capture_st.so",
 						"plugins/pgl_renderer_st.so",
 					],
 					"window_size" : {
