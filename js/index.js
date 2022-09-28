@@ -846,6 +846,26 @@ var app = (function() {
 					}
 				}, 250);//post params
 				
+				if(m_pstcore.DGLFWView){
+					m_pstcore.DGLFWView.setCreateWindowCallback((canvas) => {
+						m_canvas = canvas;
+						$('#container').append(m_canvas);
+						self.update_canvas_size();
+						if(start_callback){
+							start_callback();
+						}
+					});
+				}else{
+					m_canvas = document.createElement("canvas");//dummy
+					$('#container').append(m_canvas);
+					setTimeout(() => { //delay
+						self.update_canvas_size();
+						if(start_callback){
+							start_callback();
+						}
+					}, 0);
+				}
+				
 				self.plugin_host.fire_pst_started(m_pstcore, m_pst);
 
 				m_pstcore.pstcore_start_pstreamer(m_pst);
@@ -855,14 +875,6 @@ var app = (function() {
 				document.addEventListener("touchstart", mousedownFunc);
 				document.addEventListener("mousedown", mousedownFunc);
 				document.addEventListener("mousemove", mousemoveFunc);
-				
-				$('#container').append(m_canvas);
-				setTimeout(() => { //delay
-					self.update_canvas_size();
-					if(start_callback){
-						start_callback();
-					}
-				}, 0);
 			}
 			if(m_pst){
 				_stop_pst();
@@ -927,7 +939,7 @@ var app = (function() {
 				}
 				
 				
-				m_canvas = document.createElement("canvas");
+				m_canvas = document.createElement("canvas");//dummy
 				//m_canvas = document.getElementById('panorama');
 				//m_overlay = document.getElementById('overlay');
 
@@ -1196,10 +1208,6 @@ var app = (function() {
 						printErr: function(e) {
 							console.error(e);
 						},
-						canvas: function() {
-							var e = m_canvas;
-							return e;
-						}(),
 						onRuntimeInitialized : function() {
 							console.log("pstcore initialized");
 							if(window.cordova){
