@@ -129,9 +129,46 @@ function MeetingHost(selfclient_enable) {
 	var m_clients = [];
 	var m_packet_pendings = {};
 	var m_in_pt_set_param;
+	var m_param_pendings = [];
 	var m_selfclient;
 	var m_selfrtp_c;
 	var m_selfrtp_h;
+
+	var m_pst;
+
+	var def = "ms_capture ! pgl_remapper s=1024x1024 edge_r=0.0 ho=1 deg_offset=-90,0,0 ! wc_encoder";
+	pstcore.pstcore_build_pstreamer(def, (pst) => {
+		m_pst = pst;
+		pstcore.pstcore_set_dequeue_callback(pst, (data)=>{
+			try{
+				for(var rtp of m_clients){
+					if(data == null){//eob
+						var pack = rtp.buildpacket(new TextEncoder().encode("<eob/>", 'ascii'), PT_ENQUEUE);
+						rtp.sendpacket(pack);
+					}else{
+						//console.log("dequeue " + data.length);
+						var MAX_PAYLOAD = 16*1024;//16k is webrtc max
+						var CHUNK_SIZE = MAX_PAYLOAD - PacketHeaderLength;
+						for(var cur=0;cur<data.length;cur+=CHUNK_SIZE){
+							var chunk = data.slice(cur, cur + CHUNK_SIZE);
+							var pack = rtp.buildpacket(chunk, PT_ENQUEUE);
+							rtp.sendpacket(pack);
+						}
+					}
+				}
+			}catch(err){
+				console.log(err);
+			}
+		});
+		// pstcore.pstcore_add_set_param_done_callback(pst, (msg)=>{
+		// 	//console.log("set_param " + msg);
+		// 	if(m_in_pt_set_param){//prevent loop back
+		// 		return;
+		// 	}
+		// 	m_param_pendings.push(msg);
+		// });
+		pstcore.pstcore_start_pstreamer(pst);
+	});
 
 	var self = {
 		add_client : (rtp) => {
@@ -205,12 +242,13 @@ function MeetingHost(selfclient_enable) {
 				}
 				
 			} else if (packet.GetPayloadType() == PT_MT_SET_PARAM) { // set_param
+			} else if (packet.GetPayloadType() == PT_SET_PARAM) { // set_param
 				var str = (new TextDecoder)
 					.decode(packet.GetPayload());
 				var list = JSON.parse(str);
 				for(var ary of list){
 					m_in_pt_set_param = true;
-					//pstcore.pstcore_set_param(m_pst, ary[0], ary[1], ary[2]);
+					pstcore.pstcore_set_param(m_pst, ary[0], ary[1], ary[2]);
 					m_in_pt_set_param = false;
 				}
 			}

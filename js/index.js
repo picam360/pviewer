@@ -943,8 +943,10 @@ var app = (function() {
 						"plugins/libde265_decoder_st.so",
 						"plugins/h264bsd_decoder_st.so",
 						"plugins/wc_decoder_st.so",
+						"plugins/wc_encoder_st.so",
 						"plugins/ms_capture_st.so",
 						"plugins/pgl_renderer_st.so",
+						"plugins/pgl_remapper_st.so",
 					],
 					"window_size" : {
 						"width" : window.innerWidth,

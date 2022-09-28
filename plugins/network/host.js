@@ -239,32 +239,32 @@ var create_plugin = (function() {
 				
 				rtp.set_callback(function(packet, _rtp) {
 					conn.attr.timeout = new Date().getTime();
-					if (packet.GetPayloadType() == PT_SET_PARAM) { // set_param
-						var str = (new TextDecoder)
-							.decode(packet.GetPayload());
-						try{
-							var list = JSON.parse(str);
-							for(var ary of list){
-								conn.attr.in_pt_set_param = true;
-								//pstcore.pstcore_set_param(conn.attr.pst, ary[0], ary[1], ary[2]);
-								conn.attr.in_pt_set_param = false;
-							}
-						}catch{
-							console.log("fail parse json", str);
-						}
-					}else if (packet.GetPayloadType() == PT_CMD) {
-						var cmd = packet.GetPacketData().toString('ascii', packet
-							.GetHeaderLength());
-						var split = cmd.split('\"');
-						var id = split[1];
-						var value = split[3];
-						//plugin_host.send_command(value, conn);
-						if (options.debug >= 5) {
-							console.log("cmd got :" + cmd);
-						}
-					}else{
+					// if (packet.GetPayloadType() == PT_SET_PARAM) { // set_param
+					// 	var str = (new TextDecoder)
+					// 		.decode(packet.GetPayload());
+					// 	try{
+					// 		var list = JSON.parse(str);
+					// 		for(var ary of list){
+					// 			conn.attr.in_pt_set_param = true;
+					// 			//pstcore.pstcore_set_param(conn.attr.pst, ary[0], ary[1], ary[2]);
+					// 			conn.attr.in_pt_set_param = false;
+					// 		}
+					// 	}catch{
+					// 		console.log("fail parse json", str);
+					// 	}
+					// }else if (packet.GetPayloadType() == PT_CMD) {
+					// 	var cmd = packet.GetPacketData().toString('ascii', packet
+					// 		.GetHeaderLength());
+					// 	var split = cmd.split('\"');
+					// 	var id = split[1];
+					// 	var value = split[3];
+					// 	//plugin_host.send_command(value, conn);
+					// 	if (options.debug >= 5) {
+					// 		console.log("cmd got :" + cmd);
+					// 	}
+					// }else{
                         m_mt_host.handle_packet(packet, _rtp);
-                    }
+                    //}
 				}, rtp);
 			});
 		}
