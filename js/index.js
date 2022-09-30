@@ -420,11 +420,6 @@ var app = (function() {
 		},
 		
 		update_canvas_size: function() {
-			if(m_pstcore && m_pstcore.Browser) {
-				m_pstcore.Browser.setCanvasSize(
-						window.innerWidth * window.devicePixelRatio,
-						window.innerHeight * window.devicePixelRatio);
-			}
 			m_canvas.width = window.innerWidth * window.devicePixelRatio;
 			m_canvas.height = window.innerHeight * window.devicePixelRatio;
 			m_canvas.style.width = window.innerWidth + "px";
