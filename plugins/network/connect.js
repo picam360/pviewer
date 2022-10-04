@@ -449,7 +449,7 @@ var create_plugin = (function() {
                 }
             });
             // end set rtp callback
-            if (m_query['meeting-enable'] == "true") {//meeting
+            if (m_options.meeting_enabled) {//meeting
                 mt_client = MeetingClient(conn.rtp);
 			}
         });
@@ -483,14 +483,18 @@ var create_plugin = (function() {
             init_options : function(options) {
                 m_plugin_host.loadScript("plugins/network/signaling.js").then(() => {
                     return m_plugin_host.loadScript("plugins/network/rtp.js");
+                }).then(() => {
+                    return m_plugin_host.loadScript("plugins/network/meeting.js");
                 });
                 try{
                     m_permanent_options = JSON.parse(localStorage.getItem('connect_js_options')) || {};
                 }catch (e){
                     m_permanent_options = {};
                 }
-                var bln_open_dialog = false;
                 Object.assign(options, m_permanent_options);
+                m_options = options;
+
+                var bln_open_dialog = false;
                 if(m_query['wrtc-key'] == undefined){
                     if(options['wrtc-key']){
                         m_query['wrtc-key'] = options['wrtc-key'];
@@ -507,6 +511,11 @@ var create_plugin = (function() {
                     m_permanent_options['default-interface'] = 'ws';
                     bln_open_dialog = true;
                 }
+                if (m_query['meeting-enabled'] == "true") {//meeting
+                    m_options.meeting_enabled = true;
+                }
+
+
                 if(bln_open_dialog){
                     open_dialog();
                 }

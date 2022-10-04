@@ -841,7 +841,7 @@ var app = (function() {
 					}
 				}, 250);//post params
 				
-				if(m_pstcore.DGLFWView){
+				if(!window.cordova && m_pstcore.DGLFWView){
 					m_pstcore.DGLFWView.setCreateWindowCallback((canvas) => {
 						m_canvas = canvas;
 						$('#container').append(m_canvas);

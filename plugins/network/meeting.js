@@ -49,7 +49,7 @@ function MeetingClient(host) {
 				if(!m_pst_eqs[src]){ //input stream
 					if(m_pst_eq_building_src < 0){
 						m_pst_eq_building_src = src;
-						var def = "opus_decoder ! oal_player realtime=1 buffer=0.2";
+						var def = "opus_decoder ! oal_player realtime=1 buffer=0.5";
 						pstcore.pstcore_build_pstreamer(def, (pst) => {
 							m_pst_eqs[m_pst_eq_building_src] = pst;
 							pstcore.pstcore_start_pstreamer(m_pst_eqs[m_pst_eq_building_src]);
@@ -136,12 +136,15 @@ function MeetingHost(selfclient_enable) {
 
 	var m_pst;
 
-	var def = "ms_capture ! pgl_remapper s=1024x1024 edge_r=0.0 ho=1 deg_offset=-90,0,0 ! wc_encoder";
+	var def = "ms_capture ! pgl_remapper s=1024x1024 edge_r=0.1 ho=1 deg_offset=-90,0,0 ! wc_encoder br=4000000";
 	pstcore.pstcore_build_pstreamer(def, (pst) => {
 		m_pst = pst;
 		pstcore.pstcore_set_dequeue_callback(pst, (data)=>{
 			try{
 				for(var rtp of m_clients){
+					if(rtp == m_selfrtp_c){//skip
+						continue;
+					}
 					if(data == null){//eob
 						var pack = rtp.buildpacket(new TextEncoder().encode("<eob/>", 'ascii'), PT_ENQUEUE);
 						rtp.sendpacket(pack);

@@ -14,6 +14,7 @@ function PluginHost(core, options) {
 	var m_view_quat = new THREE.Quaternion();
 	var m_north = 0;
 	var m_view_quat_changed_callbacks = [];
+	var m_loaded_scripts = {};
 
 	var query = GetQueryString();
 	
@@ -280,14 +281,21 @@ function PluginHost(core, options) {
 		},
 		loadScript: (path) => {
 			return new Promise((resolve, reject) => {
-				self.getFileUrl(path, function(url) {
-					var script = document
-						.createElement('script');
-					script.onload = resolve;
-					script.src = url;
-		
-					document.head.appendChild(script);
-				});
+				if(m_loaded_scripts[path]){
+					console.log("already loaded : ", path);
+					resolve();
+				}else{
+					self.getFileUrl(path, function(url) {
+						var script = document
+							.createElement('script');
+						script.onload = resolve;
+						script.src = url;
+
+						m_loaded_scripts[path] = script;
+			
+						document.head.appendChild(script);
+					});
+				}
 			});
 		},
 		refresh_app_menu: function() {
