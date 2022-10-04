@@ -9,34 +9,46 @@ function MeetingClient(host) {
 	var m_pst_dq;
 	var m_pst_eqs = {};
 	var m_pst_eq_building_src = -1;
-	var m_enqueue_pendings = [];
+	var m_enqueue_pendings = {};
 	var m_in_pt_set_param;
 
 	{//output stream
+	    var dequeue_callback = (data) => {
+            try{
+                if(data == null){//eob
+                    var pack = m_host.buildpacket(new TextEncoder().encode("<eob/>", 'ascii'), PT_MT_ENQUEUE);
+                    m_host.sendpacket(pack);
+                }else{
+                    //console.log("dequeue " + data.length);
+                    var MAX_PAYLOAD = 16*1024;//16k is webrtc max
+                    var CHUNK_SIZE = MAX_PAYLOAD - PacketHeaderLength;
+                    for(var cur=0;cur<data.length;cur+=CHUNK_SIZE){
+                        var chunk = data.slice(cur, cur + CHUNK_SIZE);
+                        var pack = m_host.buildpacket(chunk, PT_MT_ENQUEUE);
+                        m_host.sendpacket(pack);
+                    }
+                }
+            }catch(err){
+                console.log(err);
+            }
+        };
 		var def = "oal_capture name=capture ! opus_encoder";
-		pstcore.pstcore_build_pstreamer(def, (pst) => {
-			m_pst_dq = pst;
-			pstcore.pstcore_set_dequeue_callback(m_pst_dq, (data)=>{
-				try{
-					if(data == null){//eob
-						var pack = m_host.buildpacket(new TextEncoder().encode("<eob/>", 'ascii'), PT_MT_ENQUEUE);
-						m_host.sendpacket(pack);
-					}else{
-						//console.log("dequeue " + data.length);
-						var MAX_PAYLOAD = 16*1024;//16k is webrtc max
-						var CHUNK_SIZE = MAX_PAYLOAD - PacketHeaderLength;
-						for(var cur=0;cur<data.length;cur+=CHUNK_SIZE){
-							var chunk = data.slice(cur, cur + CHUNK_SIZE);
-							var pack = m_host.buildpacket(chunk, PT_MT_ENQUEUE);
-							m_host.sendpacket(pack);
-						}
-					}
-				}catch(err){
-					console.log(err);
-				}
-			});
-			pstcore.pstcore_start_pstreamer(m_pst_dq);
-		});
+        if (window.cordova && window.PstCoreLoader) {
+            pstcore.pstcore_build_pstreamer("cordova_binder", (pst) => {
+                m_pst_dq = pst;
+                pstcore.pstcore_set_param(m_pst_dq, "cordova_binder", "def", def);
+                setTimeout(() => {//need to wait build cordova_binder.def
+                    pstcore.pstcore_set_dequeue_callback(m_pst_dq, dequeue_callback);
+                    pstcore.pstcore_start_pstreamer(m_pst_dq);
+                }, 0);
+            });
+        } else {
+            pstcore.pstcore_build_pstreamer(def, (pst) => {
+                m_pst_dq = pst;
+                pstcore.pstcore_set_dequeue_callback(m_pst_dq, dequeue_callback);
+                pstcore.pstcore_start_pstreamer(m_pst_dq);
+            });
+        }
 	}
 
 	var self = {
@@ -46,15 +58,34 @@ function MeetingClient(host) {
 				var chunk = packet.GetPayload();
 				var eob = "<eob/>";
 
+				if(src != 0){
+					return;//fail safe
+				}
+
+				if(!m_enqueue_pendings[src]){
+					m_enqueue_pendings[src] = [];
+				}
+
 				if(!m_pst_eqs[src]){ //input stream
 					if(m_pst_eq_building_src < 0){
 						m_pst_eq_building_src = src;
 						var def = "opus_decoder ! oal_player realtime=1 buffer=0.5";
-						pstcore.pstcore_build_pstreamer(def, (pst) => {
-							m_pst_eqs[m_pst_eq_building_src] = pst;
-							pstcore.pstcore_start_pstreamer(m_pst_eqs[m_pst_eq_building_src]);
-							m_pst_eq_building_src = -1;
-						});
+                        // if (window.cordova && window.PstCoreLoader) {
+                        //     pstcore.pstcore_build_pstreamer("cordova_binder", (pst) => {
+                        //         m_pst_eqs[m_pst_eq_building_src] = pst;
+                        //         pstcore.pstcore_set_param(m_pst_eqs[m_pst_eq_building_src], "cordova_binder", "def", def);
+                        //         setTimeout(() => {//need to wait build cordova_binder.def
+                        //             pstcore.pstcore_start_pstreamer(m_pst_eqs[m_pst_eq_building_src]);
+                        //             m_pst_eq_building_src = -1;
+                        //         }, 0);
+                        //     });
+                        // } else {
+                            pstcore.pstcore_build_pstreamer(def, (pst) => {
+                                m_pst_eqs[m_pst_eq_building_src] = pst;
+                                pstcore.pstcore_start_pstreamer(m_pst_eqs[m_pst_eq_building_src]);
+                                m_pst_eq_building_src = -1;
+                            });
+                        //}
 					}else{
 						//just wait
 					}
@@ -68,16 +99,16 @@ function MeetingClient(host) {
 				   chunk[chunk.length - 1] == eob.charCodeAt(5)){
 					
 					var buff = null;
-					if(m_enqueue_pendings.length == 1){
-						buff = m_enqueue_pendings[0];
-					}else if(m_enqueue_pendings.length > 1){
+					if(m_enqueue_pendings[src].length == 1){
+						buff = m_enqueue_pendings[src][0];
+					}else if(m_enqueue_pendings[src].length > 1){
 						var len = 0;
-						for (var _chunk of m_enqueue_pendings) {
+						for (var _chunk of m_enqueue_pendings[src]) {
 							len += _chunk.length;
 						}
 						var buff = new Uint8Array(len);
 						var cur = 0;
-						for (var _chunk of m_enqueue_pendings) {
+						for (var _chunk of m_enqueue_pendings[src]) {
 							buff.set(_chunk, cur);
 							cur += _chunk.length;
 						}
@@ -93,11 +124,11 @@ function MeetingClient(host) {
 						if(m_pst_eqs[src]){
 							pstcore.pstcore_enqueue(m_pst_eqs[src], buff);
 							pstcore.pstcore_enqueue(m_pst_eqs[src], null);//eob
-							m_enqueue_pendings = [];
+							m_enqueue_pendings[src] = null;
 						}
 					}
 				}else{
-					m_enqueue_pendings.push(chunk);
+					m_enqueue_pendings[src].push(chunk);
 				}
 				
 			} else if (packet.GetPayloadType() == PT_MT_SET_PARAM) { // set_param
