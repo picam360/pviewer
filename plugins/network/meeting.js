@@ -58,10 +58,6 @@ function MeetingClient(host) {
 				var chunk = packet.GetPayload();
 				var eob = "<eob/>";
 
-				if(src != 0){
-					return;//fail safe
-				}
-
 				if(!m_enqueue_pendings[src]){
 					m_enqueue_pendings[src] = [];
 				}
@@ -207,6 +203,9 @@ function MeetingHost(selfclient_enable) {
 	var self = {
 		add_client : (rtp) => {
 			if(m_clients.length == 0 && selfclient_enable){
+				//m_selfclient{capture} -> m_selfrtp_h.sendpacket -> self.handle_packet -> m_clients.sendpacket
+				//m_selfrtp_c{in m_clients}.sendpacket -> m_selfclient.handle_packet{player}
+
 				m_selfrtp_c = Rtp();
 				m_selfrtp_c.sendpacket = (data) => {
 					m_selfclient.handle_packet(PacketHeader(data));
@@ -234,17 +233,22 @@ function MeetingHost(selfclient_enable) {
 			if (packet.GetPayloadType() == PT_MT_ENQUEUE) { // enqueue
 				var chunk = packet.GetPayload();
 				var eob = "<eob/>";
+				var src = -1;
 
-				for(var src=0;src<m_clients.length;src++){
-					var _rtp = m_clients[src];
+				for(var s=0;s<m_clients.length;s++){
+					var _rtp = m_clients[s];
 					if(_rtp == rtp){
 						//rewrite src
 						var pack = packet.GetPacketData();
 						var view = new DataView(pack.buffer);
-						view.setUint32(pack.byteOffset + 8, src, false);
-						//console.log("handle_packet", src);
+						view.setUint32(pack.byteOffset + 8, s, false);
+						src = s;
 						break;
 					}
+				}
+				
+				if(src < 0){
+					return;
 				}
 				
 				if(chunk[0] == eob.charCodeAt(0) &&
@@ -259,7 +263,7 @@ function MeetingHost(selfclient_enable) {
 							if(_rtp == rtp){
 								continue;
 							}
-							for (var _packet of m_packet_pendings[rtp]) {
+							for (var _packet of m_packet_pendings[src]) {
 								_rtp.sendpacket(_packet.GetPacketData());
 							}
 							_rtp.sendpacket(packet.GetPacketData());//eob
@@ -267,12 +271,12 @@ function MeetingHost(selfclient_enable) {
 							self.remove_client(_rtp);
 						}
 					}
-					m_packet_pendings[rtp] = [];
+					m_packet_pendings[src] = [];
 				}else{
-					if(!m_packet_pendings[rtp]){
-						m_packet_pendings[rtp] = [];
+					if(!m_packet_pendings[src]){
+						m_packet_pendings[src] = [];
 					}
-					m_packet_pendings[rtp].push(packet);
+					m_packet_pendings[src].push(packet);
 				}
 				
 			} else if (packet.GetPayloadType() == PT_MT_SET_PARAM) { // set_param
