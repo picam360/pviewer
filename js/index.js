@@ -164,6 +164,7 @@ var app = (function() {
 			self.isDeviceReady = true;
 			
 			if(window.universalLinks){
+				window.universalLinks.subscribe("picam360.github.io", self.applink_handler);
 				window.universalLinks.subscribe("vpm.picam360.com", self.applink_handler);
 				window.universalLinks.subscribe("park.picam360.com", self.applink_handler);
 				window.universalLinks.subscribe("s.360pi.cam", self.applink_handler);
