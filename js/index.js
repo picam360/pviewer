@@ -18,6 +18,7 @@ var app = (function() {
 	
 	// main canvas
 	var m_canvas;
+	var m_session;
 	// toolbar
 	var m_toolbar;
 	// overlay
@@ -393,6 +394,10 @@ var app = (function() {
 		start_animate: function() {
 			
 			function redraw() {
+				if(m_session){
+					debugger;
+					return;
+				}
 				m_pstcore._pstcore_poll_events();
 				requestAnimationFrame(redraw);
 			}
@@ -750,7 +755,7 @@ var app = (function() {
 		},
 
 		build_pst: (loader, splitter, callback) => {
-			var renderer = "pgl_renderer name=renderer format=p2s w=640 h=480 fps=30";
+			var renderer = "pgl_renderer name=renderer w=640 h=480 fps=30";
 			if(m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS") {
 				renderer += " mode=speed";
 			}
@@ -843,12 +848,86 @@ var app = (function() {
 				}, 250);//post params
 				
 				if(!window.cordova && m_pstcore.DGLFWView){
-					m_pstcore.DGLFWView.setCreateWindowCallback((canvas) => {
-						m_canvas = canvas;
+					m_pstcore.DGLFWView.setCreateWindowCallback((dglfw_win) => {
+						var framebuffer;
+						var refSpace;
+						var ctx = dglfw_win.ctx.GLctx;
+						m_canvas = dglfw_win.canvas;
 						$('#container').append(m_canvas);
 						self.update_canvas_size();
 						if(start_callback){
 							start_callback();
+						}
+						if(navigator.xr){
+							function vr_draw(){
+								function redraw(t, xrFrame) {
+									m_pstcore.GL.makeContextCurrent(dglfw_win.handle);
+									var layer = m_session.renderState.baseLayer;
+									if(!framebuffer && layer.framebuffer){
+										framebuffer = layer.framebuffer;
+										framebuffer.name = m_pstcore.GL.framebuffers.length;
+										m_pstcore.GL.framebuffers.push(framebuffer);
+										ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
+
+										var pose = xrFrame.getViewerPose(refSpace);
+										if(pose){
+											var w = 0;
+											var h = 0;
+											for (let view of pose.views) {
+												let viewport = layer.getViewport(view);
+												w += viewport.width;
+												h = viewport.height;
+											}
+											m_canvas.width = w;
+											m_canvas.height = h;
+											self.set_param("renderer", "stereo", "1");
+											//self.set_param("renderer", "mode", "speed");
+											self.set_param("renderer", "texrender_margin", "66");
+
+											var euler = new THREE.Euler(THREE.Math
+												.degToRad(90), THREE.Math
+												.degToRad(0), THREE.Math
+												.degToRad(0), "YXZ");
+							
+											var quat = new THREE.Quaternion()
+												.setFromEuler(euler);
+											self.plugin_host.set_view_offset(quat);
+										}
+									}
+									m_pstcore._pstcore_poll_events();
+									m_session.requestAnimationFrame(redraw);
+								}
+								m_session.requestAnimationFrame(redraw);
+							}
+							navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
+								if(supported){
+									var onRequestSession = function(){
+										return navigator.xr.requestSession('immersive-vr').then(onSessionStarted);
+									}
+									var onSessionStarted = function(session) {
+										m_session = session;
+										ctx.makeXRCompatible().then(() => {
+											m_session.updateRenderState({ baseLayer: new XRWebGLLayer(m_session, ctx) });
+											return m_session.requestReferenceSpace('local');
+										}).then((_refSpace) => {
+											refSpace = _refSpace;
+											vr_draw();
+										});
+									};
+									var onEndSession = function() {
+									};
+									var xrButton = new WebXRButton({
+										onRequestSession: onRequestSession,
+										onEndSession: onEndSession
+								  	});
+									xrButton.enabled = supported
+									xrButton.domElement.style.zIndex = "0";
+									xrButton.domElement.style.position = "absolute";
+									//xrButton.domElement.style.left = x_pos+'px';
+									xrButton.domElement.style.top = 100+'px';
+									$('body').append(xrButton.domElement);
+								}
+							});
 						}
 					});
 				}else{
