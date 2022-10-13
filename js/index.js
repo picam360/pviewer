@@ -480,11 +480,16 @@ var app = (function() {
 			if(value){
 				self.set_param("renderer", "stereo", "1");
 				self.plugin_host.set_fov(m_options.fov_stereo);
+				self.set_param("renderer", "parallax", m_options.parallax.toString());
+				self.set_param("renderer", "margin", m_options.margin);
+				self.set_param("renderer", "mode", "speed");
 			}else{
 				self.set_param("renderer", "stereo", "0");
 				self.plugin_host.set_fov(m_options.fov);
+				self.set_param("renderer", "parallax", "0");
+				self.set_param("renderer", "margin", "0");
+				self.set_param("renderer", "mode", "quality");
 			}
-			self.set_param("renderer", "parallax", m_options.parallax.toString());
 		},
 		
 		set_deblock: function(value) {
@@ -915,8 +920,6 @@ var app = (function() {
 								}
 								
 								self.set_stereo(true);
-								self.set_param("renderer", "mode", "speed");
-								self.set_param("renderer", "margin", m_options.margin);
 
 								m_session.requestAnimationFrame(redraw);
 							}
