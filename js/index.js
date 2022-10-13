@@ -862,15 +862,15 @@ var app = (function() {
 							function vr_draw(){
 								function redraw(t, xrFrame) {
 									m_pstcore.GL.makeContextCurrent(dglfw_win.handle);
+									var pose = xrFrame.getViewerPose(refSpace);
 									var layer = m_session.renderState.baseLayer;
-									if(!framebuffer && layer.framebuffer){
-										framebuffer = layer.framebuffer;
-										framebuffer.name = m_pstcore.GL.framebuffers.length;
-										m_pstcore.GL.framebuffers.push(framebuffer);
-										ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
+									if(pose){
+										if(!framebuffer && layer.framebuffer){
+											framebuffer = layer.framebuffer;
+											framebuffer.name = m_pstcore.GL.framebuffers.length;
+											m_pstcore.GL.framebuffers.push(framebuffer);
+											ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
 
-										var pose = xrFrame.getViewerPose(refSpace);
-										if(pose){
 											var w = 0;
 											var h = 0;
 											for (let view of pose.views) {
@@ -880,19 +880,23 @@ var app = (function() {
 											}
 											m_canvas.width = w;
 											m_canvas.height = h;
-											self.set_param("renderer", "stereo", "1");
+											self.set_stereo(true);
 											//self.set_param("renderer", "mode", "speed");
 											self.set_param("renderer", "texrender_margin", "66");
-
-											var euler = new THREE.Euler(THREE.Math
-												.degToRad(90), THREE.Math
-												.degToRad(0), THREE.Math
-												.degToRad(0), "YXZ");
-							
-											var quat = new THREE.Quaternion()
-												.setFromEuler(euler);
-											self.plugin_host.set_view_offset(quat);
 										}
+										
+										var euler = new THREE.Euler(THREE.Math
+											.degToRad(90), THREE.Math
+											.degToRad(0), THREE.Math
+											.degToRad(0), "YXZ");
+						
+										var offset_quat = new THREE.Quaternion()
+											.setFromEuler(euler);
+						
+										var ori = pose.transform.orientation;
+										var quat = new THREE.Quaternion(ori.x, ori.y, ori.z, ori.w);
+										quat = quat.multiply(offset_quat);
+										self.plugin_host.set_view_offset(quat);
 									}
 									m_pstcore._pstcore_poll_events();
 									m_session.requestAnimationFrame(redraw);
