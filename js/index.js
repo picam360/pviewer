@@ -50,6 +50,7 @@ var app = (function() {
 		"simd" : false,
 		"boost" : false,
 		"margin" : "0,0,0,0",
+		"parallax" : 0,
 	};
 	var m_permanent_options = {};
 	var is_recording = false;
@@ -231,6 +232,9 @@ var app = (function() {
 				{//parse query
 					if (m_query["margin"]) {
 						m_options.margin = m_query["margin"];
+					}
+					if (m_query["parallax"]) {
+						m_options.parallax = parseFloat(m_query["parallax"]);
 					}
 				}
 				// @data : uint8array
@@ -480,6 +484,7 @@ var app = (function() {
 				self.set_param("renderer", "stereo", "0");
 				self.plugin_host.set_fov(m_options.fov);
 			}
+			self.set_param("renderer", "parallax", m_options.parallax.toString());
 		},
 		
 		set_deblock: function(value) {
