@@ -49,6 +49,7 @@ var app = (function() {
 		"deblock" : false,
 		"simd" : false,
 		"boost" : false,
+		"margin" : "0,0,0,0",
 	};
 	var m_permanent_options = {};
 	var is_recording = false;
@@ -226,6 +227,11 @@ var app = (function() {
 					return;
 				} else {
 					self.init_options_done = true;
+				}
+				{//parse query
+					if (m_query["margin"]) {
+						m_options.margin = m_query["margin"];
+					}
 				}
 				// @data : uint8array
 				loadFile("config.json", function(chunk_array) {
@@ -882,7 +888,7 @@ var app = (function() {
 											m_canvas.height = h;
 											self.set_stereo(true);
 											//self.set_param("renderer", "mode", "speed");
-											self.set_param("renderer", "texrender_margin", "66");
+											self.set_param("renderer", "margin", m_options.margin);
 										}
 										
 										var euler = new THREE.Euler(THREE.Math
