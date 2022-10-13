@@ -401,7 +401,6 @@ var app = (function() {
 			
 			function redraw() {
 				if(m_session){
-					debugger;
 					return;
 				}
 				m_pstcore._pstcore_poll_events();
@@ -876,7 +875,8 @@ var app = (function() {
 											framebuffer.name = m_pstcore.GL.framebuffers.length;
 											m_pstcore.GL.framebuffers.push(framebuffer);
 											ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
-
+										}
+										{//update canvas size
 											var w = 0;
 											var h = 0;
 											for (let view of pose.views) {
@@ -884,11 +884,12 @@ var app = (function() {
 												w += viewport.width;
 												h = viewport.height;
 											}
-											m_canvas.width = w;
-											m_canvas.height = h;
-											self.set_stereo(true);
-											//self.set_param("renderer", "mode", "speed");
-											self.set_param("renderer", "margin", m_options.margin);
+											if(w != m_canvas.width){
+												m_canvas.width = w;
+											}
+											if(h != m_canvas.height){
+												m_canvas.height = h;
+											}
 										}
 										
 										var euler = new THREE.Euler(THREE.Math
@@ -907,6 +908,11 @@ var app = (function() {
 									m_pstcore._pstcore_poll_events();
 									m_session.requestAnimationFrame(redraw);
 								}
+								
+								self.set_stereo(true);
+								self.set_param("renderer", "mode", "speed");
+								self.set_param("renderer", "margin", m_options.margin);
+
 								m_session.requestAnimationFrame(redraw);
 							}
 							navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
