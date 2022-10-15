@@ -37,10 +37,8 @@ function MeetingClient(host) {
             pstcore.pstcore_build_pstreamer("cordova_binder", (pst) => {
                 m_pst_dq = pst;
                 pstcore.pstcore_set_param(m_pst_dq, "cordova_binder", "def", def);
-                setTimeout(() => {//need to wait build cordova_binder.def
-                    pstcore.pstcore_set_dequeue_callback(m_pst_dq, dequeue_callback);
-                    pstcore.pstcore_start_pstreamer(m_pst_dq);
-                }, 0);
+                pstcore.pstcore_set_dequeue_callback(m_pst_dq, dequeue_callback);
+                pstcore.pstcore_start_pstreamer(m_pst_dq);
             });
         } else {
             pstcore.pstcore_build_pstreamer(def, (pst) => {
