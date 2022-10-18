@@ -227,12 +227,12 @@ var create_plugin = (function() {
                     { // ping
                         if(m_query['stream-def']){
                             var cmd = "<picam360:command id=\"0\" value=\"stream_def " + m_query['stream-def'] + "\" />";
-                            var pack = conn.rtp.buildpacket(cmd, PT_CMD);
-                            conn.rtp.sendpacket(pack);
+                            var pack = conn.rtp.build_packet(cmd, PT_CMD);
+                            conn.rtp.send_packet(pack);
                         }
                         var cmd = "<picam360:command id=\"0\" value=\"ping " + new Date().getTime() + "\" />";
-                        var pack = conn.rtp.buildpacket(cmd, PT_CMD);
-                        conn.rtp.sendpacket(pack);
+                        var pack = conn.rtp.build_packet(cmd, PT_CMD);
+                        conn.rtp.send_packet(pack);
                         
                         console.log("establish sequence started");
                     }
@@ -256,13 +256,13 @@ var create_plugin = (function() {
                                     rtt);
                                 if (ping_cnt < 10) {
                                     var cmd = "<picam360:command id=\"0\" value=\"ping " +　new Date().getTime() + "\" />";
-                                    var pack = conn.rtp.buildpacket(cmd, PT_CMD);
-                                    conn.rtp.sendpacket(pack);
+                                    var pack = conn.rtp.build_packet(cmd, PT_CMD);
+                                    conn.rtp.send_packet(pack);
                                     return;
                                 } else {
                                     var cmd = "<picam360:command id=\"0\" value=\"set_timediff_ms " + timediff_ms + "\" />";
-                                    var pack = conn.rtp.buildpacket(cmd, PT_CMD);
-                                    conn.rtp.sendpacket(pack);
+                                    var pack = conn.rtp.build_packet(cmd, PT_CMD);
+                                    conn.rtp.send_packet(pack);
             
                                     console.log("min_rtt=" + min_rtt +
                                         ":timediff_ms:" +
@@ -296,16 +296,16 @@ var create_plugin = (function() {
                 try{
                     if(conn.attr.param_pendings.length > 0) {
                         var msg = "[" + conn.attr.param_pendings.join(',') + "]";
-                        var pack = conn.rtp.buildpacket(msg, PT_SET_PARAM);
-                        conn.rtp.sendpacket(pack);
+                        var pack = conn.rtp.build_packet(msg, PT_SET_PARAM);
+                        conn.rtp.send_packet(pack);
                         conn.attr.param_pendings = [];
                     }
                     if (m_cmd2upstream_list.length > 0) {
                         var {cmd} = m_cmd2upstream_list.shift();
                         var xml = "<picam360:command id=\"" + app.rtcp_command_id +
                             "\" value=\"" + cmd + "\" />"
-                        var pack = conn.rtp.buildpacket(xml, PT_CMD);
-                        conn.rtp.sendpacket(pack);
+                        var pack = conn.rtp.build_packet(xml, PT_CMD);
+                        conn.rtp.send_packet(pack);
                     }
                 }catch(err){
                     clearInterval(conn.attr.timer);

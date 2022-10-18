@@ -87,8 +87,8 @@ var create_plugin = (function() {
 				var status = "<picam360:status name=\"" + name +
 					"\" value=\"" + value + "\" />";
 //				var pack = rtp
-//					.buildpacket(status, PT_STATUS);
-//				rtp.sendpacket(pack);
+//					.build_packet(status, PT_STATUS);
+//				rtp.send_packet(pack);
 			}, 1000);
 		}
 
@@ -193,8 +193,8 @@ var create_plugin = (function() {
 								new Date().getTime() +
 								"\" />";
 							var pack = rtp
-								.buildpacket(status, PT_STATUS);
-							rtp.sendpacket(pack);
+								.build_packet(status, PT_STATUS);
+							rtp.send_packet(pack);
 							return;
 						} else if (value[0] == "set_timediff_ms") {
 							resolve();
@@ -219,8 +219,8 @@ var create_plugin = (function() {
 						// }
 						if(conn.attr.param_pendings.length > 0) {
 							var msg = "[" + conn.attr.param_pendings.join(',') + "]";
-							var pack = rtp.buildpacket(msg, PT_SET_PARAM);
-							rtp.sendpacket(pack);
+							var pack = rtp.build_packet(msg, PT_SET_PARAM);
+							rtp.send_packet(pack);
 							conn.attr.param_pendings = [];
 						}
 					}catch(err){

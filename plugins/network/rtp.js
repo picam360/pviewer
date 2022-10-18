@@ -122,14 +122,14 @@ function Rtp(conn) {
 			m_callback = callback;
 			m_callback_args = args;
 		},
-		sendpacket : function(pack) {
+		send_packet : function(pack) {
 			if (!m_conn) {
 				return;
 			}
 			m_conn.send(pack);
 		},
 		// @data : ArrayBuffer
-		buildpacket : function(data, pt) {
+		build_packet : function(data, pt) {
 			if (typeof data == 'string') {
 				data = string_to_buffer(data);
 			}

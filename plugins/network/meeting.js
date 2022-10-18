@@ -16,16 +16,16 @@ function MeetingClient(host) {
 	    var dequeue_callback = (data) => {
             try{
                 if(data == null){//eob
-                    var pack = m_host.buildpacket(new TextEncoder().encode("<eob/>", 'ascii'), PT_MT_ENQUEUE);
-                    m_host.sendpacket(pack);
+                    var pack = m_host.build_packet(new TextEncoder().encode("<eob/>", 'ascii'), PT_MT_ENQUEUE);
+                    m_host.send_packet(pack);
                 }else{
                     //console.log("dequeue " + data.length);
                     var MAX_PAYLOAD = 16*1024;//16k is webrtc max
                     var CHUNK_SIZE = MAX_PAYLOAD - PacketHeaderLength;
                     for(var cur=0;cur<data.length;cur+=CHUNK_SIZE){
                         var chunk = data.slice(cur, cur + CHUNK_SIZE);
-                        var pack = m_host.buildpacket(chunk, PT_MT_ENQUEUE);
-                        m_host.sendpacket(pack);
+                        var pack = m_host.build_packet(chunk, PT_MT_ENQUEUE);
+                        m_host.send_packet(pack);
                     }
                 }
             }catch(err){
@@ -171,16 +171,16 @@ function MeetingHost(selfclient_enable) {
 						continue;
 					}
 					if(data == null){//eob
-						var pack = rtp.buildpacket(new TextEncoder().encode("<eob/>", 'ascii'), PT_ENQUEUE);
-						rtp.sendpacket(pack);
+						var pack = rtp.build_packet(new TextEncoder().encode("<eob/>", 'ascii'), PT_ENQUEUE);
+						rtp.send_packet(pack);
 					}else{
 						//console.log("dequeue " + data.length);
 						var MAX_PAYLOAD = 16*1024;//16k is webrtc max
 						var CHUNK_SIZE = MAX_PAYLOAD - PacketHeaderLength;
 						for(var cur=0;cur<data.length;cur+=CHUNK_SIZE){
 							var chunk = data.slice(cur, cur + CHUNK_SIZE);
-							var pack = rtp.buildpacket(chunk, PT_ENQUEUE);
-							rtp.sendpacket(pack);
+							var pack = rtp.build_packet(chunk, PT_ENQUEUE);
+							rtp.send_packet(pack);
 						}
 					}
 				}
@@ -201,15 +201,15 @@ function MeetingHost(selfclient_enable) {
 	var self = {
 		add_client : (rtp) => {
 			if(m_clients.length == 0 && selfclient_enable){
-				//m_selfclient{capture} -> m_selfrtp_h.sendpacket -> self.handle_packet -> m_clients.sendpacket
-				//m_selfrtp_c{in m_clients}.sendpacket -> m_selfclient.handle_packet{player}
+				//m_selfclient{capture} -> m_selfrtp_h.send_packet -> self.handle_packet -> m_clients.send_packet
+				//m_selfrtp_c{in m_clients}.send_packet -> m_selfclient.handle_packet{player}
 
 				m_selfrtp_c = Rtp();
-				m_selfrtp_c.sendpacket = (data) => {
+				m_selfrtp_c.send_packet = (data) => {
 					m_selfclient.handle_packet(PacketHeader(data));
 				};
 				m_selfrtp_h = Rtp();
-				m_selfrtp_h.sendpacket = (data) => {
+				m_selfrtp_h.send_packet = (data) => {
 					self.handle_packet(PacketHeader(data), m_selfrtp_c);
 				};
 				m_selfclient = MeetingClient(m_selfrtp_h);
@@ -262,9 +262,9 @@ function MeetingHost(selfclient_enable) {
 								continue;
 							}
 							for (var _packet of m_packet_pendings[src]) {
-								_rtp.sendpacket(_packet.GetPacketData());
+								_rtp.send_packet(_packet.GetPacketData());
 							}
-							_rtp.sendpacket(packet.GetPacketData());//eob
+							_rtp.send_packet(packet.GetPacketData());//eob
 						}catch(err){
 							self.remove_client(_rtp);
 						}
