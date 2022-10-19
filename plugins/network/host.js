@@ -424,10 +424,9 @@ var create_plugin = (function() {
                             console.log('peer connection closed');
                             pc.close();
                             dc.close();
-                            // if (dc.DataChannel) {
-                            //     m_rtp_mod.remove_conn(dc.DataChannel);
-                            // }
-                            m_rtp_mod.remove_conn(dc);
+                            if (dc.DataChannel) {
+                                m_rtp_mod.remove_conn(dc.DataChannel);
+                            }
                             break;
                     }
                 }
