@@ -1,11 +1,18 @@
+var is_nodejs = (typeof process !== 'undefined' && process.versions && process.versions.node);
+
 function PacketHeader(pack) {
+	// copy ArrayBuffer
+	function copy(dst, dst_offset, src, src_offset, len) {
+		new Uint8Array(dst, dst_offset)
+			.set(new Uint8Array(src, src_offset, len));
+	}
 	if(pack instanceof Uint8Array){
-		if(pack.byteOffset > 0){
-			var _pack = new ArrayBuffer(pack.byteLength);
-			new Uint8Array(_pack, 0).set(new Uint8Array(pack, 0, ack.byteLength));
-			pack = _pack;
-		}else{
+		if(pack.byteOffset == 0 && pack.byteLength == pack.buffer.byteLength){
 			pack = pack.buffer;
+		}else{
+			var _pack = new ArrayBuffer(pack.byteLength);
+			copy(_pack, 0, pack, 0, pack.byteLength);
+			pack = _pack;
 		}
 	}
 	var view = new DataView(pack);
@@ -69,11 +76,11 @@ function Rtp(conn) {
 	}
 	
 	if(m_conn){
-		m_conn.addEventListener('message', function(data){
+		m_conn.on("data", function(data) {
 			if(data instanceof MessageEvent){
 				data = data.data;
 			}
-			if(data instanceof Blob) {
+			if(!is_nodejs && data instanceof Blob) {
 				var fr = new FileReader();
 				fr.onload = function(evt) {
 					self.packet_handler(evt.target.result);
@@ -148,4 +155,9 @@ function Rtp(conn) {
 		},
 	};
 	return self;
+}
+if (typeof exports !== 'undefined') {
+	exports.PacketHeader = PacketHeader;
+	exports.PacketHeaderLength = 12;
+	exports.Rtp = Rtp;
 }

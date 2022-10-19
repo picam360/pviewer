@@ -1,18 +1,19 @@
 
 var is_nodejs = (typeof process !== 'undefined' && process.versions && process.versions.node);
 var rtp_mod;
+var util;
 if(is_nodejs){
 	rtp_mod = require("./rtp.js");
+	util = require('util');
 }else{
-	Buffer = {
-		from : (data, type) => {
-			return new TextEncoder().encode(data, type);
-		},
-	};
 	rtp_mod = {
 		Rtp,
 		PacketHeader,
-	}
+	};
+	util = {
+		TextDecoder,
+		TextEncoder,
+	};
 }
 
 var PT_STATUS = 100;
@@ -41,7 +42,7 @@ function MeetingClient(pstcore, host, _options) {
 	    var dequeue_callback = (data) => {
             try{
                 if(data == null){//eob
-					var pack = m_host.build_packet(Buffer.from("<eob/>", 'ascii'), PT_MT_ENQUEUE);
+					var pack = m_host.build_packet(new util.TextEncoder().encode("<eob/>", 'ascii'), PT_MT_ENQUEUE);
                     m_host.send_packet(pack);
                 }else{
                     //console.log("dequeue " + data.length);

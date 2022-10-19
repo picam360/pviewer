@@ -1,3 +1,22 @@
+
+var is_nodejs = (typeof process !== 'undefined' && process.versions && process.versions.node);
+var rtp_mod;
+var util;
+if(is_nodejs){
+	rtp_mod = require("./rtp.js");
+	util = require('util');
+}else{
+	rtp_mod = {
+		Rtp,
+		PacketHeader,
+	};
+	util = {
+		TextDecoder,
+		TextEncoder,
+	};
+}
+
+
 var create_plugin = (function() {
     var PERMANENT_KEY = "meeting_host_js_options";
 	var PacketHeaderLength = 12;
@@ -166,8 +185,7 @@ var create_plugin = (function() {
 				rtp.set_callback(function(packet) {
 					conn.attr.timeout = new Date().getTime();
 					if (packet.GetPayloadType() == PT_CMD) {
-                        var cmd = (new TextDecoder)
-                            .decode(packet.GetPayload());
+                        var cmd = new util.TextDecoder().decode(packet.GetPayload());
 						var split = cmd.split('\"');
 						var id = split[1];
 						var value = split[3].split(' ');
@@ -215,7 +233,7 @@ var create_plugin = (function() {
                         m_pstcore.pstcore_set_dequeue_callback(pst, (data)=>{
                             try{
                                 if(data == null){//eob
-                                    var pack = rtp.build_packet(new TextEncoder().encode("<eob/>", 'ascii'), PT_ENQUEUE);
+                                    var pack = rtp.build_packet(new util.TextEncoder().encode("<eob/>", 'ascii'), PT_ENQUEUE);
                                     rtp.send_packet(pack);
                                 }else{
                                     //console.log("dequeue " + data.length);
@@ -279,8 +297,7 @@ var create_plugin = (function() {
 				rtp.set_callback(function(packet, _rtp) {
 					conn.attr.timeout = new Date().getTime();
 					if (packet.GetPayloadType() == PT_SET_PARAM) { // set_param
-						var str = (new TextDecoder)
-							.decode(packet.GetPayload());
+						var str = new TextDecoder().decode(packet.GetPayload());
 						try{
 							var list = JSON.parse(str);
 							for(var ary of list){
@@ -348,43 +365,42 @@ var create_plugin = (function() {
                 var dc = pc.createDataChannel('data');
                 dc.onopen = function() {
                     console.log('Data channel connection success');
-                    // class DataChannel extends EventEmitter {
-                    //     constructor() {
-                    //         super();
-                    //         var self = this;
-                    //         this.peerConnection = pc;
-                    //         dc.addEventListener('message', function(data) {
-                    //             self.emit('data', new Uint8Array(data.data));
-                    //         });
-                    //     }
-                    //     getMaxPayload() {
-                    //         return dc.maxRetransmits;
-                    //     }
-                    //     send(data) {
-                    //         if (dc.readyState != 'open') {
-                    //             return;
-                    //         }
-                    //         if (!Array.isArray(data)) {
-                    //             data = [data];
-                    //         }
-                    //         try {
-                    //             for (var i = 0; i < data.length; i++) {
-                    //                 dc.send(Uint8Array.from(data[i]).buffer);
-                    //             }
-                    //         } catch (e) {
-                    //             console.log('error on dc.send');
-                    //             this.close();
-                    //         }
-                    //     }
-                    //     close() {
-                    //         dc.close();
-                    //         pc.close();
-                    //         console.log('Data channel closed');
-                    //     }
-                    // }
-                    // dc.DataChannel = new DataChannel();
-                    // m_rtp_mod.add_conn(dc.DataChannel);
-                    m_rtp_mod.add_conn(dc);
+                    class DataChannel extends EventEmitter {
+                        constructor() {
+                            super();
+                            var self = this;
+                            this.peerConnection = pc;
+                            dc.addEventListener('message', function(data) {
+                                self.emit('data', new Uint8Array(data.data));
+                            });
+                        }
+                        getMaxPayload() {
+                            return dc.maxRetransmits;
+                        }
+                        send(data) {
+                            if (dc.readyState != 'open') {
+                                return;
+                            }
+                            if (!Array.isArray(data)) {
+                                data = [data];
+                            }
+                            try {
+                                for (var i = 0; i < data.length; i++) {
+                                    dc.send(data[i]);
+                                }
+                            } catch (e) {
+                                console.log('error on dc.send');
+                                this.close();
+                            }
+                        }
+                        close() {
+                            dc.close();
+                            pc.close();
+                            console.log('Data channel closed');
+                        }
+                    }
+                    dc.DataChannel = new DataChannel();
+                    m_rtp_mod.add_conn(dc.DataChannel);
                 }
 
                 pc.createOffer().then(function(sdp) {
