@@ -133,7 +133,7 @@ function MeetingClient(pstcore, host, _options) {
 						for (var _chunk of m_enqueue_pendings[src]) {
 							len += _chunk.length;
 						}
-						var buff = new Uint8Array(len);
+						buff = new Uint8Array(len);
 						var cur = 0;
 						for (var _chunk of m_enqueue_pendings[src]) {
 							buff.set(_chunk, cur);

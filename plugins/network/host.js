@@ -1,15 +1,9 @@
 
 var is_nodejs = (typeof process !== 'undefined' && process.versions && process.versions.node);
-var rtp_mod;
 var util;
 if(is_nodejs){
-	rtp_mod = require("./rtp.js");
 	util = require('util');
 }else{
-	rtp_mod = {
-		Rtp,
-		PacketHeader,
-	};
 	util = {
 		TextDecoder,
 		TextEncoder,
