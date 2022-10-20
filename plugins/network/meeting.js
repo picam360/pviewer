@@ -63,6 +63,9 @@ function MeetingClient(pstcore, host, _options) {
             pstcore.pstcore_build_pstreamer("cordova_binder", (pst) => {
                 m_pst_dq = pst;
                 pstcore.pstcore_set_param(m_pst_dq, "cordova_binder", "def", def);
+				if(options.audio_input_devicename){
+					pstcore.pstcore_set_param(m_pst_dq, "capture", "devicename", options.audio_input_devicename);
+				}
                 pstcore.pstcore_set_dequeue_callback(m_pst_dq, dequeue_callback);
                 pstcore.pstcore_start_pstreamer(m_pst_dq);
             });
@@ -92,17 +95,19 @@ function MeetingClient(pstcore, host, _options) {
 				if(!m_pst_eqs[src]){ //input stream
 					if(m_pst_eq_building_src < 0){
 						m_pst_eq_building_src = src;
-						var def = "opus_decoder ! oal_player name=player realtime=1 buffer=0.5";
-                        // if (window.cordova && window.PstCoreLoader) {
-                        //     pstcore.pstcore_build_pstreamer("cordova_binder", (pst) => {
-                        //         m_pst_eqs[m_pst_eq_building_src] = pst;
-                        //         pstcore.pstcore_set_param(m_pst_eqs[m_pst_eq_building_src], "cordova_binder", "def", def);
-                        //         setTimeout(() => {//need to wait build cordova_binder.def
-                        //             pstcore.pstcore_start_pstreamer(m_pst_eqs[m_pst_eq_building_src]);
-                        //             m_pst_eq_building_src = -1;
-                        //         }, 0);
-                        //     });
-                        // } else {
+						var def = "opus_decoder ! oal_player name=player realtime=1 buffer=0.25";
+                        if (window.cordova && window.PstCoreLoader) {
+                            pstcore.pstcore_build_pstreamer("cordova_binder", (pst) => {
+                                m_pst_eqs[m_pst_eq_building_src] = pst;
+                                pstcore.pstcore_set_param(m_pst_eqs[m_pst_eq_building_src], "cordova_binder", "def", def);
+								if(options.audio_output_devicename){
+									console.log("player.devicename", options.audio_output_devicename);
+									pstcore.pstcore_set_param(m_pst_dq, "player", "devicename", options.audio_output_devicename);
+								}
+								pstcore.pstcore_start_pstreamer(m_pst_eqs[m_pst_eq_building_src]);
+								m_pst_eq_building_src = -1;
+                            });
+                        } else {
                             pstcore.pstcore_build_pstreamer(def, (pst) => {
                                 m_pst_eqs[m_pst_eq_building_src] = pst;
 								if(options.audio_output_devicename){
@@ -112,7 +117,7 @@ function MeetingClient(pstcore, host, _options) {
                                 pstcore.pstcore_start_pstreamer(m_pst_eqs[m_pst_eq_building_src]);
                                 m_pst_eq_building_src = -1;
                             });
-                        //}
+                        }
 					}else{
 						//just wait
 					}

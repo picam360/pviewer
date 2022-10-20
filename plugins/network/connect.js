@@ -162,16 +162,49 @@ var create_plugin = (function() {
                     console.log('Data channel is created!');
                     var dc = ev.channel;
                     dc.onopen = function() {
-                        console.log("p2p connection established as downstream.");
-                        dc.addEventListener('close', function(){
-                            pc.close();
-                        });
-                        callback(dc);
-                    };
-                    dc.onclose = function() {
-                        m_plugin_host.set_info("p2p connection closed");
-                        m_frame_active = false;
-                    };
+                        console.log('Data channel connection success');
+                        class DataChannel extends EventEmitter {
+                            constructor() {
+                                super();
+                                var self = this;
+                                this.peerConnection = pc;
+                                dc.addEventListener('message', function(data) {
+                                    self.emit('data', new Uint8Array(data.data));
+                                });
+                                dc.addEventListener('close', function(){
+                                    pc.close();
+                                    m_plugin_host.set_info("p2p connection closed");
+                                    m_frame_active = false;
+                                });
+                            }
+                            getMaxPayload() {
+                                return dc.maxRetransmits;
+                            }
+                            send(data) {
+                                if (dc.readyState != 'open') {
+                                    return;
+                                }
+                                if (!Array.isArray(data)) {
+                                    data = [data];
+                                }
+                                try {
+                                    for (var i = 0; i < data.length; i++) {
+                                        dc.send(data[i]);
+                                    }
+                                } catch (e) {
+                                    console.log('error on dc.send');
+                                    this.close();
+                                }
+                            }
+                            close() {
+                                dc.close();
+                                pc.close();
+                                console.log('Data channel closed');
+                            }
+                        }
+                        dc.DataChannel = new DataChannel();
+                        callback(dc.DataChannel);
+                    }
                 };
                 pc.onerror = function(err) {
                     if (err.type == "peer-unavailable") {
@@ -255,7 +288,7 @@ var create_plugin = (function() {
                                 console.log(name + ":" + value + ":rtt=" +
                                     rtt);
                                 if (ping_cnt < 10) {
-                                    var cmd = "<picam360:command id=\"0\" value=\"ping " +　new Date().getTime() + "\" />";
+                                    var cmd = "<picam360:command id=\"0\" value=\"ping " + new Date().getTime() + "\" />";
                                     var pack = conn.rtp.build_packet(cmd, PT_CMD);
                                     conn.rtp.send_packet(pack);
                                     return;
@@ -450,7 +483,7 @@ var create_plugin = (function() {
             });
             // end set rtp callback
             if (m_options.meeting_enabled) {//meeting
-                mt_client = MeetingClient(conn.rtp);
+                mt_client = MeetingClient(pstcore, conn.rtp);
 			}
         });
     };
