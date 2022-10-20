@@ -175,10 +175,10 @@ function MeetingClient(pstcore, host, _options) {
 			}
 		},
 		close : () => {
-			pstcore.pstcore_stop_pstreamer(m_pst_dq);
+			//pstcore.pstcore_stop_pstreamer(m_pst_dq);
 			pstcore.pstcore_destroy_pstreamer(m_pst_dq);
 			for(var pst of Object.values(m_pst_eqs)){
-				pstcore.pstcore_stop_pstreamer(pst);
+				//pstcore.pstcore_stop_pstreamer(pst);
 				pstcore.pstcore_destroy_pstreamer(pst);
 			}
 		},

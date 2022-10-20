@@ -230,13 +230,10 @@ var create_plugin = (function() {
         conn.rtp.set_callback(null);
         conn.close();
         if(conn.attr.pst){
-            pstcore.pstcore_remove_set_param_done_callback(conn.attr.pst, conn.on_set_param_done_callback);
-            pstcore.pstcore_destroy_pstreamer(conn.attr.pst);
+            // destroy should be done by app.stop_pst()
+            // pstcore.pstcore_remove_set_param_done_callback(conn.attr.pst, conn.on_set_param_done_callback);
+            // pstcore.pstcore_destroy_pstreamer(conn.attr.pst);
             conn.attr.pst = 0;
-        }
-        if(conn.attr.mt_pst){
-            pstcore.pstcore_destroy_pstreamer(conn.attr.mt_pst);
-            conn.attr.mt_pst = 0;
         }
     }
     function init_connection(conn) {
