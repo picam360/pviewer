@@ -174,7 +174,10 @@ var create_plugin = (function() {
                                 dc.addEventListener('close', function(){
                                     pc.close();
                                     m_plugin_host.set_info("p2p connection closed");
-                                    m_frame_active = false;
+                                    if(mt_client){
+                                        mt_client.close();
+                                        mt_client = null;
+                                    }
                                 });
                             }
                             getMaxPayload() {
