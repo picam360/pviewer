@@ -36,6 +36,16 @@ var create_plugin = (function() {
                      + '<tr>'
                      + '<td/><td>key:<input type="text" name="dialog-message-wrtckey" id="dialog-message-wrtckey" size="25" value="" disabled /></td>'
                      + '</tr>'
+                     + '<tr>'
+                     + '<td></td><td></td>'
+                     + '</tr>'
+                     + '<tr>'
+                     + '<td/><td>mode:<select name="dialog-message-stream-mode" id="dialog-message-stream-mode">'
+                     + '<option value="vid+mt">Video+Meeting</option>'
+                     + '<option value="vid">Video</option>'
+                     + '<option value="mt">Meeting</option>'
+                     + '</select></td>'
+                     + '</tr>'
                      + '</table>';
             $( "#dialog-message" ).html(html);
             $( "#dialog-message" ).dialog({
@@ -47,6 +57,7 @@ var create_plugin = (function() {
                         type:$( "input[name='dialog-message-type']:checked" ).val(),
                         ws_url:$( "#dialog-message-wsurl" ).val(),
                         wrtc_key:$( "#dialog-message-wrtckey" ).val(),
+                        stream_mode:$( "#dialog-message-stream-mode" ).val(),
                     };
                     resolve(opt);
                     $( this ).dialog( "close" );
@@ -236,7 +247,7 @@ var create_plugin = (function() {
             conn.attr.pst = 0;
         }
     }
-    function init_connection(conn) {
+    function init_connection(conn, stream_mode) {
         var pstcore = app.get_pstcore();
         conn.rtp = Rtp(conn);
         conn.PacketHeaderLength = 12;
@@ -257,12 +268,17 @@ var create_plugin = (function() {
                     var timediff_ms = 0;
                     var min_rtt = 0;
                     var ping_cnt = 0;
+                    if(stream_mode){//stream mode
+                        var cmd = "<picam360:command id=\"0\" value=\"stream_mode " + stream_mode + "\" />";
+                        var pack = conn.rtp.build_packet(cmd, PT_CMD);
+                        conn.rtp.send_packet(pack);
+                    }
+                    if(m_query['stream-def']){//stream def
+                        var cmd = "<picam360:command id=\"0\" value=\"stream_def " + m_query['stream-def'] + "\" />";
+                        var pack = conn.rtp.build_packet(cmd, PT_CMD);
+                        conn.rtp.send_packet(pack);
+                    }
                     { // ping
-                        if(m_query['stream-def']){
-                            var cmd = "<picam360:command id=\"0\" value=\"stream_def " + m_query['stream-def'] + "\" />";
-                            var pack = conn.rtp.build_packet(cmd, PT_CMD);
-                            conn.rtp.send_packet(pack);
-                        }
                         var cmd = "<picam360:command id=\"0\" value=\"ping " + new Date().getTime() + "\" />";
                         var pack = conn.rtp.build_packet(cmd, PT_CMD);
                         conn.rtp.send_packet(pack);
@@ -492,13 +508,13 @@ var create_plugin = (function() {
         prompt("input connection info", "connect stream via network").then((opt) => {
             if(opt.type == "ws"){
                 start_ws(opt.ws_url, (socket) => {
-                    init_connection(socket);
+                    init_connection(socket, opt.stream_mode);
                 }, () => {
                     //error
                 });
             }else{
                 start_p2p(opt.wrtc_key, (dc) => {
-                    init_connection(dc);
+                    init_connection(dc, opt.stream_mode);
                 }, () => {
                     //error
                 });

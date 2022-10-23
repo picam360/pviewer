@@ -152,6 +152,7 @@ var create_plugin = (function() {
 				renderer_uuid: uuidgen(),
 				snapper_uuid: uuidgen(),
 				recorder_uuid: uuidgen(),
+				stream_mode: "vid+mt",
 				// mode: options.frame_mode || "WINDOW",
 				// width: options.frame_width || 512,
 				// height: options.frame_height || 512,
@@ -198,6 +199,9 @@ var create_plugin = (function() {
 						} else if (value[0] == "stream_def") {
 							conn.frame_info.stream_def = value[1];
 							return;
+						} else if (value[0] == "stream_mode") {
+							conn.frame_info.stream_mode = value[1];
+							return;
 						} else if (value[0] == "frame_bitrate") {
 							conn.frame_info.bitrate = value[1];
 							return;
@@ -220,7 +224,7 @@ var create_plugin = (function() {
                 if(!m_pstcore){
                     m_pstcore = app.get_pstcore();
                 }
-                if(!m_pst){
+                if((conn.frame_info.stream_mode == "vid" || conn.frame_info.stream_mode == "vid+mt") && !m_pst){
                     var def = "ms_capture ! pgl_remapper s=1024x1024 edge_r=0.1 ho=1 deg_offset=-90,0,0 ! wc_encoder br=4000000";
                     m_pstcore.pstcore_build_pstreamer(def, (pst) => {
                         m_pst = pst;
@@ -256,7 +260,9 @@ var create_plugin = (function() {
                 if(!m_mt_host){
                     m_mt_host = MeetingHost(m_pstcore, true);
                 }
-                m_mt_host.add_client(rtp);
+                if((conn.frame_info.stream_mode == "mt" || conn.frame_info.stream_mode == "vid+mt")){
+                    m_mt_host.add_client(rtp);
+                }
 
 				m_rtp_rx_conns.push(conn);
 
@@ -313,7 +319,9 @@ var create_plugin = (function() {
 					// 		console.log("cmd got :" + cmd);
 					// 	}
 					}else{
-                        m_mt_host.handle_packet(packet, _rtp);
+                        if((conn.frame_info.stream_mode == "mt" || conn.frame_info.stream_mode == "vid+mt")){
+                            m_mt_host.handle_packet(packet, _rtp);
+                        }
                     }
 				}, rtp);
 			});
