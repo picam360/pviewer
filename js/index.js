@@ -1183,7 +1183,7 @@ var app = (function() {
 								console.log(msg);
 							}, (msg) => {
 								console.log(msg);
-							}, "CDVPstCore", "init_internal", []); // init is reserved
+							}, "CDVPstCore", "init_internal", [config_json]); // init is reserved
 						},
 						// on_set_param: function (successCallback, errorCallback) {
 						// 	cordova.exec(successCallback, errorCallback, "CDVPstCore", "on_set_param", []);
@@ -1310,7 +1310,33 @@ var app = (function() {
 						onRuntimeInitialized : function() {
 							console.log("pstcore initialized");
 							if(window.cordova){
+
 								config.plugin_paths.push("plugins/cordova_binder_st.so");
+
+                                var platform = cordova.platformId;
+                                if(platform == 'electron'){
+                                    platform = process.platform;
+                                }
+
+                                var decoder = "libde265_decoder name=decoder";
+                                switch(platform){
+                                case "ios":
+                                case "darwin":
+                                    config.plugin_paths.push("plugins/vt_decoder_st.so");
+                                    break;
+                                case "android":
+                                    config.plugin_paths.push("plugins/mc_decoder_st.so");
+                                    break;
+                                case "win32":
+                                    break;
+                                case "linux":
+                                    break;
+                                }
+                                cordova.exec((msg) => {
+                                    console.log(msg);
+                                }, (msg) => {
+                                    console.log(msg);
+                                }, "CDVPstCore", "init_internal", [JSON.stringify(config)]); // init is reserved
 							}
 							const config_json = JSON.stringify(config);
 							m_pstcore.pstcore_init(config_json);

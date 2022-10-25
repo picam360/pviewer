@@ -59,6 +59,14 @@ var create_plugin = (function() {
                         wrtc_key:$( "#dialog-message-wrtckey" ).val(),
                         stream_mode:$( "#dialog-message-stream-mode" ).val(),
                     };
+                    for(var options of [m_options, m_permanent_options]){
+                        options.ws_url = opt.ws_url;
+                        options.wrtc_key = opt.wrtc_key;
+                        options.default_interface = opt.type;
+                        options.stream_mode = opt.stream_mode;
+                    }
+                    localStorage.setItem('connect_js_options', JSON.stringify(m_permanent_options));
+            
                     resolve(opt);
                     $( this ).dialog( "close" );
                     app.menu.close();
@@ -82,15 +90,18 @@ var create_plugin = (function() {
                     break;
                 }
             });
-            if(m_query['wrtc-key']){
-                $( "#dialog-message-wrtckey" ).val(m_query['wrtc-key']);
+            if(m_options.wrtc_key){
+                $( "#dialog-message-wrtckey" ).val(m_options.wrtc_key);
             }
-            if(m_query['ws-url']){
-                $( "#dialog-message-wsurl" ).val(m_query['ws-url']);
+            if(m_options.ws_url){
+                $( "#dialog-message-wsurl" ).val(m_options.ws_url);
             }
-            if(m_permanent_options['default-interface'] == 'wrtc'){
+            if(m_options.stream_mode){
+                $( "#dialog-message-stream-mode" ).val(m_options.stream_mode);
+            }
+            if(m_options.default_interface == 'wrtc'){
                 $( "input[name='dialog-message-type']" ).val(['wrtc']).trigger("change");
-            }else if(m_permanent_options['default-interface'] == 'ws'){
+            }else if(m_options.default_interface == 'ws'){
                 $( "input[name='dialog-message-type']" ).val(['ws']).trigger("change");
             }
         });
@@ -98,10 +109,6 @@ var create_plugin = (function() {
     
     
     function start_ws(url, callback, err_callback) {
-        m_permanent_options['ws-url'] = url;
-        m_permanent_options['default-interface'] = 'ws';
-        localStorage.setItem('connect_js_options', JSON.stringify(m_permanent_options));
-
         try{
             // websocket
             var ws_url = "ws://" + url.slice(url.indexOf("://")+3);
@@ -120,10 +127,6 @@ var create_plugin = (function() {
     }
     
     function start_p2p(p2p_uuid, callback, err_callback) {
-        m_permanent_options['wrtc-key'] = p2p_uuid;
-        m_permanent_options['default-interface'] = 'wrtc';
-        localStorage.setItem('connect_js_options', JSON.stringify(m_permanent_options));
-
         var options = {
             host: SIGNALING_HOST,
             port: SIGNALING_PORT,
@@ -544,21 +547,18 @@ var create_plugin = (function() {
                 m_options = options;
 
                 var bln_open_dialog = false;
-                if(m_query['wrtc-key'] == undefined){
-                    if(options['wrtc-key']){
-                        m_query['wrtc-key'] = options['wrtc-key'];
-                    }
-                }else{
-                    m_permanent_options['default-interface'] = 'wrtc';
+                if(m_query['wrtc-key']){
+                    m_options.wrtc_key = m_query['wrtc-key'];
+                    m_options.default_interface = 'wrtc';
                     bln_open_dialog = true;
                 }
-                if(m_query['ws-url'] == undefined){
-                    if(options['ws-url']){
-                        m_query['ws-url'] = options['ws-url'];
-                    }
-                }else{
-                    m_permanent_options['default-interface'] = 'ws';
+                if(m_query['ws-url']){
+                    m_options.ws_url = m_query['ws-url'];
+                    m_options.default_interface = 'ws';
                     bln_open_dialog = true;
+                }
+                if(m_query['stream-mode']){
+                    m_options.stream_mode = m_query['stream-mode'];
                 }
                 if (m_query['meeting-enabled'] == "true") {//meeting
                     m_options.meeting_enabled = true;
