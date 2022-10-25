@@ -501,7 +501,7 @@ var create_plugin = (function() {
                 }
             });
             // end set rtp callback
-            if (m_options.meeting_enabled) {//meeting
+            if(stream_mode == "mt" || stream_mode == "vid+mt"){//meeting
                 mt_client = MeetingClient(pstcore, conn.rtp);
 			}
         });
@@ -559,9 +559,6 @@ var create_plugin = (function() {
                 }
                 if(m_query['stream-mode']){
                     m_options.stream_mode = m_query['stream-mode'];
-                }
-                if (m_query['meeting-enabled'] == "true") {//meeting
-                    m_options.meeting_enabled = true;
                 }
 
 
