@@ -258,7 +258,7 @@ var create_plugin = (function() {
                     });
                 }
                 if(!m_mt_host){
-                    m_mt_host = MeetingHost(m_pstcore, true);
+                    m_mt_host = MeetingHost(m_pstcore, m_options.meeting_enabled);
                 }
                 if((conn.frame_info.stream_mode == "mt" || conn.frame_info.stream_mode == "vid+mt")){
                     m_mt_host.add_client(rtp);
@@ -499,6 +499,7 @@ var create_plugin = (function() {
                 }
                 var bln_open_dialog = false;
                 Object.assign(options, m_permanent_options);
+                m_options = options;
                 if(m_query['host-wrtc-key'] == undefined){
                     if(options['host-wrtc-key']){
                         m_query['host-wrtc-key'] = options['host-wrtc-key'];
@@ -506,6 +507,9 @@ var create_plugin = (function() {
                 }else{
                     m_permanent_options['default-interface'] = 'wrtc';
                     bln_open_dialog = true;
+                }
+                if (m_query['meeting-enabled'] == "true") {//meeting
+                    m_options.meeting_enabled = true;
                 }
                 if(bln_open_dialog){
                     open_dialog();
