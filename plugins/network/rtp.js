@@ -77,7 +77,7 @@ function Rtp(conn) {
 	
 	if(m_conn){
 		m_conn.on("data", function(data) {
-			if(data instanceof MessageEvent){
+			if(!is_nodejs && data instanceof MessageEvent){
 				data = data.data;
 			}
 			if(!is_nodejs && data instanceof Blob) {

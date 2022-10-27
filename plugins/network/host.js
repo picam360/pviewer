@@ -25,7 +25,6 @@ var create_plugin = (function() {
     var m_rtp_mod;
     var m_rtp_rx_conns = [];
     var m_mt_host;
-    var m_pst;
         
     function addMenuButton(name, txt) {
             return new Promise((resolve, reject) => {
@@ -120,16 +119,7 @@ var create_plugin = (function() {
 					conn.close();
                     m_mt_host.remove_client(conn.rtp);
 					if(conn.attr.pst){
-
-						//let plugins know pst destroyed
-						for (var i = 0; i < plugins.length; i++) {
-							if (plugins[i].pst_stopped) {
-								plugins[i].pst_stopped(m_pstcore, conn.attr.pst);
-								break;
-							}
-						}
-
-						//m_pstcore.pstcore_destroy_pstreamer(conn.attr.pst);
+						m_pstcore.pstcore_destroy_pstreamer(conn.attr.pst);
 						conn.attr.pst = 0;
 					}
 					return;
@@ -224,10 +214,10 @@ var create_plugin = (function() {
                 if(!m_pstcore){
                     m_pstcore = app.get_pstcore();
                 }
-                if((conn.frame_info.stream_mode == "vid" || conn.frame_info.stream_mode == "vid+mt") && !m_pst){
+                if((conn.frame_info.stream_mode == "vid" || conn.frame_info.stream_mode == "vid+mt")){
                     var def = "ms_capture ! pgl_remapper s=1024x1024 edge_r=0.1 ho=1 deg_offset=-90,0,0 ! wc_encoder br=4000000";
                     m_pstcore.pstcore_build_pstreamer(def, (pst) => {
-                        m_pst = pst;
+                        conn.attr.pst = pst;
                         m_pstcore.pstcore_set_dequeue_callback(pst, (data)=>{
                             try{
                                 if(data == null){//eob
