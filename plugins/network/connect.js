@@ -115,7 +115,46 @@ var create_plugin = (function() {
             var socket = new WebSocket(ws_url);
             socket.binaryType = 'arraybuffer';// blob or arraybuffer
             socket.addEventListener('open', function (event) {
-                callback(socket);
+                class DataChannel extends EventEmitter {
+                    constructor() {
+                        super();
+                        var self = this;
+                        this.socket = socket;
+                        socket.addEventListener('message', function(data) {
+                            self.emit('data', new Uint8Array(data.data));
+                        });
+                        socket.addEventListener('close', function(){
+                            socket.close();
+                            m_plugin_host.set_info("ws connection closed");
+                            if(mt_client){
+                                mt_client.close();
+                                mt_client = null;
+                            }
+                        });
+                    }
+                    getMaxPayload() {
+                        return 16*1024*1024;//16k
+                    }
+                    send(data) {
+                        if (!Array.isArray(data)) {
+                            data = [data];
+                        }
+                        try {
+                            for (var i = 0; i < data.length; i++) {
+                                socket.send(data[i]);
+                            }
+                        } catch (e) {
+                            console.log('error on socket.send');
+                            this.close();
+                        }
+                    }
+                    close() {
+                        socket.close();
+                        console.log('ws closed');
+                    }
+                }
+                socket.DataChannel = new DataChannel();
+                callback(socket.DataChannel);
             });
             socket.addEventListener('error', function (event) {
                 m_plugin_host.set_info("error : Could not connect : " + event);
