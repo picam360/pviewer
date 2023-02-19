@@ -1,7 +1,6 @@
 {
 	"plugin_paths" : [
 		"plugins/mouse.js",
-		"plugins/icade.js",
 		"plugins/pvf/file_open.js",
 		"plugins/network/connect.js",
 		"plugins/tour/tour.js"

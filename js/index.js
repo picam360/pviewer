@@ -117,7 +117,7 @@ var app = (function() {
 			// });
 
 			window.addEventListener('message', function(event) {
-				if (!event.data || event.data.charAt(0) != '{') {
+				if (!event.data || !event.data.charAt || event.data.charAt(0) != '{') {
 					return;
 				}
 				var args = JSON.parse(event.data);
