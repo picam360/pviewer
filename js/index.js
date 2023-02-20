@@ -944,11 +944,11 @@ var app = (function() {
 										onRequestSession: onRequestSession,
 										onEndSession: onEndSession
 								  	});
-									xrButton.enabled = supported
+									xrButton.enabled = supported;
 									xrButton.domElement.style.zIndex = "0";
 									xrButton.domElement.style.position = "absolute";
-									//xrButton.domElement.style.left = x_pos+'px';
-									xrButton.domElement.style.top = 100+'px';
+									xrButton.domElement.style.bottom = 10+'px';
+									xrButton.domElement.style.right = 10+'px';
 									$('body').append(xrButton.domElement);
 								}
 							});
