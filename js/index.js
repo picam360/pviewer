@@ -207,7 +207,14 @@ var app = (function() {
 					try{
 						var txt = (new TextDecoder).decode(chunk_array[0]);
 						if (txt) {
-							_options = JSON.parse(txt);
+							var lines = txt.split('\n')
+							for(var i=0;i<lines.length;i++){
+								if(lines[i][0] == '#'){
+									lines[i] = "";
+								}
+							}
+							var json_str = lines.join("\n");
+							_options = JSON.parse(json_str);
 						}
 					}catch(e){
 						_options = {};
@@ -243,7 +250,14 @@ var app = (function() {
 						try{
 							var txt = (new TextDecoder).decode(chunk_array[0]);
 							if (txt) {
-								_options = JSON.parse(txt);
+								var lines = txt.split('\n')
+								for(var i=0;i<lines.length;i++){
+									if(lines[i][0] == '#'){
+										lines[i] = "";
+									}
+								}
+								var json_str = lines.join("\n");
+								_options = JSON.parse(json_str);
 							}
 						}catch(e){
 							_options = {};
@@ -1045,6 +1059,7 @@ var app = (function() {
 				const config = {
 					"plugin_paths" : [
 						"plugins/splitter_st.so",
+						"plugins/selector_st.so",
 						"plugins/composite_decoder_st.so",
 						"plugins/opus_decoder_st.so",
 						"plugins/opus_encoder_st.so",

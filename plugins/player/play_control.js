@@ -3,6 +3,11 @@ var create_plugin = (function() {
 	var m_is_init = false;
 	var m_pst = null;
 	var m_pstcore = null;
+	var m_pvf_chcker = null;
+	var m_st_pts = 0;
+	var m_et_pts = 0;
+	var m_cur_pts = 0;
+
 	var m_slider = null;
 
 	var startTimer = function() {
@@ -42,35 +47,22 @@ var create_plugin = (function() {
 		}
 	};
 
-	function on_pst_started() {
-
+	function on_pvf_started() {
 		m_slider = document.createElement("input");
 		m_slider.type = "range";
 		m_slider.min = "0";
 		m_slider.max = "1000";//permil
 		m_slider.value = "0";
 		m_slider.addEventListener("change", (e) => {
-			m_pstcore.pstcore_get_param(m_pst, "pvf_loader", "src_st_pts", (value) => {
-				var st_pts = parseFloat(value);
-				m_pstcore.pstcore_get_param(m_pst, "pvf_loader", "src_et_pts", (value) => {
-					var et_pts = parseFloat(value);
-					var pts = (et_pts - st_pts) * m_slider.value / 1000;
-					m_pstcore.pstcore_set_param(m_pst, "pvf_loader", "pts", pts.toString());
-				});
-			});
+			var pts = (m_et_pts - m_st_pts) * m_slider.value / 1000;
+			m_pstcore.pstcore_set_param(m_pst, "pvf_loader", "pts", pts.toString());
 		});
 		m_slider.update_interval = setInterval(() => {
-			m_pstcore.pstcore_get_param(m_pst, "pvf_loader", "src_st_pts", (value) => {
-				var st_pts = parseFloat(value);
-				m_pstcore.pstcore_get_param(m_pst, "pvf_loader", "src_et_pts", (value) => {
-					var et_pts = parseFloat(value);
-					m_pstcore.pstcore_get_param(m_pst, "pvf_loader", "cur_pts", (value) => {
-						var cur_pts = parseFloat(value);
-						if(!isNaN(st_pts) && !isNaN(et_pts) && !isNaN(cur_pts)){
-							m_slider.value = (cur_pts - st_pts) / (et_pts - st_pts) * 1000;
-						}
-					});
-				});
+			get_pts((st_pts, et_pts, cur_pts) => {
+				m_st_pts = st_pts;
+				m_et_pts = et_pts;
+				m_cur_pts = cur_pts;
+				m_slider.value = (m_cur_pts - m_st_pts) / (m_et_pts - m_st_pts) * 1000;
 			});
 		}, 1000);
 		m_slider.setAttribute("style", "position:absolute; bottom:75px; right:10%; width:80%;");
@@ -82,7 +74,36 @@ var create_plugin = (function() {
 		document.addEventListener("mousedown", mousedownFunc);
 		document.addEventListener("mousemove", mousemoveFunc);
 	}
+
+	function get_pts(callback) {
+		var name = "pvf_loader";
+		m_pstcore.pstcore_get_param(m_pst, name, "src_st_pts", (value) => {
+			var st_pts = parseFloat(value);
+			m_pstcore.pstcore_get_param(m_pst, name, "src_et_pts", (value) => {
+				var et_pts = parseFloat(value);
+				m_pstcore.pstcore_get_param(m_pst, name, "cur_pts", (value) => {
+					var cur_pts = parseFloat(value);
+					callback(st_pts, et_pts, cur_pts);
+				});
+			});
+		});
+	}
+
+	function on_pst_started() {
+		m_pvf_chcker = setInterval(() => {
+			get_pts((st_pts, et_pts, cur_pts) => {
+				if(!isNaN(st_pts) && !isNaN(et_pts) && !isNaN(cur_pts)){
+					m_st_pts = st_pts;
+					m_et_pts = et_pts;
+					m_cur_pts = cur_pts;
+					clearInterval(m_pvf_chcker);
+					on_pvf_started();
+				}
+			});
+		}, 1000);
+	}
 	function on_pst_stopped() {
+		clearInterval(m_pvf_chcker);
 		clearInterval(m_slider.update_interval);
 		document.body.removechild(m_slider);
 
