@@ -119,6 +119,7 @@ var create_plugin = (function() {
 		m_slider.timer = setTimeout(() => {
 			if(app.navi && app.navi.getCurrentPage().name == 'main.html'){
 				m_slider.style.visibility = 'hidden';
+				m_play_button.style.visibility = 'hidden';
 			}
 			m_slider.timer = null;
 		}, 3000);
@@ -126,6 +127,7 @@ var create_plugin = (function() {
 	var mousedownFunc = function(ev) {
 		if(app.navi && app.navi.getCurrentPage().name == 'main.html'){
 			m_slider.style.visibility = 'visible';
+			m_play_button.style.visibility = 'visible';
 		}
 		startTimer();
 	};
