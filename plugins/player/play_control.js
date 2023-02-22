@@ -8,6 +8,7 @@ var create_plugin = (function() {
 	var m_et_pts = 0;
 	var m_cur_pts = 0;
 
+	var m_timebox = null;
 	var m_slider = null;
 
 	var m_play_button = null;
@@ -119,6 +120,7 @@ var create_plugin = (function() {
 		m_slider.timer = setTimeout(() => {
 			if(app.navi && app.navi.getCurrentPage().name == 'main.html'){
 				m_slider.style.visibility = 'hidden';
+				m_timebox.style.visibility = 'hidden';
 				m_play_button.style.visibility = 'hidden';
 			}
 			m_slider.timer = null;
@@ -127,6 +129,7 @@ var create_plugin = (function() {
 	var mousedownFunc = function(ev) {
 		if(app.navi && app.navi.getCurrentPage().name == 'main.html'){
 			m_slider.style.visibility = 'visible';
+			m_timebox.style.visibility = 'visible';
 			m_play_button.style.visibility = 'visible';
 		}
 		startTimer();
@@ -161,16 +164,38 @@ var create_plugin = (function() {
 			var pts = (m_et_pts - m_st_pts) * m_slider.value / 1000;
 			m_pstcore.pstcore_set_param(m_pst, "pvf_loader", "pts", pts.toString());
 		});
+		m_slider.setAttribute("style", "position:absolute; bottom:75px; right:10%; width:80%;");
+		document.body.appendChild(m_slider);
+
+		m_timebox = document.createElement("p");
+		m_timebox.innerHTML = "00:00:00/00:00:00";
+		m_timebox.setAttribute("style", "position:absolute; bottom:60px; left:90%; font-size: 16px; font-weight: bold; color:#FFF; text-stroke: 1px #000; -webkit-text-stroke: 1px #000;");
+		document.body.appendChild(m_timebox);
+
 		m_slider.update_interval = setInterval(() => {
 			get_pts((st_pts, et_pts, cur_pts) => {
 				m_st_pts = st_pts;
 				m_et_pts = et_pts;
 				m_cur_pts = cur_pts;
 				m_slider.value = (m_cur_pts - m_st_pts) / (m_et_pts - m_st_pts) * 1000;
+
+				var et_s = parseInt(m_et_pts - m_st_pts);
+				var et_m = parseInt(et_s/60);
+				var et_h = parseInt(et_m/60);
+				var et_s2 = ('00' + et_s%60).slice(-2);
+				var et_m2 = ('00' + et_m%60).slice(-2);
+				var et_h2 = ('00' + et_h%24).slice(-2);
+	
+				var ct_s = parseInt(m_cur_pts - m_st_pts);
+				var ct_m = parseInt(ct_s/60);
+				var ct_h = parseInt(ct_m/60);
+				var ct_s2 = ('00' + ct_s%60).slice(-2);
+				var ct_m2 = ('00' + ct_m%60).slice(-2);
+				var ct_h2 = ('00' + ct_h%24).slice(-2);
+	
+				m_timebox.innerHTML = `${ct_h2}:${ct_m2}:${ct_s2}/${et_h2}:${et_m2}:${et_s2}`;
 			});
 		}, 1000);
-		m_slider.setAttribute("style", "position:absolute; bottom:75px; right:10%; width:80%;");
-		document.body.appendChild(m_slider);
 
 		m_play_button = create_button(PAUSE_ICON, PAUSE_ICON, function(
 			e) {
