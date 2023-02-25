@@ -337,6 +337,13 @@ function PluginHost(core, options) {
 		is_streaming : function(url) {
 			return core.get_pst() != null;
 		},
+		fire_pstcore_initialized(pstcore){
+			for (var i = 0; i < m_plugins.length; i++) {
+				if (m_plugins[i].pstcore_initialized) {
+					m_plugins[i].pstcore_initialized(pstcore);
+				}
+			}
+		},
 		fire_pst_started(pstcore, pst){
 			for (var i = 0; i < m_plugins.length; i++) {
 				if (m_plugins[i].pst_started) {

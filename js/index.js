@@ -1087,6 +1087,38 @@ var app = (function() {
 						console.log("json parse failed", m_query['plugin_paths']);
 					}
 				}
+
+				function call_pstcore_init(config){
+					console.log("pstcore initialized");
+					const config_json = JSON.stringify(config);
+					m_pstcore.pstcore_init(config_json);
+
+					setTimeout(() => {
+						self.plugin_host.fire_pstcore_initialized(m_pstcore);
+					}, 100);
+
+					m_applink_ready = true;
+					if(!m_query['applink']){
+						m_query['applink'] = window.location.href;
+					}
+					self.open_applink(m_query['applink']);
+					
+					self.start_animate();
+					
+					window.addEventListener('resize', () => {
+						self.update_canvas_size();
+					}, false);
+					
+					document.ondragover = document.ondrop = function (e) {
+					  e.preventDefault()
+					}
+					document.body.addEventListener('drop', function (e) {
+						if(e.dataTransfer.files.length == 0){
+							var url = e.dataTransfer.getData("URL");
+							self.open_applink(url);
+						}
+					});
+				}
 				
 				if (window.cordova && cordova.platformId == 'electron'){
 					console = require('electron').remote.require('console');
@@ -1138,32 +1170,8 @@ var app = (function() {
 
 					m_pstcore = require('node-pstcore');
 					m_pstcore._pstcore_poll_events = m_pstcore.pstcore_poll_events;
-					
-					console.log("pstcore initialized");
-					const config_json = JSON.stringify(config);
-					m_pstcore.pstcore_init(config_json);
 
-					m_applink_ready = true;
-					if(!m_query['applink']){
-						m_query['applink'] = window.location.href;
-					}
-					self.open_applink(m_query['applink']);
-					
-					self.start_animate();
-					
-					window.addEventListener('resize', () => {
-						self.update_canvas_size();
-					}, false);
-					
-					document.ondragover = document.ondrop = function (e) {
-					  e.preventDefault()
-					}
-					document.body.addEventListener('drop', function (e) {
-						if(e.dataTransfer.files.length == 0){
-							var url = e.dataTransfer.getData("URL");
-							self.open_applink(url);
-						}
-					});
+					call_pstcore_init(config);
 
 					window.PstCoreLoader = undefined;
 
@@ -1287,31 +1295,9 @@ var app = (function() {
 							}, "CDVPstCore", "set_dequeue_callback", [pst, idx]);
                         },
 					};
-					console.log("pstcore initialized");
-					const config_json = JSON.stringify(config);
-					m_pstcore.pstcore_init(config_json);
 
-					m_applink_ready = true;
-					if(!m_query['applink']){
-						m_query['applink'] = window.location.href;
-					}
-					self.open_applink(m_query['applink']);
+					call_pstcore_init(config);
 					
-					self.start_animate();
-					
-					window.addEventListener('resize', () => {
-						self.update_canvas_size();
-					}, false);
-					
-					document.ondragover = document.ondrop = function (e) {
-					  e.preventDefault()
-					}
-					document.body.addEventListener('drop', function (e) {
-						if(e.dataTransfer.files.length == 0){
-							var url = e.dataTransfer.getData("URL");
-							self.open_applink(url);
-						}
-					});
 				}else{
 					m_pstcore = window.PstCoreLoader({
 						preRun: [],
@@ -1353,30 +1339,9 @@ var app = (function() {
                                     console.log(msg);
                                 }, "CDVPstCore", "init_internal", [JSON.stringify(config)]); // init is reserved
 							}
-							const config_json = JSON.stringify(config);
-							m_pstcore.pstcore_init(config_json);
-	
-							m_applink_ready = true;
-							if(!m_query['applink']){
-								m_query['applink'] = window.location.href;
-							}
-							self.open_applink(m_query['applink']);
+
+							call_pstcore_init(config);
 							
-							self.start_animate();
-							
-							window.addEventListener('resize', () => {
-								self.update_canvas_size();
-							}, false);
-							
-							document.ondragover = document.ondrop = function (e) {
-							  e.preventDefault()
-							}
-							document.body.addEventListener('drop', function (e) {
-								if(e.dataTransfer.files.length == 0){
-									var url = e.dataTransfer.getData("URL");
-									self.open_applink(url);
-								}
-							});
 						},
 						locateFile : function(path, prefix) {
 							return self.base_path + "../lib/pstcore/" + path;
