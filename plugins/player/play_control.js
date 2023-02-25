@@ -1,6 +1,5 @@
 var create_plugin = (function() {
 	var m_plugin_host = null;
-	var m_is_init = false;
 	var m_pst = null;
 	var m_pstcore = null;
 	var m_pvf_chcker = null;
@@ -255,7 +254,9 @@ var create_plugin = (function() {
 	function on_pst_stopped() {
 		clearInterval(m_pvf_chcker);
 		clearInterval(m_slider.update_interval);
-		document.body.removechild(m_slider);
+		document.body.removeChild(m_slider);
+		document.body.removeChild(m_timebox);
+		document.body.removeChild(m_play_button);
 
 		document.removeEventListener("keydown", mousedownFunc);
 		document.removeEventListener("touchstart", mousedownFunc);
@@ -264,19 +265,16 @@ var create_plugin = (function() {
 	}
 	return function(plugin_host) {
 		m_plugin_host = plugin_host;
-		if (!m_is_init) {
-			m_is_init = true;
-			//init();
-		}
 		var plugin = {
+			pstcore_initialized : (pstcore) => {
+				m_pstcore = pstcore;
+			},
 			pst_started : function(pstcore, pst) {
 				m_pst = pst;
-				m_pstcore = pstcore;
 				on_pst_started();
 			},
 			pst_stopped : function(pstcore, pst) {
 				m_pst = null;
-				m_pstcore = null;
 				on_pst_stopped();
 			},
 			on_restore_app_menu : function(callback) {

@@ -339,22 +339,34 @@ function PluginHost(core, options) {
 		},
 		fire_pstcore_initialized(pstcore){
 			for (var i = 0; i < m_plugins.length; i++) {
-				if (m_plugins[i].pstcore_initialized) {
-					m_plugins[i].pstcore_initialized(pstcore);
+				try{
+					if (m_plugins[i].pstcore_initialized) {
+						m_plugins[i].pstcore_initialized(pstcore);
+					}
+				}catch(e){
+					console.log(e);
 				}
 			}
 		},
 		fire_pst_started(pstcore, pst){
 			for (var i = 0; i < m_plugins.length; i++) {
-				if (m_plugins[i].pst_started) {
-					m_plugins[i].pst_started(pstcore, pst);
+				try{
+					if (m_plugins[i].pst_started) {
+						m_plugins[i].pst_started(pstcore, pst);
+					}
+				}catch(e){
+					console.log(e);
 				}
 			}
 		},
 		fire_pst_stopped(pstcore, pst){
 			for (var i = 0; i < m_plugins.length; i++) {
-				if (m_plugins[i].pst_stopped) {
-					m_plugins[i].pst_stopped(pstcore, pst);
+				try{
+					if (m_plugins[i].pst_stopped) {
+						m_plugins[i].pst_stopped(pstcore, pst);
+					}
+				}catch(e){
+					console.log(e);
 				}
 			}
 		},
