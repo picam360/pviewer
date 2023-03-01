@@ -18,7 +18,7 @@ var app = (function() {
 	
 	// main canvas
 	var m_canvas;
-	var m_session;
+	var m_xrsession;
 	// toolbar
 	var m_toolbar;
 	// overlay
@@ -418,7 +418,7 @@ var app = (function() {
 		start_animate: function() {
 			
 			function redraw() {
-				if(m_session){
+				if(m_xrsession){
 					return;
 				}
 				m_pstcore._pstcore_poll_events();
@@ -892,7 +892,7 @@ var app = (function() {
 								function redraw(t, xrFrame) {
 									m_pstcore.GL.makeContextCurrent(dglfw_win.handle);
 									var pose = xrFrame.getViewerPose(refSpace);
-									var layer = m_session.renderState.baseLayer;
+									var layer = m_xrsession.renderState.baseLayer;
 									if(pose){
 										if(!framebuffer && layer.framebuffer){
 											framebuffer = layer.framebuffer;
@@ -926,16 +926,19 @@ var app = (function() {
 						
 										var ori = pose.transform.orientation;
 										var quat = new THREE.Quaternion(ori.x, ori.y, ori.z, ori.w);
+
 										quat = quat.multiply(offset_quat);
-										self.plugin_host.set_view_offset(quat);
+
+										self.plugin_host.set_view_quat(quat);
 									}
 									m_pstcore._pstcore_poll_events();
-									m_session.requestAnimationFrame(redraw);
+									m_xrsession.requestAnimationFrame(redraw);
 								}
 								
 								self.set_stereo(true);
+								self.plugin_host.set_view_offset(new THREE.Quaternion());
 
-								m_session.requestAnimationFrame(redraw);
+								m_xrsession.requestAnimationFrame(redraw);
 							}
 							navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
 								if(supported){
@@ -943,10 +946,10 @@ var app = (function() {
 										return navigator.xr.requestSession('immersive-vr').then(onSessionStarted);
 									}
 									var onSessionStarted = function(session) {
-										m_session = session;
+										m_xrsession = session;
 										ctx.makeXRCompatible().then(() => {
-											m_session.updateRenderState({ baseLayer: new XRWebGLLayer(m_session, ctx) });
-											return m_session.requestReferenceSpace('local');
+											m_xrsession.updateRenderState({ baseLayer: new XRWebGLLayer(m_xrsession, ctx) });
+											return m_xrsession.requestReferenceSpace('local');
 										}).then((_refSpace) => {
 											refSpace = _refSpace;
 											vr_draw();
@@ -1044,7 +1047,7 @@ var app = (function() {
 				
 					m_mpu = MPU();
 					m_mpu.init((quat) => {
-						if(!m_pstcore || !m_pst){
+						if(!m_pstcore || !m_pst || m_xrsession){
 							return;
 						}
 						self.plugin_host.set_view_quat(quat);
