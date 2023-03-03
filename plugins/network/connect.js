@@ -225,6 +225,7 @@ var create_plugin = (function() {
                                     self.emit('data', new Uint8Array(data.data));
                                 });
                                 dc.addEventListener('close', function(){
+                                    console.log('Data channel closed');
                                     pc.close();
                                     m_plugin_host.set_info("p2p connection closed");
                                     if(mt_client){
@@ -282,12 +283,7 @@ var create_plugin = (function() {
         clearInterval(conn.attr.timer);
         conn.rtp.set_callback(null);
         conn.close();
-        if(conn.attr.pst){
-            // destroy should be done by app.stop_pst()
-            // pstcore.pstcore_remove_set_param_done_callback(conn.attr.pst, conn.on_set_param_done_callback);
-            // pstcore.pstcore_destroy_pstreamer(conn.attr.pst);
-            conn.attr.pst = 0;
-        }
+        conn.attr.pst = 0;
     }
     function init_connection(conn, stream_mode) {
         var pstcore = app.get_pstcore();
@@ -334,7 +330,14 @@ var create_plugin = (function() {
                             var split = str.split('"');
                             var name = split[1];
                             var value = split[3].split(' ');
-                            if (name == "pong") {
+                            if (name == "error") {
+                                alert(value);
+        
+                                var page = app.navi.getCurrentPage();
+                                if(page.name == 'main.html'){
+                                    app.navi.popPage();
+                                }
+                            }else if (name == "pong") {
                                 ping_cnt++;
                                 var now = new Date().getTime();
                                 var rtt = now - parseInt(value[0]);

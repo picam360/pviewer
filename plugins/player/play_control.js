@@ -252,16 +252,20 @@ var create_plugin = (function() {
 		}, 1000);
 	}
 	function on_pst_stopped() {
-		clearInterval(m_pvf_chcker);
-		clearInterval(m_slider.update_interval);
-		document.body.removeChild(m_slider);
-		document.body.removeChild(m_timebox);
-		document.body.removeChild(m_play_button);
+		if(m_slider){
+			clearInterval(m_pvf_chcker);
+			clearInterval(m_slider.update_interval);
+			document.body.removeChild(m_slider);
+			document.body.removeChild(m_timebox);
+			document.body.removeChild(m_play_button);
+	
+			document.removeEventListener("keydown", mousedownFunc);
+			document.removeEventListener("touchstart", mousedownFunc);
+			document.removeEventListener("mousedown", mousedownFunc);
+			document.removeEventListener("mousemove", mousemoveFunc);
 
-		document.removeEventListener("keydown", mousedownFunc);
-		document.removeEventListener("touchstart", mousedownFunc);
-		document.removeEventListener("mousedown", mousedownFunc);
-		document.removeEventListener("mousemove", mousemoveFunc);
+			m_slider = null;
+		}
 	}
 	return function(plugin_host) {
 		m_plugin_host = plugin_host;
