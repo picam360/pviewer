@@ -410,14 +410,14 @@ var create_plugin = (function() {
             // set rtp callback
             conn.rtp.set_callback(function(packet) {
                 var sequencenumber = packet.GetSequenceNumber();
-                if ((sequencenumber % 100) == 0) {
-                    var latency = new Date().getTime() /
-                        1000 -
-                        (packet.GetTimestamp() + packet.GetSsrc() / 1E6) +
-                        m_timediff_ms / 1000;
-                    console.log("packet latency : seq=" + sequencenumber +
-                        ", latency=" + latency + "sec");
-                }
+                // if ((sequencenumber % 100) == 0) {
+                //     var latency = new Date().getTime() /
+                //         1000 -
+                //         packet.GetTimestamp() +
+                //         m_timediff_ms / 1000;
+                //     console.log("packet latency : seq=" + sequencenumber +
+                //         ", latency=" + latency + "sec");
+                // }
                 if (packet.GetPayloadType() == PT_ENQUEUE) { // enqueue
                     var chunk = packet.GetPayload();
                     var eob = "<eob/>";
@@ -454,8 +454,8 @@ var create_plugin = (function() {
 
                             pstcore.pstcore_enqueue(conn.attr.pst, buff);
                             pstcore.pstcore_enqueue(conn.attr.pst, null);//eob
-                            conn.attr.enqueue_pendings = [];
                         }
+                        conn.attr.enqueue_pendings = [];
                     }else{
                         conn.attr.enqueue_pendings.push(chunk);
                     }

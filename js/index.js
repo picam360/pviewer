@@ -1095,6 +1095,9 @@ var app = (function() {
 					console.log("pstcore initialized");
 					const config_json = JSON.stringify(config);
 					m_pstcore.pstcore_init(config_json);
+					m_pstcore.pstcore_add_log_callback((level, tag, msg) => {
+						console.log(level, tag, msg);
+					});
 
 					setTimeout(() => {
 						self.plugin_host.fire_pstcore_initialized(m_pstcore);
