@@ -24,6 +24,7 @@ var create_plugin = (function() {
     var m_query = GetQueryString();
     var m_rtp_mod;
     var m_rtp_rx_conns = [];
+	var m_last_src = 0;
     var m_mt_host;
         
     function addMenuButton(name, txt) {
@@ -166,6 +167,7 @@ var create_plugin = (function() {
 			};
 			var rtp = Rtp(conn);
 			conn.rtp = rtp;
+            conn.rtp.src = ++m_last_src;
 			new Promise((resolve, reject) => {
 				rtp.set_callback(function(packet) {
 					conn.attr.timeout = new Date().getTime();
@@ -298,16 +300,16 @@ var create_plugin = (function() {
 						}catch{
 							console.log("fail parse json", str);
 						}
-					// }else if (packet.GetPayloadType() == PT_CMD) {
-					// 	var cmd = packet.GetPacketData().toString('ascii', packet
-					// 		.GetHeaderLength());
-					// 	var split = cmd.split('\"');
-					// 	var id = split[1];
-					// 	var value = split[3];
-					// 	//plugin_host.send_command(value, conn);
-					// 	if (options.debug >= 5) {
-					// 		console.log("cmd got :" + cmd);
-					// 	}
+					}else if (packet.GetPayloadType() == PT_CMD) {
+						var cmd = packet.GetPacketData().toString('ascii', packet
+							.GetHeaderLength());
+						var split = cmd.split('\"');
+						var id = split[1];
+						var value = split[3];
+						m_plugin_host.send_command(value, conn);
+						if (options.debug >= 5) {
+							console.log("cmd got :" + cmd);
+						}
 					}else{
                         if((conn.frame_info.stream_mode == "mt" || conn.frame_info.stream_mode == "vid+mt")){
                             m_mt_host.handle_packet(packet, _rtp);

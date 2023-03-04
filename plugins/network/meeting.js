@@ -188,11 +188,11 @@ function MeetingHost(pstcore, selfclient_enable, _options) {
 	var options = _options || {};
 
 	var PacketHeaderLength = 12;
-	var m_last_src = 0;
 	var m_clients = {};
-	var m_selfclient;
-	var m_selfrtp_c;
-	var m_selfrtp_h;
+	var m_presentor = 0;
+	var m_selfclient = null;
+	var m_selfrtp_c = null;
+	var m_selfrtp_h = null;
 
 	var options = _options || {};
 
@@ -212,35 +212,33 @@ function MeetingHost(pstcore, selfclient_enable, _options) {
 	var self = {
 		add_client : (rtp) => {
 			var push_client = (rtp) =>{
-				var src = ++m_last_src;
 				rtp.src_data = {
-					src : src,
 					packet_pendings : [],
 					param_pendings : [],
 					in_pt_set_param : false,
 				};
-				m_clients[src] = rtp;
+				m_clients[rtp.src] = rtp;
 
-				for(var _src in m_clients){
-					if(_src == src){//prevent loop back
+				for(var src in m_clients){
+					if(src == rtp.src){//prevent loop back
 						continue;
 					}
 					try{
-						var timediff_ms = (m_clients[_src].timediff_ms || 0) - (rtp.timediff_ms || 0);
+						var timediff_ms = (m_clients[src].timediff_ms || 0) - (rtp.timediff_ms || 0);
 						{
 							var msg = `[["network","timediff_ms","${timediff_ms}"]]`;
-							var pack = m_clients[_src].build_packet(msg, PT_MT_SET_PARAM);
-							rewite_src(pack, src);
-							m_clients[_src].send_packet(pack);
+							var pack = m_clients[src].build_packet(msg, PT_MT_SET_PARAM);
+							rewite_src(pack, rtp.src);
+							m_clients[src].send_packet(pack);
 						}
 						{
 							var msg = `[["network","timediff_ms","${-timediff_ms}"]]`;
 							var pack = m_clients[src].build_packet(msg, PT_MT_SET_PARAM);
-							rewite_src(pack, _src);
-							m_clients[src].send_packet(pack);
+							rewite_src(pack, src);
+							m_clients[rtp.src].send_packet(pack);
 						}
 					}catch(err){
-						self.remove_client(m_clients[_src]);
+						self.remove_client(m_clients[src]);
 					}
 				}
 			};
@@ -262,7 +260,10 @@ function MeetingHost(pstcore, selfclient_enable, _options) {
 			push_client(rtp);
 		},
 		remove_client : (rtp) => {
-			delete m_clients[rtp.src_data.src];
+			if(m_presentor == rtp.src){
+				m_presentor = 0;
+			}
+			delete m_clients[rtp.src];
 			if(Object.keys(m_clients).length == 1 && selfclient_enable){
 				m_selfclient.close();
 				m_selfclient = null;
@@ -271,12 +272,25 @@ function MeetingHost(pstcore, selfclient_enable, _options) {
 				m_clients = {};
 			}
 		},
+		get_presentor : () => {
+			return m_presentor;
+		},
+		send_mt_param : (pst_name, param, value, rtp) => {
+			var param_str = "[\"" + pst_name + "\",\"" + param + "\",\"" + value + "\"]";
+			var msg = "[" + param_str + "]";
+			for(var src in m_clients){
+				if(rtp && rtp.src != src){
+					continue;
+				}
+				var pack = m_clients[src].build_packet(msg, PT_MT_SET_PARAM);
+				m_clients[src].send_packet(pack);
+			}
+		},
 		handle_packet : (packet, rtp) => {
-			if(!rtp || !rtp.src_data || !m_clients[rtp.src_data.src]){//fail safe
+			if(!rtp || !m_clients[rtp.src]){//fail safe
 				return;
 			}
-			var src = rtp.src_data.src;
-			rewite_src(packet, src);
+			rewite_src(packet, rtp.src);
 			
 			if (packet.GetPayloadType() == PT_MT_ENQUEUE) { // enqueue
 				var chunk = packet.GetPayload();
@@ -289,26 +303,55 @@ function MeetingHost(pstcore, selfclient_enable, _options) {
 				   chunk[chunk.length - 2] == eob.charCodeAt(4) &&
 				   chunk[chunk.length - 1] == eob.charCodeAt(5)){
 					
-					for(var _src in m_clients){
-						if(_src == src){//prevent loop back
+					for(var src in m_clients){
+						if(src == rtp.src){//prevent loop back
 							continue;
 						}
-						try{
-							for (var _packet of m_clients[src].src_data.packet_pendings) {
-								m_clients[_src].send_packet(_packet.GetPacketData());
+						if(m_presentor != 0){
+							//(presentor to others) or (others to presentor)
+							if(rtp.src == m_presentor || src == m_presentor){
+								//pass through
+							}else{
+								continue;
 							}
-							m_clients[_src].send_packet(packet.GetPacketData());//eob
+						}
+						try{
+							for (var _packet of m_clients[rtp.src].src_data.packet_pendings) {
+								m_clients[src].send_packet(_packet.GetPacketData());
+							}
+							m_clients[src].send_packet(packet.GetPacketData());//eob
 						}catch(err){
-							self.remove_client(m_clients[_src]);
+							self.remove_client(m_clients[src]);
 						}
 					}
-					m_clients[src].src_data.packet_pendings = [];
+					m_clients[rtp.src].src_data.packet_pendings = [];
 				}else{
-					m_clients[src].src_data.packet_pendings.push(packet);
+					m_clients[rtp.src].src_data.packet_pendings.push(packet);
 				}
 				
 			} else if (packet.GetPayloadType() == PT_MT_SET_PARAM) { // set_param
-
+				var str = new TextDecoder().decode(packet.GetPayload());
+				try{
+					var list = JSON.parse(str);
+					for(var ary of list){
+						if(ary[0] == "mt_host"){
+							if(ary[1] == "offer_presentor"){
+								if(ary[2] == "1"){
+									m_presentor = rtp.src;
+								}
+								self.send_mt_param("mt_host", "presentor", m_presentor.toString());
+							}
+							if(ary[1] == "resign_presentor"){
+								if(ary[2] == "1" && m_presentor == rtp.src){
+									m_presentor = 0;
+								}
+								self.send_mt_param("mt_host", "presentor", m_presentor.toString());
+							}
+						}
+					}
+				}catch{
+					console.log("fail parse json", str);
+				}
 			}
 		},
 	};

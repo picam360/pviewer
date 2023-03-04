@@ -2,27 +2,6 @@ var create_plugin = (function() {
 	var m_plugin_host = null;
 	var m_auto_park = true;
 	var m_park_url = "plugins/park/top/Picam360 Park.html";
-
-	function loadFile(path, callback, error_callbackk) {
-		var req = new XMLHttpRequest();
-		req.responseType = "arraybuffer";
-		req.open("get", path, true);
-
-		req.onerror = function() {
-			if(error_callbackk){
-				error_callbackk(req);
-			}
-			return;
-		};
-		req.onload = function() {
-			if(req.status != 200){
-				req.onerror();
-				return;
-			}
-			callback(new Uint8Array(req.response));
-		};
-		req.send(null);
-	}
 	
 	return function(plugin_host) {
 		//debugger;

@@ -1,0 +1,33 @@
+<ons-template id="meeting_control.html"><ons-navigator
+		animation="slide"
+		var="app.navi"
+	> <ons-page>
+<ons-toolbar>
+<div class="left">
+	<ons-back-button>Back</ons-back-button>
+</div>
+<div class="center">Meeting</div>
+<div class="right">
+	<ons-toolbar-button ng-click="app.menu.toggleMenu()">
+      <ons-icon icon="ion-navicon" style="font-size: 32px; width: 1em;"></ons-icon>
+    </ons-toolbar-button>
+</div>
+</ons-toolbar>
+<div
+	style="width: 100%; height: 100%; margin: 0;"
+	id="container"
+>
+
+<ons-list id="menu_list"> 
+	<ons-list-item class="menu-item">
+		<ons-row align="center">
+			<ons-col>Presentor</ons-col>
+			<ons-col align="right" valign="center">
+				<ons-switch var="swPresentorMode" onchange=""></ons-switch>
+			</ons-col>
+		</ons-row>
+	</ons-list-item> 
+</ons-list>
+
+</div>
+</ons-page>  </ons-navigator> </ons-template>
