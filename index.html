@@ -146,7 +146,7 @@
 <body>
 	<ons-sliding-menu
 		menu-page="menu.html"
-		main-page=""
+		main-page="empty.html"
 		side="right"
 		var="app.menu"
 		type="push"
@@ -288,6 +288,27 @@
 		icon="fa-info-circle"
 		fixed-width="true"
 	></ons-icon> About </ons-list-item></ons-list></ons-page> </ons-template>
+
+	<ons-template id="empty.html">
+	<ons-navigator
+		animation="slide"
+		var="app.navi">
+	<ons-page>
+	<ons-page>
+	<ons-toolbar id="toolbar" class="toolbar">
+	<div class="left">
+		<ons-back-button>Back</ons-back-button>
+	</div>
+	<div class="center">PViewer</div>
+	<div class="right">
+		<ons-toolbar-button ng-click="app.menu.toggleMenu()">
+			<ons-icon icon="ion-navicon" style="font-size: 32px; width: 1em;"></ons-icon>
+		</ons-toolbar-button>
+	</div>
+	</ons-toolbar> 
+	</ons-page>
+	</ons-navigator>
+	</ons-template>
 
 	<ons-template id="main.html">
     <ons-page>
