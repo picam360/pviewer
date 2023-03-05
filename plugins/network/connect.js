@@ -10,7 +10,10 @@ var create_plugin = (function() {
     var m_permanent_options = {};
     var m_query = GetQueryString();
     var mt_client;
-    var mt_host_data = {};
+    var mt_host_data = {
+        presentor : 0,
+        n_clients : 0,
+    };
         
     function addMenuButton(name, txt) {
             return new Promise((resolve, reject) => {
@@ -534,10 +537,15 @@ var create_plugin = (function() {
                                     return;
                                 }
                                 if(swPresentorMode.isChecked()){
-                                    send_mt_param(conn, "mt_host", "offer_presentor", "1");
+                                    if(mt_host_data.presentor == 0){
+                                        send_mt_param(conn, "mt_host", "offer_presentor", "1");
+                                    }
                                 }else{
-                                    send_mt_param(conn, "mt_host", "resign_presentor", "1");
+                                    if(mt_host_data.presentor == conn.rtp.src){
+                                        send_mt_param(conn, "mt_host", "resign_presentor", "1");
+                                    }
                                 }
+                                swPresentorMode.setChecked(mt_host_data.presentor == conn.rtp.src);
                             });
 
                             swPresentorMode.in_set_presentor = true;
