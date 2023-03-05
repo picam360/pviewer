@@ -10,6 +10,7 @@ var create_plugin = (function() {
     var m_permanent_options = {};
     var m_query = GetQueryString();
     var mt_client;
+    var mt_host_data = {};
         
     function addMenuButton(name, txt) {
             return new Promise((resolve, reject) => {
@@ -538,6 +539,12 @@ var create_plugin = (function() {
                                     send_mt_param(conn, "mt_host", "resign_presentor", "1");
                                 }
                             });
+
+                            swPresentorMode.in_set_presentor = true;
+                            swPresentorMode.setChecked(mt_host_data.presentor == conn.rtp.src);
+                            swPresentorMode.in_set_presentor = false;
+                            $('#txtNClients').text(mt_host_data.n_clients);
+
                             callback();
                         }, 0);
                     }});
@@ -560,10 +567,14 @@ var create_plugin = (function() {
                     for(var ary of list){
                         if(ary[0] == "mt_host"){
                             if(ary[1] == "presentor"){
-                                var presentor = parseInt(ary[2]);
+                                mt_host_data.presentor = parseInt(ary[2]);
                                 swPresentorMode.in_set_presentor = true;
-                                swPresentorMode.setChecked(presentor == conn.rtp.src);
+                                swPresentorMode.setChecked(mt_host_data.presentor == conn.rtp.src);
                                 swPresentorMode.in_set_presentor = false;
+                            }
+                            if(ary[1] == "n_clients"){
+                                mt_host_data.n_clients = parseInt(ary[2]);
+                                $('#txtNClients').text(mt_host_data.n_clients);
                             }
                         }
                     }

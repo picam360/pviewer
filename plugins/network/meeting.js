@@ -184,6 +184,9 @@ function MeetingClient(pstcore, host, _options) {
 	return self;
 }
 
+var SELF_RTP_CLIENT = (1 << 30) + 1;
+var SELF_RTP_HOST = (1 << 30) + 2;
+
 function MeetingHost(pstcore, selfclient_enable, _options) {
 	var options = _options || {};
 
@@ -193,8 +196,30 @@ function MeetingHost(pstcore, selfclient_enable, _options) {
 	var m_selfclient = null;
 	var m_selfrtp_c = null;
 	var m_selfrtp_h = null;
+	var m_param_pendings = [];
 
 	var options = _options || {};
+
+	var m_timer = setInterval(function() {
+		if(m_param_pendings.length > 0) {
+			var param_pendings = m_param_pendings;
+			m_param_pendings = [];
+			for(var [param_str, rtp] of param_pendings){
+				var msg = "[" + param_str + "]";
+				for(var src in m_clients){
+					if(rtp && rtp.src != src){
+						continue;
+					}
+					try{
+						var pack = m_clients[src].build_packet(msg, PT_MT_SET_PARAM);
+						m_clients[src].send_packet(pack);
+					}catch(err){
+						self.remove_client(m_clients[src]);
+					}
+				}
+			}
+		}
+	}, 33);
 
 	function rewite_src(pack, src){
 		if(!pack){
@@ -218,6 +243,7 @@ function MeetingHost(pstcore, selfclient_enable, _options) {
 					in_pt_set_param : false,
 				};
 				m_clients[rtp.src] = rtp;
+				self.send_mt_param("mt_host", "n_clients", Object.keys(m_clients).length.toString());
 
 				for(var src in m_clients){
 					if(src == rtp.src){//prevent loop back
@@ -247,13 +273,16 @@ function MeetingHost(pstcore, selfclient_enable, _options) {
 				//m_selfrtp_c{in m_clients}.send_packet -> m_selfclient.handle_packet{player}
 
 				m_selfrtp_c = rtp_mod.Rtp();
+				m_selfrtp_c.src = SELF_RTP_CLIENT;
 				m_selfrtp_c.send_packet = (data) => {
 					m_selfclient.handle_packet(rtp_mod.PacketHeader(data));
 				};
 				m_selfrtp_h = rtp_mod.Rtp();
+				m_selfrtp_h.src = SELF_RTP_HOST;
 				m_selfrtp_h.send_packet = (data) => {
 					self.handle_packet(rtp_mod.PacketHeader(data), m_selfrtp_c);
 				};
+
 				m_selfclient = MeetingClient(pstcore, m_selfrtp_h, options);
 				push_client(m_selfrtp_c);
 			}
@@ -271,20 +300,11 @@ function MeetingHost(pstcore, selfclient_enable, _options) {
 				m_selfrtp_c = null;
 				m_clients = {};
 			}
-		},
-		get_presentor : () => {
-			return m_presentor;
+			self.send_mt_param("mt_host", "n_clients", Object.keys(m_clients).length.toString());
 		},
 		send_mt_param : (pst_name, param, value, rtp) => {
 			var param_str = "[\"" + pst_name + "\",\"" + param + "\",\"" + value + "\"]";
-			var msg = "[" + param_str + "]";
-			for(var src in m_clients){
-				if(rtp && rtp.src != src){
-					continue;
-				}
-				var pack = m_clients[src].build_packet(msg, PT_MT_SET_PARAM);
-				m_clients[src].send_packet(pack);
-			}
+			m_param_pendings.push([param_str, rtp]);
 		},
 		handle_packet : (packet, rtp) => {
 			if(!rtp || !m_clients[rtp.src]){//fail safe
