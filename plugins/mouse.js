@@ -134,7 +134,7 @@ var create_plugin = (function() {
 				// + THREE.Math.radToDeg(diff_euler.z));
 				// }
 			} else {
-				if(pre_view_offset_quat != null && !pre_view_offset_quat.equals(view_offset_quat)){
+				if(pre_view_offset_quat == null || !pre_view_offset_quat.equals(view_offset_quat)){
 					var cur_quat = view_offset_quat.clone().multiply(view_quat.clone());
 					var cur_pu = quat_to_yxy(cur_quat);
 					var ori_pu = quat_to_yxy(view_quat);
