@@ -154,7 +154,34 @@ var create_plugin = (function() {
 	};
 
 	function on_pvf_started() {
+		m_play_button = create_button(PAUSE_ICON, PAUSE_ICON, function(
+			e) {
+			switch (e.type) {
+				case "up" :
+					if(m_play_button.pause){
+						m_pstcore.pstcore_set_param(m_pst, "pvf_loader", "pause", "0");
+						m_play_button.pause = false;
+						m_play_button.src_normal = PAUSE_ICON;
+						m_play_button.src_pushed = PAUSE_ICON;
+					}else{
+						m_pstcore.pstcore_set_param(m_pst, "pvf_loader", "pause", "1");
+						m_play_button.pause = true;
+						m_play_button.src_normal = PLAY_ICON;
+						m_play_button.src_pushed = PLAY_ICON;
+					}
+					break;
+			}
+		});
+		m_play_button.setAttribute("style", `position:absolute; bottom:60px; left:5px; width:50px; height:50px;`);
+		document.body.appendChild(m_play_button);
+
+		m_timebox = document.createElement("p");
+		m_timebox.innerHTML = "00:00:00/00:00:00";
+		m_timebox.setAttribute("style", "position:absolute; bottom:60px; right:10px; font-size: 16px; font-weight: bold; color:#FFF; text-stroke: 1px #000; -webkit-text-stroke: 1px #000;");
+		document.body.appendChild(m_timebox);
+
 		m_slider = document.createElement("input");
+		m_slider.id = "play_control_slider";
 		m_slider.type = "range";
 		m_slider.min = "0";
 		m_slider.max = "1000";//permil
@@ -163,13 +190,15 @@ var create_plugin = (function() {
 			var pts = (m_et_pts - m_st_pts) * m_slider.value / 1000;
 			m_pstcore.pstcore_set_param(m_pst, "pvf_loader", "pts", pts.toString());
 		});
-		m_slider.setAttribute("style", "position:absolute; bottom:75px; right:10%; width:80%;");
+		m_slider.setAttribute("style", "position:absolute; bottom:75px;");
+		m_slider.resize_fnc = () => {
+			m_slider.style.left = (m_play_button.offsetWidth + 10) + "px";
+			m_slider.style.width = (window.innerWidth - (m_play_button.offsetWidth + 10) - (m_timebox.offsetWidth + 20)) + "px";
+		};
+		m_slider.resize_fnc();
+		window.addEventListener('resize', m_slider.resize_fnc, false);
 		document.body.appendChild(m_slider);
 
-		m_timebox = document.createElement("p");
-		m_timebox.innerHTML = "00:00:00/00:00:00";
-		m_timebox.setAttribute("style", "position:absolute; bottom:60px; left:90%; font-size: 16px; font-weight: bold; color:#FFF; text-stroke: 1px #000; -webkit-text-stroke: 1px #000;");
-		document.body.appendChild(m_timebox);
 
 		m_slider.update_interval = setInterval(() => {
 			get_pts((st_pts, et_pts, cur_pts) => {
@@ -195,27 +224,6 @@ var create_plugin = (function() {
 				m_timebox.innerHTML = `${ct_h2}:${ct_m2}:${ct_s2}/${et_h2}:${et_m2}:${et_s2}`;
 			});
 		}, 1000);
-
-		m_play_button = create_button(PAUSE_ICON, PAUSE_ICON, function(
-			e) {
-			switch (e.type) {
-				case "up" :
-					if(m_play_button.pause){
-						m_pstcore.pstcore_set_param(m_pst, "pvf_loader", "pause", "0");
-						m_play_button.pause = false;
-						m_play_button.src_normal = PAUSE_ICON;
-						m_play_button.src_pushed = PAUSE_ICON;
-					}else{
-						m_pstcore.pstcore_set_param(m_pst, "pvf_loader", "pause", "1");
-						m_play_button.pause = true;
-						m_play_button.src_normal = PLAY_ICON;
-						m_play_button.src_pushed = PLAY_ICON;
-					}
-					break;
-			}
-		});
-		m_play_button.setAttribute("style", `position:absolute; bottom:60px; right:90%; width:50px; height:50px;`);
-		document.body.appendChild(m_play_button);
 
 		startTimer();
 		document.addEventListener('keydown', keydownFun);
@@ -254,10 +262,14 @@ var create_plugin = (function() {
 	function on_pst_stopped() {
 		if(m_slider){
 			clearInterval(m_pvf_chcker);
-			clearInterval(m_slider.update_interval);
-			document.body.removeChild(m_slider);
-			document.body.removeChild(m_timebox);
+
 			document.body.removeChild(m_play_button);
+			document.body.removeChild(m_timebox);
+
+			clearTimeout(m_slider.timer);
+			clearInterval(m_slider.update_interval);
+			window.removeEventListener('resize', m_slider.resize_fnc);
+			document.body.removeChild(m_slider);
 	
 			document.removeEventListener("keydown", mousedownFunc);
 			document.removeEventListener("touchstart", mousedownFunc);
