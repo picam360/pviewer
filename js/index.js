@@ -1147,28 +1147,54 @@ var app = (function() {
 				
 				if (window.cordova && cordova.platformId == 'electron'){
 					console = require('electron').remote.require('console');
-
-					var platform = cordova.platformId;
-					if(platform == 'electron'){
-						platform = process.platform;
-					}
 	
 					window.pstcore = {};
 					window.pstcore.win = require('electron').remote.getCurrentWindow();
-					window.pstcore.win.on('focus', function() {
+					window.pstcore.win.on('focus', function(ev) {
+						// var now = Date.now();
+						// if(!window.last_focus_date){
+						// 	window.last_focus_date = now;
+						// }
+						// var diff = now - window.last_focus_date;
+						// if(diff > 500){
+						// 	window.last_focus_date = now;
+						// 	self.set_param("renderer", "win_focus", "1");
+						// 	window.pstcore.win.show();
+						// }
 						self.set_param("renderer", "win_focus", "1");
 						window.pstcore.win.show();
 					});
-					$(window).on('resize', function() {
+					$(window).on('resize', function(ev) {
+						if(!m_pst){
+							return;
+						}
 						setTimeout(()=>{
-							var value = window.outerWidth + "," + window.outerHeight;
-							console.log("renderer", "win_size", value);
-							self.set_param("renderer", "win_size", value);
+							var is_fullscreen = (window.outerWidth == screen.width && window.outerHeight == screen.height);
+							if(!is_fullscreen){
+								console.log("resize", window.outerWidth, window.outerHeight);
+								var value = window.outerWidth + "," + window.outerHeight;
+								self.set_param("renderer", "win_size", value);
+							}
 						}, 300);
 					});
-					setInterval(()=>{
-						var dev_offset = window.pstcore.win.isDevToolsOpened() ? window.outerWidth : 0;
-						self.set_param("renderer", "win_pos", (window.screenX + dev_offset) + "," + window.screenY);
+					setInterval(() => {
+						if(!m_pst){
+							window.is_fullscreen = false;
+							return;
+						}
+						var is_fullscreen = (window.outerWidth == screen.width && window.outerHeight == screen.height);
+						if(is_fullscreen != window.is_fullscreen) {
+							window.is_fullscreen = is_fullscreen;
+							console.log("fullscreen", is_fullscreen);
+							self.set_param("renderer", "fullscreen", (is_fullscreen ? "1" : "0"));
+							setTimeout(()=>{
+								window.pstcore.win.show();
+							}, 300);
+						}
+						if(!is_fullscreen){
+							var dev_offset = window.pstcore.win.isDevToolsOpened() ? window.outerWidth : 0;
+							self.set_param("renderer", "win_pos", (window.screenX + dev_offset) + "," + window.screenY);
+						}
 						var win_focus = m_pstcore.pstcore_get_param(m_pst, "renderer", "win_focus");
 						if(parseInt(win_focus) && !window.pstcore.win.isFocused()){
 							window.pstcore.win.show();
