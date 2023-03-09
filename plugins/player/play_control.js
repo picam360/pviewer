@@ -234,16 +234,10 @@ var create_plugin = (function() {
 
 	function get_pts(callback) {
 		var name = "pvf_loader";
-		m_pstcore.pstcore_get_param(m_pst, name, "src_st_pts", (value) => {
-			var st_pts = parseFloat(value);
-			m_pstcore.pstcore_get_param(m_pst, name, "src_et_pts", (value) => {
-				var et_pts = parseFloat(value);
-				m_pstcore.pstcore_get_param(m_pst, name, "cur_pts", (value) => {
-					var cur_pts = parseFloat(value);
-					callback(st_pts, et_pts, cur_pts);
-				});
-			});
-		});
+		var st_pts = m_pstcore.pstcore_get_param(m_pst, name, "src_st_pts");
+		var et_pts = m_pstcore.pstcore_get_param(m_pst, name, "src_et_pts");
+		var cur_pts = m_pstcore.pstcore_get_param(m_pst, name, "cur_pts");
+		callback(parseFloat(st_pts), parseFloat(et_pts), parseFloat(cur_pts));
 	}
 
 	function on_pst_started() {

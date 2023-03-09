@@ -737,25 +737,17 @@ var app = (function() {
 			var platform = "web";
 			if (window.cordova) {
 
-				platform = cordova.platformId;
-				if(platform == 'electron'){
-					platform = process.platform;
+				var decoder;
+				if(m_pstcore.supported_streams["vt_decoder"]){
+					decoder = "vt_decoder name=decoder";
+				}else if(m_pstcore.supported_streams["mc_decoder"]){
+					decoder = "mc_decoder name=decoder";
+				}else if(m_pstcore.supported_streams["v4l2_tegra_decoder"]){
+					decoder = "v4l2_tegra_decoder name=decoder";
+				}else{
+					decoder = "libde265_decoder name=decoder";
 				}
 
-				var decoder = "libde265_decoder name=decoder";
-				switch(platform){
-				case "ios":
-				case "darwin":
-					decoder = "vt_decoder name=decoder vtbf=1";
-					break;
-				case "android":
-					decoder = "mc_decoder name=decoder mcbf=1";
-					break;
-				case "win32":
-					break;
-				case "linux":
-					break;
-				}
 				callback(decoder);
 
 			}else{
@@ -772,7 +764,7 @@ var app = (function() {
 				};
 				navigator.mediaCapabilities.decodingInfo(mediaConfig).then((info) =>{
 					if(info.supported){
-						var decoder = "wc_decoder";
+						var decoder = "wc_decoder name=decoder";
 						callback(decoder);
 					}else{
 						var h264_decoder = ('VideoDecoder' in window) ? "wc_decoder" : "h264bsd_decoder";
@@ -1076,6 +1068,10 @@ var app = (function() {
 						"plugins/ms_capture_st.so",
 						"plugins/pgl_renderer_st.so",
 						"plugins/pgl_remapper_st.so",
+						//platform dependents
+						"plugins/vt_decoder_st.so",
+						"plugins/mc_decoder_st.so",
+						"plugins/v4l2_tegra_decoder_st.so",
 					],
 					"window_size" : {
 						"width" : window.innerWidth,
@@ -1099,9 +1095,32 @@ var app = (function() {
 						console.log(level, tag, msg);
 					});
 
-					setTimeout(() => {
-						self.plugin_host.fire_pstcore_initialized(m_pstcore);
-					}, 100);
+					m_pstcore.supported_streams = {};
+					var streams = [
+						"vt_decoder",
+						"mc_decoder",
+						"v4l2_tegra_decoder",
+					];
+					var check_fnc = (idx, callback) => {
+						if(idx == streams.length){
+							callback();
+							return;
+						}
+						m_pstcore.pstcore_build_pstreamer(streams[idx], (pst) => {
+							if(pst){
+								m_pstcore.supported_streams[streams[idx]] = true;
+								m_pstcore.pstcore_destroy_pstreamer(pst);
+							}else{
+								m_pstcore.supported_streams[streams[idx]] = false;
+							}
+							check_fnc(idx + 1, callback);
+						});
+					};
+					check_fnc(0, () => {
+						setTimeout(() => {
+							self.plugin_host.fire_pstcore_initialized(m_pstcore);
+						}, 100);
+					});
 
 					m_applink_ready = true;
 					if(!m_query['applink']){
@@ -1132,21 +1151,6 @@ var app = (function() {
 					var platform = cordova.platformId;
 					if(platform == 'electron'){
 						platform = process.platform;
-					}
-	
-					var decoder = "libde265_decoder name=decoder";
-					switch(platform){
-					case "ios":
-					case "darwin":
-						config.plugin_paths.push("plugins/vt_decoder_st.so");
-						break;
-					case "android":
-						config.plugin_paths.push("plugins/mc_decoder_st.so");
-						break;
-					case "win32":
-						break;
-					case "linux":
-						break;
 					}
 	
 					window.pstcore = {};
@@ -1325,20 +1329,6 @@ var app = (function() {
                                     platform = process.platform;
                                 }
 
-                                var decoder = "libde265_decoder name=decoder";
-                                switch(platform){
-                                case "ios":
-                                case "darwin":
-                                    config.plugin_paths.push("plugins/vt_decoder_st.so");
-                                    break;
-                                case "android":
-                                    config.plugin_paths.push("plugins/mc_decoder_st.so");
-                                    break;
-                                case "win32":
-                                    break;
-                                case "linux":
-                                    break;
-                                }
                                 cordova.exec((msg) => {
                                     console.log(msg);
                                 }, (msg) => {
