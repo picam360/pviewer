@@ -1,5 +1,5 @@
 
-var is_nodejs = (!cordova && typeof process !== 'undefined' && process.versions && process.versions.node);
+var is_nodejs = (typeof cordova === 'undefined' && typeof process !== 'undefined' && process.versions && process.versions.node);
 var rtp_mod;
 var util;
 if(is_nodejs){

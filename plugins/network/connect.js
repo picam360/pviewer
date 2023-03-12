@@ -60,8 +60,8 @@ var create_plugin = (function() {
                 "Connect": function() {
                     var opt = {
                         type:$( "input[name='dialog-message-type']:checked" ).val(),
-                        ws_url:$( "#dialog-message-wsurl" ).val(),
-                        wrtc_key:$( "#dialog-message-wrtckey" ).val(),
+                        ws_url:$( "#dialog-message-wsurl" ).val().trim(),
+                        wrtc_key:$( "#dialog-message-wrtckey" ).val().trim(),
                         stream_mode:$( "#dialog-message-stream-mode" ).val(),
                     };
                     for(var options of [m_options, m_permanent_options]){
