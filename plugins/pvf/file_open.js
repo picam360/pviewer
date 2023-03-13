@@ -44,7 +44,7 @@ var create_plugin = (function() {
 					m_filemap[pvf] = e.target.files[0];
 				}
 				
-				var url = "applink=?pvf=" + encodeURIComponent(pvf);
+				var url = "applink=?loop=1&pvf=" + encodeURIComponent(pvf);
 				app.open_applink(url);
 				
 				$( "#dialog-message" ).dialog( "close" );
@@ -75,7 +75,7 @@ var create_plugin = (function() {
 							m_filemap[pvf] = e.dataTransfer.files[0];
 						}
 						
-						var url = "applink=?pvf=" + encodeURIComponent(pvf);
+						var url = "applink=?loop=1&pvf=" + encodeURIComponent(pvf);
 						app.open_applink(url);
 
 					}

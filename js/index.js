@@ -585,7 +585,7 @@ var app = (function() {
 		
 		open_applink: function(url){
 			if(url.indexOf('applink=') >= 0){
-				m_query = GetQueryString(url);
+				m_query = Object.assign(GetQueryString(), GetQueryString(url));
 			}else{
 				m_query = {'applink' : url};
 			}
@@ -727,6 +727,12 @@ var app = (function() {
 								(m_query['head-query'] ? m_query['head-query'] : ""));
 						m_pstcore.pstcore_set_param(pst, "pvf_loader", "get_query",
 								(m_query['get-query'] ? m_query['get-query'] : ""));
+						if (m_query['loop']) {
+							m_pstcore.pstcore_set_param(pst, "pvf_loader", "loop", m_query['loop']);
+						}
+						if (m_query['force_fps']) {
+							m_pstcore.pstcore_set_param(pst, "pvf_loader", "force_fps", m_query['force_fps']);
+						}
 								
 						self.start_pst(pst);
 					});
