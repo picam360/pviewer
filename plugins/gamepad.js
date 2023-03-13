@@ -4,8 +4,10 @@ var create_plugin = (function() {
 
 	window.addEventListener('gamepadconnected', function(e) {
 		active_gamepad = e.gamepad.id;
+		console.log("gamepadconnected", active_gamepad);
 	}, false);
 	window.addEventListener('gamepaddisconnected', function(e) {
+		console.log("gamepaddisconnected", active_gamepad);
 		active_gamepad = "";
 	}, false);
 
@@ -22,6 +24,7 @@ var create_plugin = (function() {
 		for ( var i = 0 in gamepads) {
 			if (gamepads[i] && gamepads[i].id == active_gamepad) {
 				gamepad = gamepads[i];
+				break;
 			}
 		}
 		if (!gamepad) {

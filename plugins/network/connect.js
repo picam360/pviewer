@@ -438,7 +438,8 @@ var create_plugin = (function() {
                             for(var ary of list){
                                 if(ary[0] == "network"){
                                     if(ary[1] == "pviewer_config_ext"){
-                                        var config_ext = JSON.parse(ary[2]);
+                                        var json_str = atob(ary[2]);
+                                        var config_ext = JSON.parse(json_str);
                                         if(config_ext && config_ext["plugin_paths"]){
                                             for(var path of config_ext["plugin_paths"]){
                                                 var key = uuid();
@@ -449,12 +450,10 @@ var create_plugin = (function() {
                                                         m_plugin_host.add_plugin_from_script(path, config_ext, data);
                                                     }
                                                 });
-                                                m_plugin.command_handler(UPSTREAM_DOMAIN + "get_file " + path + " " +
-                                                    key);
+                                                conn.on_set_param_done_callback("network", "get_file",  path + " " + key);
                                             }
                                         }
                                     }
-        
                                 }else{
                                     conn.attr.in_pt_set_param = true;
                                     m_pstcore.pstcore_set_param(conn.attr.pst, ary[0], ary[1], ary[2]);
