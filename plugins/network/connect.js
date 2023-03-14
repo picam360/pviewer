@@ -373,7 +373,8 @@ var create_plugin = (function() {
                         if(conn.attr.in_pt_set_param){//prevent loop back
                             return;
                         }
-                        conn.attr.param_pendings.push("[\"" + pst_name + "\",\"" + param + "\",\"" + value + "\"]");
+                        var param_str = `[${JSON.stringify(pst_name)},${JSON.stringify(param)},${JSON.stringify(value)}]`;
+                        conn.attr.param_pendings.push(param_str);
                     };
                     
                     m_pstcore.pstcore_add_set_param_done_callback(conn.attr.pst, conn.on_set_param_done_callback);
@@ -593,7 +594,7 @@ var create_plugin = (function() {
         });
     }
     function send_mt_param(conn, pst_name, param, value){
-        var param_str = "[\"" + pst_name + "\",\"" + param + "\",\"" + value + "\"]";
+        var param_str = `[${JSON.stringify(pst_name)},${JSON.stringify(param)},${JSON.stringify(value)}]`;
         var msg = "[" + param_str + "]";
         var pack = conn.rtp.build_packet(msg, PT_MT_SET_PARAM);
         conn.rtp.send_packet(pack);
