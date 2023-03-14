@@ -1092,14 +1092,20 @@ var app = (function() {
 						console.log("json parse failed", m_query['plugin_paths']);
 					}
 				}
+				if(m_options.pstcore_plugins_ext){
+					for(var path of m_options.pstcore_plugins_ext){
+						var file_name = path.split('/').pop();
+						config.plugin_paths.push("plugins/" + file_name);
+					}
+				}
 
 				function call_pstcore_init(config){
 					console.log("pstcore initialized");
-					const config_json = JSON.stringify(config);
-					m_pstcore.pstcore_init(config_json);
 					m_pstcore.pstcore_add_log_callback((level, tag, msg) => {
 						console.log(level, tag, msg);
 					});
+					const config_json = JSON.stringify(config);
+					m_pstcore.pstcore_init(config_json);
 
 					m_pstcore.supported_streams = {};
 					var streams = [
@@ -1342,7 +1348,21 @@ var app = (function() {
 					
 				}else{
 					m_pstcore = window.PstCoreLoader({
-						preRun: [],
+						preRun: [(Module) => {
+							console.log("cp plugins");
+							if(m_options.pstcore_plugins_ext){
+								for(var path of m_options.pstcore_plugins_ext){
+									var file_name = path.split('/').pop();
+									Module["FS"].createPreloadedFile(
+										'/plugins',
+										file_name,
+										self.base_path + "../" + path,
+										true,//readable
+										false//writable
+									);
+								}
+							}
+						}],
 						postRun: [],
 						print: function(msg) {
 							console.log(msg);
