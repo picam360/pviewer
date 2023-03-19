@@ -421,7 +421,7 @@ var app = (function() {
 				if(m_xrsession){
 					return;
 				}
-				m_pstcore._pstcore_poll_events();
+				m_pstcore.pstcore_poll_events();
 				requestAnimationFrame(redraw);
 			}
 			requestAnimationFrame(redraw);
@@ -874,8 +874,8 @@ var app = (function() {
 					}
 				}, 250);//post params
 				
-				if(!window.cordova && m_pstcore.DGLFWView){
-					m_pstcore.DGLFWView.setCreateWindowCallback((dglfw_win) => {
+				if(!window.cordova && m_pstcore.Module.DGLFWView){
+					m_pstcore.Module.DGLFWView.setCreateWindowCallback((dglfw_win) => {
 						var framebuffer;
 						var refSpace;
 						var ctx = dglfw_win.ctx.GLctx;
@@ -929,7 +929,7 @@ var app = (function() {
 
 										self.plugin_host.set_view_quat(quat);
 									}
-									m_pstcore._pstcore_poll_events();
+									m_pstcore.pstcore_poll_events();
 									m_xrsession.requestAnimationFrame(redraw);
 								}
 								
@@ -1217,7 +1217,6 @@ var app = (function() {
 					}, 200);
 
 					m_pstcore = require('node-pstcore');
-					m_pstcore._pstcore_poll_events = m_pstcore.pstcore_poll_events;
 
 					call_pstcore_init(config);
 

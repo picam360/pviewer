@@ -1,0 +1,7 @@
+{
+	"plugin_paths" : [
+		"plugins/park/park.js"
+	],
+	"pstcore_plugins_ext" : [
+	]
+}
