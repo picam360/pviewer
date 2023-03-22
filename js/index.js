@@ -1094,8 +1094,7 @@ var app = (function() {
 				}
 				if(m_options.pstcore_plugins_ext){
 					for(var path of m_options.pstcore_plugins_ext){
-						var file_name = path.split('/').pop();
-						config.plugin_paths.push("plugins/" + file_name);
+						config.plugin_paths.push(path);
 					}
 				}
 
@@ -1352,13 +1351,19 @@ var app = (function() {
 							if(m_options.pstcore_plugins_ext){
 								for(var path of m_options.pstcore_plugins_ext){
 									var file_name = path.split('/').pop();
-									Module["FS"].createPreloadedFile(
-										'/plugins',
-										file_name,
-										self.base_path + "../" + path,
-										true,//readable
-										false//writable
-									);
+									var file_dir = path.split('/').slice(0, -1).join('/');
+									try{
+										Module["FS"].mkdirTree('/' + file_dir);
+										Module["FS"].createPreloadedFile(
+											'/' + file_dir,
+											file_name,
+											self.base_path + "../" + path,
+											true,//readable
+											false//writable
+										);
+									}catch(e){
+										console.log(e);
+									}
 								}
 							}
 						}],
