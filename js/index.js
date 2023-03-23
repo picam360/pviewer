@@ -791,7 +791,7 @@ var app = (function() {
 				renderer += " mode=speed";
 			}
 			self.get_decorder_def((decoder) => {
-				if (window.cordova && window.PstCoreLoader) {
+				if (window.cordova && m_pstcore.supported_streams["cordova_binder"]) {
 					var def = (loader ? loader + " ! " : "") + "cordova_binder";
 					m_pstcore.pstcore_build_pstreamer(def, (pst) => {
 						var def = (splitter ? splitter + " ! " : "") + decoder + " ! " + renderer;
@@ -1114,6 +1114,7 @@ var app = (function() {
 					var streams = [
 						"vt_decoder",
 						"v4l2_tegra_decoder",
+						"cordova_binder",
 					];
 					var check_fnc = (idx, callback) => {
 						if(idx == streams.length){
@@ -1136,12 +1137,20 @@ var app = (function() {
 						}, 100);
 					});
 
-					if(window.cordova && cordova.platformId != 'electron'){
+					if (window.cordova && m_pstcore.supported_streams["cordova_binder"]) {
 						cordova.exec((msg) => {
 							console.log(msg);
 						}, (msg) => {
 							console.log(msg);
 						}, "CDVPstCore", "init_internal", [JSON.stringify(config)]); // init is reserved
+
+						setInterval(() => {
+							cordova.exec((msg) => {
+								//console.log(msg);
+							}, (msg) => {
+								console.log(msg);
+							}, "CDVPstCore", "poll", []);
+						}, 33);
 					}
 
 					m_applink_ready = true;
