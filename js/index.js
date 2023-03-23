@@ -740,24 +740,28 @@ var app = (function() {
 			});
 		},
 		get_decorder_def: (callback) => {
-			var platform = "web";
 			if (window.cordova) {
-
-				var decoder;
-				if(m_pstcore.supported_streams["vt_decoder"]){
+				var decoder = "libde265_decoder name=decoder";
+				switch(cordova.platformId){
+				case "ios":
+				case "darwin":
 					decoder = "vt_decoder name=decoder";
-				}else if(m_pstcore.supported_streams["mc_decoder"]){
+					break;
+				case "android":
 					decoder = "mc_decoder name=decoder";
-				}else if(m_pstcore.supported_streams["v4l2_tegra_decoder"]){
-					decoder = "v4l2_tegra_decoder name=decoder";
-				}else{
-					decoder = "libde265_decoder name=decoder";
+					break;
+				case "electron":
+					if(m_pstcore.supported_streams["vt_decoder"]){
+						decoder = "vt_decoder name=decoder";
+					}else if(m_pstcore.supported_streams["mc_decoder"]){
+						decoder = "mc_decoder name=decoder";
+					}else if(m_pstcore.supported_streams["v4l2_tegra_decoder"]){
+						decoder = "v4l2_tegra_decoder name=decoder";
+					}
+					break;
 				}
-
 				callback(decoder);
-
-			}else{
-				
+			}else{// web decoder
 				const mediaConfig = {
 					type: 'file',
 					video: {
@@ -1109,7 +1113,6 @@ var app = (function() {
 					m_pstcore.supported_streams = {};
 					var streams = [
 						"vt_decoder",
-						"mc_decoder",
 						"v4l2_tegra_decoder",
 					];
 					var check_fnc = (idx, callback) => {
@@ -1132,6 +1135,14 @@ var app = (function() {
 							self.plugin_host.fire_pstcore_initialized(m_pstcore);
 						}, 100);
 					});
+
+					if(window.cordova && cordova.platformId != 'electron'){
+						cordova.exec((msg) => {
+							console.log(msg);
+						}, (msg) => {
+							console.log(msg);
+						}, "CDVPstCore", "init_internal", [JSON.stringify(config)]); // init is reserved
+					}
 
 					m_applink_ready = true;
 					if(!m_query['applink']){
@@ -1376,21 +1387,6 @@ var app = (function() {
 						},
 						onRuntimeInitialized : function() {
 							console.log("pstcore initialized");
-							if(window.cordova){
-
-								config.plugin_paths.push("plugins/cordova_binder_st.so");
-
-                                var platform = cordova.platformId;
-                                if(platform == 'electron'){
-                                    platform = process.platform;
-                                }
-
-                                cordova.exec((msg) => {
-                                    console.log(msg);
-                                }, (msg) => {
-                                    console.log(msg);
-                                }, "CDVPstCore", "init_internal", [JSON.stringify(config)]); // init is reserved
-							}
 
 							call_pstcore_init(config);
 							
