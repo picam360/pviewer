@@ -745,16 +745,14 @@ var app = (function() {
 				switch(cordova.platformId){
 				case "ios":
 				case "darwin":
-					decoder = "vt_decoder name=decoder";
+					decoder = "vt_decoder name=decoder vtbf=1";
 					break;
 				case "android":
-					decoder = "mc_decoder name=decoder";
+					decoder = "mc_decoder name=decoder mcbf=1";
 					break;
 				case "electron":
 					if(m_pstcore.supported_streams["vt_decoder"]){
-						decoder = "vt_decoder name=decoder";
-					}else if(m_pstcore.supported_streams["mc_decoder"]){
-						decoder = "mc_decoder name=decoder";
+						decoder = "vt_decoder name=decoder vtbf=1";
 					}else if(m_pstcore.supported_streams["v4l2_tegra_decoder"]){
 						decoder = "v4l2_tegra_decoder name=decoder";
 					}
@@ -1247,6 +1245,7 @@ var app = (function() {
 					window.pstcore_callback_args = [];
 
 				    var n_poll = 0;
+				    var params_pendings = {};
 				    var params = {};
 				    setInterval(()=>{
 				        n_poll++;
@@ -1257,16 +1256,18 @@ var app = (function() {
 								//console.log(msg);
 							}, "CDVPstCore", "poll", null);
 				        }
-				        for(var key in params){
+				        for(var key in params_pendings){
 							cordova.exec((msg) => {
 								//console.log(msg);
 							}, (msg) => {
 								//console.log(msg);
-							}, "CDVPstCore", "set_param", params[key]);
+							}, "CDVPstCore", "set_param", params_pendings[key]);
 				        }
-				        params = {};
+				        params_pendings = {};
 				    }, 1000/60);
 					m_pstcore = {
+						pstcore_add_log_callback: function (callback) {
+						},
 						pstcore_init: function (config_json) {
 							cordova.exec((msg) => {
 								console.log(msg);
@@ -1274,19 +1275,28 @@ var app = (function() {
 								console.log(msg);
 							}, "CDVPstCore", "init_internal", [config_json]); // init is reserved
 						},
-						// on_set_param: function (successCallback, errorCallback) {
-						// 	cordova.exec(successCallback, errorCallback, "CDVPstCore", "on_set_param", []);
-						// },
 						pstcore_build_pstreamer: function (def, callback) {
 							cordova.exec((pst) => {
+								if(pst == '0' ){
+									pst = null;
+								}
 								console.log("pstcore_build_pstreamer succeeded", pst);
 								callback(pst);
+
+								if(pst){
+									cordova.exec((msg, pst) => {
+										var ary = JSON.parse(msg);
+										params[`${pst}.${ary[0]}.${ary[1]}`] = ary[2];
+									}, (msg) => {
+										console.log(msg);
+									}, "CDVPstCore", "on_set_param", [pst]);
+								}
 							}, (msg) => {
 								console.log(msg);
 							}, "CDVPstCore", "build_pstreamer", [def]);
 							return 1;
 						},
-						_pstcore_poll_events: function () {
+						pstcore_poll_events: function () {
 							cordova.exec((msg) => {
 								//console.log(msg);
 							}, (msg) => {
@@ -1326,24 +1336,18 @@ var app = (function() {
                             }, "CDVPstCore", "enqueue", [pst, data2]);
 						},
 						pstcore_set_param: function (pst, pst_name, param, value) {
-						    params[pst_name + "." + param] = [pst, pst_name, param, value];
-							//cordova.exec((msg) => {
-							//	//console.log(msg);
-							//}, (msg) => {
-							//	//console.log(msg);
-							//}, "CDVPstCore", "set_param", [pst, pst_name, param, value]);
+						    params_pendings[pst_name + "." + param] = [pst, pst_name, param, value];
 						},
+						pstcore_get_param: function (pst, pst_name, param) {
+							return params[`${pst}.${pst_name}.${param}`];
+                        },
 						pstcore_add_set_param_done_callback: function (pst, callback) {
-							var idx = window.pstcore_callbacks.length;
-							window.pstcore_callbacks.push((pst_name, param, value) => {
-								callback(pst_name, param, value);
-							});
-							window.pstcore_callback_args.push(null);
-							cordova.exec((pst_name, param, value) => {
-								window.pstcore_callbacks[idx](pst_name, param, value);
+							cordova.exec((msg, pst) => {
+								var ary = JSON.parse(msg);
+								callback(ary[0], ary[1], ary[2]);
 							}, (msg) => {
 								console.log(msg);
-							}, "CDVPstCore", "on_set_param", [pst, idx]);
+							}, "CDVPstCore", "on_set_param", [pst]);
                         },
 						//pstcore_set_fill_buffer_done_callback will be pstcore_set_dequeue_callback
 						//pstcore_dequeue need to be called just after pstcore_set_fill_buffer_done_callback
