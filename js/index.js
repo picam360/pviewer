@@ -21,6 +21,8 @@ var app = (function() {
 	var m_xrsession;
 	// toolbar
 	var m_toolbar;
+	// backbutton
+	var m_backbutton_visible = true;
 	// overlay
 	var m_overlay;
 	var m_menu_str;
@@ -535,7 +537,16 @@ var app = (function() {
 				window.swBoost.setChecked(value);
 			}
 		},
-		
+
+		set_backbutton_visible: function(value) {
+			m_backbutton_visible = value;
+			if(m_backbutton_visible){
+				$("#btnBack").css("visibility", "visible");
+			}else{
+				$("#btnBack").css("visibility", "hidden");
+			}
+		},
+
 		alert: function(msg, title) {
 			var html = '<p>'
 	    			 + '<span class="ui-icon ui-icon-circle-check" style="float:left; margin:0 7px 50px 0;"></span>'
@@ -825,6 +836,7 @@ var app = (function() {
 				if(app.navi && app.navi.getCurrentPage().name == 'main.html'){
 					if(m_toolbar) {
 						$('#container').before(m_toolbar);
+						self.set_backbutton_visible(m_backbutton_visible);
 						m_toolbar = null;
 					}
 				}
