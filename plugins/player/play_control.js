@@ -20,6 +20,8 @@ var create_plugin = (function() {
 		button.src_normal = src_normal;
 		button.src_pushed = src_pushed;
 		button.down = false;
+		button.last_down = 0;
+		button.last_up = 0;
 		button.set_src = function(src_normal, src_pushed) {
 			button.src_normal = src_normal;
 			button.src_pushed = src_pushed;
@@ -27,6 +29,10 @@ var create_plugin = (function() {
 		}
 
 		var mousedownFunc = function(ev) {
+			var now = new Date().getTime();
+			if(now - button.last_down < 100){
+				return;
+			}
 			if (callback) {
 				callback({
 					type : "down",
@@ -35,11 +41,16 @@ var create_plugin = (function() {
 			}
 
 			button.down = true;
+			button.last_down = now;
 			if (button.src_pushed) {
 				button.src = button.src_pushed;
 			}
 		}
 		button.mouseupFunc = function() {
+			var now = new Date().getTime();
+			if(now - button.last_up < 100){
+				return;
+			}
 			if (callback) {
 				callback({
 					type : "up",
@@ -48,6 +59,7 @@ var create_plugin = (function() {
 			}
 
 			button.down = false;
+			button.last_up = now;
 			button.src = button.src_normal;
 		}
 		button.mousemoveFunc = function(ev) {
@@ -160,20 +172,26 @@ var create_plugin = (function() {
 				case "up" :
 					if(m_play_button.pause){
 						m_pstcore.pstcore_set_param(m_pst, "pvf_loader", "pause", "0");
-						m_play_button.pause = false;
-						m_play_button.src_normal = PAUSE_ICON;
-						m_play_button.src_pushed = PAUSE_ICON;
 					}else{
 						m_pstcore.pstcore_set_param(m_pst, "pvf_loader", "pause", "1");
-						m_play_button.pause = true;
-						m_play_button.src_normal = PLAY_ICON;
-						m_play_button.src_pushed = PLAY_ICON;
 					}
 					break;
 			}
 		});
 		m_play_button.setAttribute("style", `position:absolute; bottom:60px; left:5px; width:50px; height:50px;`);
 		document.body.appendChild(m_play_button);
+
+		m_play_button.update_interval = setInterval(() => {
+			var name = "pvf_loader";
+			var paus_str = m_pstcore.pstcore_get_param(m_pst, name, "pause");
+			var pause = (paus_str == "1");
+			if(m_play_button.pause != pause){
+				m_play_button.pause = pause;
+				m_play_button.src_normal = (pause ? PLAY_ICON : PAUSE_ICON);
+				m_play_button.src_pushed = (pause ? PLAY_ICON : PAUSE_ICON);
+				m_play_button.src = (pause ? PLAY_ICON : PAUSE_ICON);
+			}
+		}, 500);
 
 		m_timebox = document.createElement("p");
 		m_timebox.innerHTML = "00:00:00/00:00:00";
@@ -186,9 +204,11 @@ var create_plugin = (function() {
 		m_slider.min = "0";
 		m_slider.max = "1000";//permil
 		m_slider.value = "0";
+		m_slider.last_change = 0;
 		m_slider.addEventListener("change", (e) => {
 			var pts = (m_et_pts - m_st_pts) * m_slider.value / 1000;
 			m_pstcore.pstcore_set_param(m_pst, "pvf_loader", "pts", pts.toString());
+			m_slider.last_change = new Date().getTime();
 		});
 		m_slider.setAttribute("style", "position:absolute; bottom:75px;");
 		m_slider.resize_fnc = () => {
@@ -201,6 +221,10 @@ var create_plugin = (function() {
 
 
 		m_slider.update_interval = setInterval(() => {
+			var now = new Date().getTime();
+			if(now - m_slider.last_change < 3000){//wait remain buffer
+				return;
+			}
 			get_pts((st_pts, et_pts, cur_pts) => {
 				m_st_pts = st_pts;
 				m_et_pts = et_pts;
@@ -223,7 +247,7 @@ var create_plugin = (function() {
 	
 				m_timebox.innerHTML = `${ct_h2}:${ct_m2}:${ct_s2}/${et_h2}:${et_m2}:${et_s2}`;
 			});
-		}, 1000);
+		}, 500);
 
 		startTimer();
 		document.addEventListener('keydown', keydownFun);
@@ -257,7 +281,9 @@ var create_plugin = (function() {
 		if(m_slider){
 			clearInterval(m_pvf_chcker);
 
+			clearInterval(m_play_button.update_interval);
 			document.body.removeChild(m_play_button);
+
 			document.body.removeChild(m_timebox);
 
 			clearTimeout(m_slider.timer);
