@@ -15,24 +15,30 @@ var create_plugin = (function() {
 	var PLAY_ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAAFAUlEQVR4nO2ZWU8bZxiFR1AqQQiE1ZjF7JgdDE3V/pAoVStFahvlL7TKjW9YEggJwTa2cYLTAi01MZSdsCRSr7nBmMXj3dgstsfQqKkwqnqqj5QqjUhmsTGtxJF8/5xv3nm/M8cUdaELXShiXTMgXrbAfNo4H7rd8Iwx1s0xa/WzwVDtdPCoZipAfqGaSb+5asJvrBr3364c3/2EkiOOOm99NMcUNC6E7sjm972N8yE0PAuhfo5B/SyDuhkGtdNB1E4FUTMZQPVEAFXjAVT97EflmB/S0d2tcuNue5kxmB9z8MZfXmY1LYa0ssVQWLawD/7we6gw7qHi6R7KRnbDpYYddcWQLzMm8M1LB5/LlkKMbHEfkcKXj+yizLCLsp92UPLjTrBkeOezswNfRkLz0oGuaWkf0YYvHT42gOIftlE86NM0a5cTogs/4Utqer4/c+bwQ9soGvRBMuCbFmt9SdGBX0ZCLOELB3wo/N4HiX5rodpg/jByA7EYm6G34J94UaD3Ir/fo44Ivun5wRfnB7+F/MdbyNW5rwuCv7rwa4ZsMRQ4T/i8Rx6I+9yMWCtgxb7e8zzhx/YgfepDxYgvKvC5OmLAA7HGpeIFX/cimC/kkpIOu3Br3okbsw6UDdhRbtiOHF7rhkjtDou1dglnA8fxQMDYlH23gfAff4Jo1MJANrCJ0kF3RPA5GmLAhWyVq50bvRxxsvn9LSEzX6pfx5sK/H6EW3MOFPXbUDzkFQwv6nUhW+n0UgbEs/L/nSoFvbCl/f82cKIpawgN+jUU6p3C4FUuZCmdSO+xf8w+PseRWNi2KXm8dqqB46fx6gg3p+2Q9NGQ6D284TMVTmT02L9lNVA/x4wKXZXFj95t4ESTlhDqdGbkae284DN7HMjodoywGqibC5qF7vlinRlc5H91hK8nbMhVbiC3z8UN/qED6d0OE/sTmAkyQi+poj5uBk40scmgSr0Kca+dCzzSHtgD7E9gJhgWesMWavkZINp+GYZUtQpRr5MNHmld9kNWA7XTgbDQeCDRrEKIgQqlCSKV8/3w9+24cs/GwcBkgBGabSRqfgbGNxhIlSsQKWzs8F02pHba2EeItAdCg1lBr4kTuP+3I3w5SiO7ew0ilYMb/D0bUjqs7C9x9bh/VGiq5GKAnHql0oTsHpp95t+AT+204XKHlX2Nkt5GaCQuUJnee+pfjdEQPVyHqNfBGz6lw4rku/Q3rAZI6SQ0z+crVk4/dbIuVSaIFFYuqxKnwV++a0Vi2+ZVTmFOatzzCMnzeW8ZOJ71MStyetaRo3ZGBJ98x+Lm3OaRxkzIx0huz8o/cXpkLQhprwk5SivXSwrvhqdxqZ1uo7iK1H2kMeP7MZKnpnFjzIrrIzRyFBsQa5xRgU9usxwmtljyKD4idR/vLymdG2KN4/WPW7YBK3w7jaRWWkHxVbXBk14yvBOI9EsqCvDBZPmmsN6UdJXnCX+pjUZiy+Y1KhKRrvK84JNaLEoqYhkQLxnwjsX85Fs3pyj5iw8iN0BRFClaC554p2M4NpOUPErl7olI5U26ypiMjTxKJ3+aSFeZq3MHor5t2iz+iF9YziYU3gxS94k07sNoXFJJrbQiRW5Op2KtdLUnjzRmWUqXR0C28ZB4wPuGPRPJEUdKJ9LbkOqDtAdpD2xM2n17+EqXLZzaaWVSOq0rJM+TSHycKv8Lf7Ne6ELU/19/AYeLBvUYIigCAAAAAElFTkSuQmCC";
 
 	function create_button(src_normal, src_pushed, callback) {
-		var button = document.createElement("img");
-		button.src = src_normal;
+		var button = document.createElement("div");
+		var img = document.createElement("img");
+		button.appendChild(img);
+		
 		button.src_normal = src_normal;
 		button.src_pushed = src_pushed;
-		button.size_normal = "50px";
-		button.size_pushed = "46px";
+		img.src = src_normal;
+
 		button.down = false;
 		button.last_down = 0;
 		button.last_up = 0;
 		button.set_src = function(src_normal, src_pushed) {
 			button.src_normal = src_normal;
 			button.src_pushed = src_pushed;
-			button.src = (!button.down ? src_normal : src_pushed);
+			img.src = (!button.down ? src_normal : src_pushed);
 		}
+
 		//style
 		button.style.position = "absolute";
-		button.style.width = button.size_normal;
-		button.style.height = button.size_normal;
+		img.style.position = "relative";
+		img.style.top = "0%";
+		img.style.left = "0%";
+		img.style.width = "100%";
+		img.style.height = "100%";
 
 		var mousedownFunc = function(ev) {
 			var now = new Date().getTime();
@@ -46,8 +52,10 @@ var create_plugin = (function() {
 				});
 			}
 
-			button.style.width = button.size_pushed;
-			button.style.height = button.size_pushed;
+			img.style.top = "5%";
+			img.style.left = "5%";
+			img.style.width = "90%";
+			img.style.height = "90%";
 
 			button.down = true;
 			button.last_down = now;
@@ -67,8 +75,10 @@ var create_plugin = (function() {
 				});
 			}
 
-			button.style.width = button.size_normal;
-			button.style.height = button.size_normal;
+			img.style.top = "0%";
+			img.style.left = "0%";
+			img.style.width = "100%";
+			img.style.height = "100%";
 
 			button.down = false;
 			button.last_up = now;
@@ -190,8 +200,7 @@ var create_plugin = (function() {
 					break;
 			}
 		});
-		m_play_button.style.bottom = "60px";
-		m_play_button.style.left = "5px";
+		m_play_button.setAttribute("style", `position:absolute; bottom:60px; left:5px; width:50px; height:50px;`);
 		document.body.appendChild(m_play_button);
 
 		m_play_button.update_interval = setInterval(() => {
@@ -200,9 +209,8 @@ var create_plugin = (function() {
 			var pause = (paus_str == "1");
 			if(m_play_button.pause != pause){
 				m_play_button.pause = pause;
-				m_play_button.src_normal = (pause ? PLAY_ICON : PAUSE_ICON);
-				m_play_button.src_pushed = (pause ? PLAY_ICON : PAUSE_ICON);
-				m_play_button.src = (pause ? PLAY_ICON : PAUSE_ICON);
+				var icon = (pause ? PLAY_ICON : PAUSE_ICON);
+				m_play_button.set_src(icon, icon);
 			}
 		}, 500);
 
