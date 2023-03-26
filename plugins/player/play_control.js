@@ -19,6 +19,8 @@ var create_plugin = (function() {
 		button.src = src_normal;
 		button.src_normal = src_normal;
 		button.src_pushed = src_pushed;
+		button.size_normal = "50px";
+		button.size_pushed = "46px";
 		button.down = false;
 		button.last_down = 0;
 		button.last_up = 0;
@@ -27,6 +29,10 @@ var create_plugin = (function() {
 			button.src_pushed = src_pushed;
 			button.src = (!button.down ? src_normal : src_pushed);
 		}
+		//style
+		button.style.position = "absolute";
+		button.style.width = button.size_normal;
+		button.style.height = button.size_normal;
 
 		var mousedownFunc = function(ev) {
 			var now = new Date().getTime();
@@ -39,6 +45,9 @@ var create_plugin = (function() {
 					caller : button,
 				});
 			}
+
+			button.style.width = button.size_pushed;
+			button.style.height = button.size_pushed;
 
 			button.down = true;
 			button.last_down = now;
@@ -57,6 +66,9 @@ var create_plugin = (function() {
 					caller : button,
 				});
 			}
+
+			button.style.width = button.size_normal;
+			button.style.height = button.size_normal;
 
 			button.down = false;
 			button.last_up = now;
@@ -178,7 +190,8 @@ var create_plugin = (function() {
 					break;
 			}
 		});
-		m_play_button.setAttribute("style", `position:absolute; bottom:60px; left:5px; width:50px; height:50px;`);
+		m_play_button.style.bottom = "60px";
+		m_play_button.style.left = "5px";
 		document.body.appendChild(m_play_button);
 
 		m_play_button.update_interval = setInterval(() => {
