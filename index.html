@@ -294,8 +294,7 @@
 		animation="slide"
 		var="app.navi">
 	<ons-page>
-	<ons-page>
-	<ons-toolbar id="toolbar" class="toolbar">
+	<ons-toolbar id="toolbar" class="toolbar" style="-webkit-app-region: drag">
 	<div class="left">
 		<ons-back-button id="btnBack">Back</ons-back-button>
 	</div>
@@ -312,7 +311,7 @@
 
 	<ons-template id="main.html">
     <ons-page>
-    <ons-toolbar id="toolbar" class="toolbar">
+    <ons-toolbar id="toolbar" class="toolbar" style="-webkit-app-region: drag">
 	<div class="left">
 		<ons-back-button id="btnBack">Back</ons-back-button>
 	</div>
@@ -369,9 +368,9 @@
 	<script>
 		ons.bootstrap();
 		ons.ready(function() {
-			if(!window.cordova){
-				document.body.style.backgroundColor = "black";
-			}
+			// if(!window.cordova){
+			// 	document.body.style.backgroundColor = "black";
+			// }
 			//addEventListener spec migration
 			var supportsPassive = false;
 			try {

@@ -87,13 +87,8 @@ var create_plugin = (function() {
 				return;
 			}
 			
-			if (window.cordova && cordova.platformId == 'electron') {
-				if (sy < 50) { // title bar
-					var dx = (window.window.screenX + ev.clientX) - (wsx + sx);
-					var dy = (window.window.screenY + ev.clientY) - (wsy + sy);
-					window.moveTo(wsx + dx, wsy + dy);
-					return;
-				}
+			if (sy < 50) { // title bar
+				return;
 			}
 			
 			var dx = -(ev.clientX - ex);
@@ -188,19 +183,6 @@ var create_plugin = (function() {
 		document.addEventListener("mousemove", mousemoveFunc);
 		document.addEventListener("mouseup", mouseupFunc);
 		document.addEventListener("mousewheel", mousewheelFunc);
-		
-		if (window.cordova && cordova.platformId == 'electron') {
-			var electron_win = require('electron').remote.getCurrentWindow();
-			document.addEventListener("dblclick", (ev) => {
-				if (ev.clientY < 50) { // title bar
-					if(electron_win.isMaximized()){
-						electron_win.unmaximize();
-					}else{
-						electron_win.maximize();
-					}
-				}
-			});
-		}
 
 		var _fov = 70;
 		function gestureStartHandler(e) {

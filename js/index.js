@@ -751,7 +751,15 @@ var app = (function() {
 			});
 		},
 		get_decorder_def: (callback) => {
-			if (window.cordova) {
+			if (window.electron) {
+				var decoder = "libde265_decoder name=decoder";
+				if(m_pstcore.supported_streams["vt_decoder"]){
+					decoder = "vt_decoder name=decoder vtbf=1";
+				}else if(m_pstcore.supported_streams["v4l2_tegra_decoder"]){
+					decoder = "v4l2_tegra_decoder name=decoder";
+				}
+				callback(decoder);
+			}else if (window.cordova) {
 				var decoder = "libde265_decoder name=decoder";
 				switch(cordova.platformId){
 				case "ios":
@@ -760,13 +768,6 @@ var app = (function() {
 					break;
 				case "android":
 					decoder = "mc_decoder name=decoder mcbf=1";
-					break;
-				case "electron":
-					if(m_pstcore.supported_streams["vt_decoder"]){
-						decoder = "vt_decoder name=decoder vtbf=1";
-					}else if(m_pstcore.supported_streams["v4l2_tegra_decoder"]){
-						decoder = "v4l2_tegra_decoder name=decoder";
-					}
 					break;
 				}
 				callback(decoder);
@@ -888,7 +889,7 @@ var app = (function() {
 					}
 				}, 250);//post params
 				
-				if(!window.cordova && m_pstcore.Module.DGLFWView){
+				if(!window.cordova && m_pstcore.Module && m_pstcore.Module.DGLFWView){
 					m_pstcore.Module.DGLFWView.setCreateWindowCallback((dglfw_win) => {
 						var framebuffer;
 						var refSpace;
@@ -1186,66 +1187,10 @@ var app = (function() {
 					});
 				}
 				
-				if (window.cordova && cordova.platformId == 'electron'){
-					console = require('electron').remote.require('console');
-	
-					window.pstcore = {};
-					window.pstcore.win = require('electron').remote.getCurrentWindow();
-					window.pstcore.win.on('focus', function(ev) {
-						// var now = Date.now();
-						// if(!window.last_focus_date){
-						// 	window.last_focus_date = now;
-						// }
-						// var diff = now - window.last_focus_date;
-						// if(diff > 500){
-						// 	window.last_focus_date = now;
-						// 	self.set_param("renderer", "win_focus", "1");
-						// 	window.pstcore.win.show();
-						// }
-						self.set_param("renderer", "win_focus", "1");
-						window.pstcore.win.show();
-					});
-					$(window).on('resize', function(ev) {
-						if(!m_pst){
-							return;
-						}
-						setTimeout(()=>{
-							var is_fullscreen = (window.outerWidth == screen.width && window.outerHeight == screen.height);
-							if(!is_fullscreen){
-								console.log("resize", window.outerWidth, window.outerHeight);
-								var value = window.outerWidth + "," + window.outerHeight;
-								self.set_param("renderer", "win_size", value);
-							}
-						}, 300);
-					});
-					setInterval(() => {
-						if(!m_pst){
-							window.is_fullscreen = false;
-							return;
-						}
-						var is_fullscreen = (window.outerWidth == screen.width && window.outerHeight == screen.height);
-						if(is_fullscreen != window.is_fullscreen) {
-							window.is_fullscreen = is_fullscreen;
-							console.log("fullscreen", is_fullscreen);
-							self.set_param("renderer", "fullscreen", (is_fullscreen ? "1" : "0"));
-							setTimeout(()=>{
-								window.pstcore.win.show();
-							}, 300);
-						}
-						if(!is_fullscreen){
-							var dev_offset = window.pstcore.win.isDevToolsOpened() ? window.outerWidth : 0;
-							self.set_param("renderer", "win_pos", (window.screenX + dev_offset) + "," + window.screenY);
-						}
-						var win_focus = m_pstcore.pstcore_get_param(m_pst, "renderer", "win_focus");
-						if(parseInt(win_focus) && !window.pstcore.win.isFocused()){
-							window.pstcore.win.show();
-							//window.pstcore.win.focus();
-							//console.log("focus req");
-						}
-						//console.log("focus "+ win_focus);
-					}, 200);
+				
+				if (window.electron){
 
-					m_pstcore = require('node-pstcore');
+					m_pstcore = window.electron.pstcore;
 
 					call_pstcore_init(config);
 
