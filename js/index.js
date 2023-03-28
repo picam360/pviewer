@@ -754,7 +754,9 @@ var app = (function() {
 			if (window.electron) {
 				var decoder = "libde265_decoder name=decoder";
 				if(m_pstcore.supported_streams["vt_decoder"]){
-					decoder = "vt_decoder name=decoder vtbf=1";
+					decoder = "vt_decoder name=decoder";
+					//at moment, vtbf has texture size bug on mac, 2048x1024 seems 2048x2048 in shader
+					//decoder = "vt_decoder name=decoder vtbf=1";
 				}else if(m_pstcore.supported_streams["v4l2_tegra_decoder"]){
 					decoder = "v4l2_tegra_decoder name=decoder";
 				}
