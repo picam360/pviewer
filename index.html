@@ -294,11 +294,11 @@
 		animation="slide"
 		var="app.navi">
 	<ons-page>
-	<ons-toolbar id="toolbar" class="toolbar" style="-webkit-app-region: drag">
+	<ons-toolbar id="toolbar" class="toolbar">
 	<div class="left">
 		<ons-back-button id="btnBack">Back</ons-back-button>
 	</div>
-	<div class="center">PViewer</div>
+	<div class="center" style="-webkit-app-region: drag">PViewer</div>
 	<div class="right">
 		<ons-toolbar-button ng-click="app.menu.toggleMenu()">
 			<ons-icon icon="ion-navicon" style="font-size: 32px; width: 1em;"></ons-icon>
@@ -311,8 +311,8 @@
 
 	<ons-template id="main.html">
     <ons-page>
-    <ons-toolbar id="toolbar" class="toolbar" style="-webkit-app-region: drag">
-	<div class="left">
+    <ons-toolbar id="toolbar" class="toolbar">
+	<div class="left" style="-webkit-app-region: drag">
 		<ons-back-button id="btnBack">Back</ons-back-button>
 	</div>
 	<div class="center">PViewer</div>
