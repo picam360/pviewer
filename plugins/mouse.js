@@ -161,6 +161,8 @@ var create_plugin = (function() {
 			var now = new Date().getTime();
 			if(now - last_mouseup < 500){
 				m_plugin_host.send_event("mouse", "double_click");
+
+				app.set_param("psf_loader", "forward", "1");
 			}
 			last_mouseup = now;
 		};

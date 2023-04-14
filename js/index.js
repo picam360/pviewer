@@ -730,19 +730,21 @@ var app = (function() {
 					if(!m_query['get-query']){
 						m_query['get-query'] = "";
 					}
+
+					var loader = m_pvf_url.endsWith(".psf") ? "psf_loader" : "pvf_loader";
 					
 					var splitter = "splitter vthrough=1 aout0='opus_decoder ! oal_player sync=renderer'";
-					self.build_pst("pvf_loader", splitter, (pst) => {
-						m_pstcore.pstcore_set_param(pst, "pvf_loader", "url", m_pvf_url);
-						m_pstcore.pstcore_set_param(pst, "pvf_loader", "head_query",
+					self.build_pst(loader, splitter, (pst) => {
+						m_pstcore.pstcore_set_param(pst, loader, "url", m_pvf_url);
+						m_pstcore.pstcore_set_param(pst, loader, "head_query",
 								(m_query['head-query'] ? m_query['head-query'] : ""));
-						m_pstcore.pstcore_set_param(pst, "pvf_loader", "get_query",
+						m_pstcore.pstcore_set_param(pst, loader, "get_query",
 								(m_query['get-query'] ? m_query['get-query'] : ""));
 						if (m_query['loop']) {
-							m_pstcore.pstcore_set_param(pst, "pvf_loader", "loop", m_query['loop']);
+							m_pstcore.pstcore_set_param(pst, loader, "loop", m_query['loop']);
 						}
 						if (m_query['force_fps']) {
-							m_pstcore.pstcore_set_param(pst, "pvf_loader", "force_fps", m_query['force_fps']);
+							m_pstcore.pstcore_set_param(pst, loader, "force_fps", m_query['force_fps']);
 						}
 								
 						self.start_pst(pst);
@@ -1084,6 +1086,7 @@ var app = (function() {
 						"plugins/oal_player_st.so",
 						"plugins/oal_capture_st.so",
 						"plugins/pvf_loader_st.so",
+						"plugins/psf_loader_st.so",
 						"plugins/libde265_decoder_st.so",
 						"plugins/h264bsd_decoder_st.so",
 						"plugins/wc_decoder_st.so",
