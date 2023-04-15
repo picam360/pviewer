@@ -16,7 +16,7 @@ var create_plugin = (function() {
 	function prompt(msg, title) {
 		return new Promise((resolve, reject) => {
 			var html = '<p>' + msg + '</p>'
-					 + '<input type="file" name="dialog-message-file" id="dialog-message-file" accept=".pvf"/>';
+					 + '<input type="file" name="dialog-message-file" id="dialog-message-file" accept=".pvf,.psf"/>';
 			$( "#dialog-message" ).html(html);
 	        $( "#dialog-message" ).dialog({
 	          modal: true,
@@ -61,7 +61,8 @@ var create_plugin = (function() {
 		var plugin = {
 			init_options : function(options) {
 				document.body.addEventListener('drop', function (e) {
-					if(e.dataTransfer.files[0].name.endsWith(".pvf")){
+					if(e.dataTransfer.files[0].name.endsWith(".pvf") ||
+					   e.dataTransfer.files[0].name.endsWith(".psf")){
 						
 						var pvf = "";
 						if(!window.PstCoreLoader){
