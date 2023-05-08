@@ -366,6 +366,16 @@ var create_plugin = (function() {
             app.start_pst(conn.attr.pst, () => {
                 establish_connection(conn, stream_mode, () => {
     
+                    m_plugin_host.getFileFromUpstream = (path, callback) => {
+                        var key = uuid();
+                        m_filerequest_list.push({
+                            filename: path,
+                            key,
+                            callback,
+                        });
+                        conn.on_set_param_done_callback("network", "get_file",  path + " " + key);
+                    };
+
                     m_pstcore.pstcore_set_param(conn.attr.pst,
                         "network", "timediff", (m_timediff_ms/1000).toString());
         
@@ -443,15 +453,9 @@ var create_plugin = (function() {
                                         var config_ext = JSON.parse(json_str);
                                         if(config_ext && config_ext["plugin_paths"]){
                                             for(var path of config_ext["plugin_paths"]){
-                                                var key = uuid();
-                                                m_filerequest_list.push({
-                                                    filename: path,
-                                                    key: key,
-                                                    callback: (path, key, data) => {
-                                                        m_plugin_host.add_plugin_from_script(path, config_ext, data);
-                                                    }
+                                                m_plugin_host.getFileFromUpstream(path, (data, path, key) => {
+                                                    m_plugin_host.add_plugin_from_script(path, config_ext, data);
                                                 });
-                                                conn.on_set_param_done_callback("network", "get_file",  path + " " + key);
                                             }
                                         }
                                     }
@@ -500,7 +504,7 @@ var create_plugin = (function() {
                                     m_filerequest_list[i].chunk_array.push(data);
                                     if (eof) {
                                         m_filerequest_list[i]
-                                            .callback(m_filerequest_list[i].filename, m_filerequest_list[i].key, m_filerequest_list[i].chunk_array);
+                                            .callback(m_filerequest_list[i].chunk_array, m_filerequest_list[i].filename, m_filerequest_list[i].key);
                                         m_filerequest_list.splice(i, 1);
                                         break;
                                     }
