@@ -972,18 +972,15 @@ var app = (function() {
 											vr_draw();
 										});
 									};
-									var onEndSession = function() {
+
+									var onsListItem = document.createElement("ons-list-item");
+									onsListItem.id = "btnXRMode";
+									onsListItem.innerHTML = "XR Mode";
+									menu_list.insertBefore(onsListItem, menu_list_about);
+									ons.compile(onsListItem);
+									btnXRMode.onclick = (evt) => {
+										onRequestSession();
 									};
-									var xrButton = new WebXRButton({
-										onRequestSession: onRequestSession,
-										onEndSession: onEndSession
-								  	});
-									xrButton.enabled = supported;
-									xrButton.domElement.style.zIndex = "0";
-									xrButton.domElement.style.position = "absolute";
-									xrButton.domElement.style.bottom = 10+'px';
-									xrButton.domElement.style.right = 10+'px';
-									$('body').append(xrButton.domElement);
 								}
 							});
 						}
