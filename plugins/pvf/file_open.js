@@ -15,40 +15,67 @@ var create_plugin = (function() {
 	}
 	function prompt(msg, title) {
 		return new Promise((resolve, reject) => {
-			var html = '<p>' + msg + '</p>'
-					 + '<input type="file" name="dialog-message-file" id="dialog-message-file" accept=".pvf,.psf"/>';
+			var html = "";
+			html += '<p>' + msg + '</p>';
+			html += 'url:<input type="text" name="dialog-message-file-url" id="dialog-message-file-url"/><br/>';
+			html += 'file:<input type="file" name="dialog-message-file" id="dialog-message-file" accept=".pvf,.psf"/><br/>';
 			$( "#dialog-message" ).html(html);
 	        $( "#dialog-message" ).dialog({
 	          modal: true,
 		  	  title: title,
 	          buttons: {
-	            "Cancel": function() {
-					reject("CANCELED");
+	            "Open": function() {
+
+					var pvf = "";
+					if($( "#dialog-message-file" )[0].files[0]){
+						var file_obj = $( "#dialog-message-file" )[0].files[0];
+						if(!window.PstCoreLoader){
+							pvf = "file://" + file_obj.path;
+						}else{
+							window.pviewer_get_file = (file) => {
+								return m_filemap[file];
+							}
+							
+							pvf = "pviewer://" + file_obj.name;
+							m_filemap[pvf] = file_obj;
+						}
+					}else if($( "#dialog-message-file-url" )[0].value){
+						var url = $( "#dialog-message-file-url" )[0].value;
+						if(url.toLowerCase().endsWith(".pvf") || url.toLowerCase().endsWith(".psf")){
+							pvf = $( "#dialog-message-file-url" )[0].value;
+						}else{
+							alert("NOT SUPPORTED FILE TYPE : " + url);
+							return;
+						}
+					}
+
+					if(pvf){
+						var url = "applink=?loop=1&pvf=" + encodeURIComponent(pvf);
+						app.open_applink(url);
+					}else{
+						alert("NOT SELECTED");
+						return;
+					}
+					
 	            	$( this ).dialog( "close" );
 					app.menu.close();
+
+					resolve("OPENED");
+	            },
+	            "Cancel": function() {
+	            	$( this ).dialog( "close" );
+					app.menu.close();
+
+					reject("CANCELED");
 	            }
 	          }
 	        });
 
+			$('#dialog-message-file-url').on('change', (e) => {
+				
+			});
+
 			$('#dialog-message-file').on('change', (e) => {
-				
-				var pvf = "";
-				if(!window.PstCoreLoader){
-					pvf = "file://"+e.target.files[0].path;
-				}else{
-					window.pviewer_get_file = (file) => {
-						return m_filemap[file];
-					}
-					
-					pvf = "pviewer://"+e.target.files[0].name;
-					m_filemap[pvf] = e.target.files[0];
-				}
-				
-				var url = "applink=?loop=1&pvf=" + encodeURIComponent(pvf);
-				app.open_applink(url);
-				
-				$( "#dialog-message" ).dialog( "close" );
-				app.menu.close();
 				
 			});
 		});
@@ -85,7 +112,7 @@ var create_plugin = (function() {
 			on_restore_app_menu : function(callback) {
 				addMenuButton("swFile", "File").then(() => {
 					swFile.onclick = async (evt) => {
-						await prompt("select pvf file", "file open").then((opt) => {
+						await prompt("select pvf/psf file", "file open").then((opt) => {
 						}).catch((err) => {
 							throw "FILE_OPEN_CANCELLED";
 						});
