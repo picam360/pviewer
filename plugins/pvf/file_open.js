@@ -2,6 +2,7 @@ var create_plugin = (function() {
 	var m_plugin_host = null;
 	var m_filemap = {};
 	var m_options = {};
+    var m_permanent_options = {};
 		
 	function addMenuButton(name, txt) {
 			return new Promise((resolve, reject) => {
@@ -15,9 +16,10 @@ var create_plugin = (function() {
 	}
 	function prompt(msg, title) {
 		return new Promise((resolve, reject) => {
+			var file_open_url = (m_options.file_open_url ? m_options.file_open_url : "");
 			var html = "";
 			html += '<p>' + msg + '</p>';
-			html += 'url:<input type="text" name="dialog-message-file-url" id="dialog-message-file-url"/><br/>';
+			html += `url:<input type="text" name="dialog-message-file-url" id="dialog-message-file-url" size="35" value="${file_open_url}"/><br/>`;
 			html += 'file:<input type="file" name="dialog-message-file" id="dialog-message-file" accept=".pvf,.psf"/><br/>';
 			$( "#dialog-message" ).html(html);
 	        $( "#dialog-message" ).dialog({
@@ -42,20 +44,25 @@ var create_plugin = (function() {
 					}else if($( "#dialog-message-file-url" )[0].value){
 						var url = $( "#dialog-message-file-url" )[0].value;
 						if(url.toLowerCase().endsWith(".pvf") || url.toLowerCase().endsWith(".psf")){
-							pvf = $( "#dialog-message-file-url" )[0].value;
+							pvf = url;
+
+							for(var options of [m_options, m_permanent_options]){
+								options.file_open_url = url;
+							}
+							localStorage.setItem('file_open_js_options', JSON.stringify(m_permanent_options));
 						}else{
 							alert("NOT SUPPORTED FILE TYPE : " + url);
 							return;
 						}
 					}
 
-					if(pvf){
-						var url = "applink=?loop=1&pvf=" + encodeURIComponent(pvf);
-						app.open_applink(url);
-					}else{
+					if(!pvf){
 						alert("NOT SELECTED");
 						return;
 					}
+
+					var applink = "applink=?loop=1&pvf=" + encodeURIComponent(pvf);
+					app.open_applink(applink);
 					
 	            	$( this ).dialog( "close" );
 					app.menu.close();
@@ -87,6 +94,14 @@ var create_plugin = (function() {
 		
 		var plugin = {
 			init_options : function(options) {
+                try{
+                    m_permanent_options = JSON.parse(localStorage.getItem('file_open_js_options')) || {};
+                }catch (e){
+                    m_permanent_options = {};
+                }
+                Object.assign(options, m_permanent_options);
+                m_options = options;
+
 				document.body.addEventListener('drop', function (e) {
 					if(e.dataTransfer.files[0].name.endsWith(".pvf") ||
 					   e.dataTransfer.files[0].name.endsWith(".psf")){
