@@ -232,7 +232,6 @@ var create_plugin = (function() {
 			});
 			m_map.addLayer(m_layer_points);
 
-			// gps_point
 			m_layer_current = new ol.layer.Vector({
 				source : new ol.source.Vector({
 					features : []
