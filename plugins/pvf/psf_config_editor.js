@@ -13,6 +13,7 @@ var create_plugin = (function() {
 	var m_map = null;
 	var m_layer_points = null;
 	var m_layer_current = null;
+	var m_feature_point_drag_interaction = null;
 
 	function push_str(nodes, str, x, y, z, w, coodinate){
 		var offset = 0;
@@ -144,9 +145,7 @@ var create_plugin = (function() {
 
 						point.compass += diff_deg;
 
-						var json_str = JSON.stringify(m_config_json);
-						//console.log(PLUGIN_NAME, json_str);
-						m_pstcore.pstcore_set_param(m_pst, "psf_loader", "config_json", json_str);
+						update_config_json();
 
 						m_yaw_deg_mousedown = yaw_deg;
 					}
@@ -238,7 +237,6 @@ var create_plugin = (function() {
 				})
 			});
 			m_map.addLayer(m_layer_current);
-			
 		};
 		document.head.appendChild(script);
 	}
@@ -254,6 +252,26 @@ var create_plugin = (function() {
 			return null;
 		}
 		return null;
+	}
+
+	function update_layer_points(){
+		var features = [];
+		for(var p of m_config_json.points){
+			var pos = p.location.split(',');
+			var lon = parseFloat(pos[0]);
+			var lat = parseFloat(pos[1]);
+			var feature = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat([lon, lat])));
+			features.push(feature);
+		}
+		m_layer_points.setSource(new ol.source.Vector({
+			features
+		}));
+	}
+
+	function update_config_json(){
+		var json_str = JSON.stringify(m_config_json);
+		//console.log(PLUGIN_NAME, json_str);
+		m_pstcore.pstcore_set_param(m_pst, "psf_loader", "config_json", json_str);
 	}
 
 	return function(plugin_host) {
@@ -276,23 +294,23 @@ var create_plugin = (function() {
 				m_pstcore = pstcore;
 				m_pst = pst;
 				m_pstcore.pstcore_add_set_param_done_callback(m_pst, (pst_name, param, value)=>{
-					if(pst_name == "psf_loader"){
+					if(param == "view_quat" && m_map){
+						var q = value.split(',');
+						var quat = new THREE.Quaternion(
+							parseFloat(q[0]),
+							parseFloat(q[1]),
+							parseFloat(q[2]),
+							parseFloat(q[3]));
+				
+						var pos = new THREE.Vector3(0, 1, 0).applyQuaternion(quat);
+						var yaw = Math.atan2(pos.x, pos.z);
+
+						m_map.getView().setRotation(yaw);
+					}else if(pst_name == "psf_loader"){
 						switch(param){
 							case "config_json":
 								m_config_json = JSON.parse(value);
-								{
-									var features = [];
-									for(var p of m_config_json.points){
-										var pos = p.location.split(',');
-										var lon = parseFloat(pos[0]);
-										var lat = parseFloat(pos[1]);
-										var feature = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat([lon, lat])));
-										features.push(feature);
-									}
-									m_layer_points.setSource(new ol.source.Vector({
-										features
-									}));
-								}
+								update_layer_points();
 								break;
 							case "current_point":
 								m_current_point = value;
@@ -317,6 +335,28 @@ var create_plugin = (function() {
 									m_layer_current.setSource(new ol.source.Vector({
 										features : [feature]
 									}));
+
+									if(m_feature_point_drag_interaction){
+										m_map.removeInteraction(m_feature_point_drag_interaction);
+										m_feature_point_drag_interaction = null;
+									}
+
+									m_feature_point_drag_interaction = new ol.interaction.Modify({
+										features : new ol.Collection([feature]),
+										style : null,
+										pixelTolerance : 20
+									});
+									m_feature_point_drag_interaction.on('modifyend', function(e) {
+										console.log('modifyend');
+										var coord = feature.getGeometry().getCoordinates();
+										//var feature = e.features.item(0);
+										var lonlat = ol.proj.transform(coord, 'EPSG:3857', 'EPSG:4326');
+										console.log(lonlat);
+										var pos = point.location.split(',');
+										point.location = `${lonlat[0]},${lonlat[1]},${pos[2]}`;
+										update_config_json();
+									});
+									m_map.addInteraction(m_feature_point_drag_interaction);
 								}
 								break;
 						}
