@@ -918,13 +918,14 @@ var app = (function() {
 											ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
 										}
 										{//update canvas size
-											var w = 0;
-											var h = 0;
-											for (let view of pose.views) {
-												let viewport = layer.getViewport(view);
-												w += viewport.width;
-												h = viewport.height;
-											}
+											var w = layer.framebufferWidth;
+											var h = layer.framebufferHeight;
+											// w = 0;
+											// for (let view of pose.views) {
+											// 	let viewport = layer.getViewport(view);
+											// 	w += viewport.width;
+											// 	h = viewport.height;
+											// }
 											if(w != m_canvas.width){
 												m_canvas.width = w;
 											}
@@ -1117,9 +1118,11 @@ var app = (function() {
 
 				function call_pstcore_init(config){
 					console.log("pstcore initialized");
-					m_pstcore.pstcore_add_log_callback((level, tag, msg) => {
-						console.log(level, tag, msg);
-					});
+					if(m_query['debug']){
+						m_pstcore.pstcore_add_log_callback((level, tag, msg) => {
+							console.log(level, tag, msg);
+						});
+					}
 					const config_json = JSON.stringify(config);
 					m_pstcore.pstcore_init(config_json);
 
@@ -1229,7 +1232,9 @@ var app = (function() {
 						}],
 						postRun: [],
 						print: function(msg) {
-							console.log(msg);
+							if(m_query['debug']){
+								console.log(msg);
+							}
 						},
 						printErr: function(e) {
 							console.error(e);
