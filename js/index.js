@@ -920,6 +920,12 @@ var app = (function() {
 										{//update canvas size
 											var w = layer.framebufferWidth;
 											var h = layer.framebufferHeight;
+											if(m_query["xr-width"]){
+												w = parseInt(m_query["xr-width"]);
+											}
+											if(m_query["xr-height"]){
+												h = parseInt(m_query["xr-height"]);
+											}
 											// w = 0;
 											// for (let view of pose.views) {
 											// 	let viewport = layer.getViewport(view);
@@ -961,6 +967,15 @@ var app = (function() {
 							navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
 								if(supported){
 									var onRequestSession = function(){
+
+										var xrsettings = JSON.parse(localStorage.getItem("xrsettings")) || {};
+										if(xrsettings.fov !== undefined && 0 < xrsettings.fov && xrsettings.fov < 180){
+											m_options["fov_stereo"] = xrsettings.fov;
+										}
+										if(xrsettings.parallax !== undefined && -100 < xrsettings.parallax && xrsettings.parallax < 100){
+											m_options["parallax"] = xrsettings.parallax;
+										}
+
 										return navigator.xr.requestSession('immersive-vr').then(onSessionStarted);
 									}
 									var onSessionStarted = function(session) {
@@ -1254,6 +1269,7 @@ var app = (function() {
 		},
 		get_pstcore: () => {return m_pstcore;},
 		set_pst: (pst) => {m_pst = pst;},
+		get_xrsession: () => {return m_xrsession},
 	};
 	return self;
 })();
