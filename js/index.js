@@ -52,7 +52,7 @@ var app = (function() {
 		"simd" : false,
 		"boost" : false,
 		"margin" : "0,0,0,0",
-		"parallax" : 0,
+		"screen_offset" : [[0, 0], [0, 0]],
 	};
 	var m_permanent_options = {};
 	var is_recording = false;
@@ -242,8 +242,12 @@ var app = (function() {
 					if (m_query["margin"]) {
 						m_options.margin = m_query["margin"];
 					}
-					if (m_query["parallax"]) {
-						m_options.parallax = parseFloat(m_query["parallax"]);
+					if (m_query["screen-offset"]) {
+						var nodes = m_query["screen-offset"].split(',');
+						m_options.screen_offset[0][0] = parseFloat(nodes[0]);
+						m_options.screen_offset[0][1] = parseFloat(nodes[1]);
+						m_options.screen_offset[1][0] = parseFloat(nodes[2]);
+						m_options.screen_offset[1][1] = parseFloat(nodes[3]);
 					}
 				}
 				// @data : uint8array
@@ -496,13 +500,15 @@ var app = (function() {
 			if(value){
 				self.set_param("renderer", "stereo", "1");
 				self.plugin_host.set_fov(m_options.fov_stereo);
-				self.set_param("renderer", "parallax", m_options.parallax.toString());
+				self.set_param("renderer", "screen_offset_left", `${m_options.screen_offset[0][0]},${m_options.screen_offset[0][1]}`);
+				self.set_param("renderer", "screen_offset_right", `${m_options.screen_offset[1][0]},${m_options.screen_offset[1][1]}`);
 				self.set_param("renderer", "margin", m_options.margin);
 				self.set_param("renderer", "mode", "speed");
 			}else{
 				self.set_param("renderer", "stereo", "0");
 				self.plugin_host.set_fov(m_options.fov);
-				self.set_param("renderer", "parallax", "0");
+				self.set_param("renderer", "screen_offset_left", "0,0");
+				self.set_param("renderer", "screen_offset_right", "0,0");
 				self.set_param("renderer", "margin", "0");
 				self.set_param("renderer", "mode", "quality");
 			}
@@ -916,6 +922,28 @@ var app = (function() {
 											framebuffer.name = m_pstcore.GL.framebuffers.length;
 											m_pstcore.GL.framebuffers.push(framebuffer);
 											ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
+
+											var xrsettings = JSON.parse(localStorage.getItem("xrsettings")) || {};
+											if(xrsettings.fov !== undefined && 0 < xrsettings.fov && xrsettings.fov < 180){
+												m_options["fov_stereo"] = xrsettings.fov;
+											}
+											if(xrsettings.screen_offset_x !== undefined && -1 < xrsettings.screen_offset_x && xrsettings.screen_offset_x < 1){
+												m_options["screen_offset"][0][0] = xrsettings.screen_offset_x;
+												m_options["screen_offset"][1][0] = -xrsettings.screen_offset_x;
+											}else{
+												m_options["screen_offset"][0][0] = -pose.views[0].projectionMatrix[8];
+												m_options["screen_offset"][1][0] = -pose.views[1].projectionMatrix[8];
+											}
+											if(xrsettings.screen_offset_y !== undefined && -1 < xrsettings.screen_offset_y && xrsettings.screen_offset_y < 1){
+												m_options["screen_offset"][0][1] = xrsettings.screen_offset_y;
+												m_options["screen_offset"][1][1] = xrsettings.screen_offset_y;
+											}else{
+												m_options["screen_offset"][0][1] = -pose.views[0].projectionMatrix[9];
+												m_options["screen_offset"][1][1] = -pose.views[1].projectionMatrix[9];
+											}
+								
+											self.set_stereo(true);
+											self.plugin_host.set_view_offset(new THREE.Quaternion());
 										}
 										{//update canvas size
 											var w = layer.framebufferWidth;
@@ -958,23 +986,12 @@ var app = (function() {
 									m_pstcore.pstcore_poll_events();
 									m_xrsession.requestAnimationFrame(redraw);
 								}
-								
-								self.set_stereo(true);
-								self.plugin_host.set_view_offset(new THREE.Quaternion());
 
 								m_xrsession.requestAnimationFrame(redraw);
 							}
 							navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
 								if(supported){
 									var onRequestSession = function(){
-
-										var xrsettings = JSON.parse(localStorage.getItem("xrsettings")) || {};
-										if(xrsettings.fov !== undefined && 0 < xrsettings.fov && xrsettings.fov < 180){
-											m_options["fov_stereo"] = xrsettings.fov;
-										}
-										if(xrsettings.parallax !== undefined && -100 < xrsettings.parallax && xrsettings.parallax < 100){
-											m_options["parallax"] = xrsettings.parallax;
-										}
 
 										return navigator.xr.requestSession('immersive-vr').then(onSessionStarted);
 									}
