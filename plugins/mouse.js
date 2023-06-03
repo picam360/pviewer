@@ -57,7 +57,8 @@ var create_plugin = (function() {
 	}
 
 	function init() {
-		var last_mouseup = 0;
+		var last_mouseup_ts = 0;
+		var last_mousemove_d = 0;
 		var down = false;
 		var wsx = 0, wsy = 0;
 		var sx = 0, sy = 0;
@@ -157,14 +158,19 @@ var create_plugin = (function() {
 			autoscroll = false;
 		}
 		var mouseupFunc = function() {
+			var dx = (ex - sx);
+			var dy = (ey - sy);
+			var d = Math.sqrt(dx*dx + dy*dy);
+
 			down = false;
 			var now = new Date().getTime();
-			if(now - last_mouseup < 500){
+			if(now - last_mouseup_ts < 500 && d + last_mousemove_d < 10){
 				m_plugin_host.send_event("mouse", "double_click");
 
 				app.set_param("psf_loader", "forward", "1");
 			}
-			last_mouseup = now;
+			last_mousemove_d = d;
+			last_mouseup_ts = now;
 		};
 		var mousewheelFunc = function(e) {
 			fov += e.wheelDelta < 0 ? 5 : -5;
