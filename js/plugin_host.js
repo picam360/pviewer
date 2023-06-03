@@ -349,6 +349,20 @@ function PluginHost(core, options) {
 			}
 		},
 		fire_pst_started(pstcore, pst){
+
+			pstcore.pstcore_add_set_param_done_callback(pst, (pst_name, param, value)=>{
+				if(param == "view_quat"){
+					var q = value.split(',');
+					var quat = new THREE.Quaternion(
+						parseFloat(q[0]),
+						parseFloat(q[1]),
+						parseFloat(q[2]),
+						parseFloat(q[3]));
+					
+					m_view_offset = quat.clone().multiply(m_view_quat.clone().conjugate());
+				}
+			});
+
 			for (var i = 0; i < m_plugins.length; i++) {
 				try{
 					if (m_plugins[i].pst_started) {
