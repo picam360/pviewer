@@ -28,7 +28,7 @@ var create_plugin = (function() {
 	          buttons: {
 	            "Open": function() {
 
-					var pvf = "";
+					var applink = "";
 					if($( "#dialog-message-file" )[0].files[0]){
 						var file_obj = $( "#dialog-message-file" )[0].files[0];
 						if(!window.PstCoreLoader){
@@ -41,27 +41,30 @@ var create_plugin = (function() {
 							pvf = "pviewer://" + file_obj.name;
 							m_filemap[pvf] = file_obj;
 						}
+						applink = "applink=?loop=1&pvf=" + encodeURIComponent(pvf);
 					}else if($( "#dialog-message-file-url" )[0].value){
 						var url = $( "#dialog-message-file-url" )[0].value;
-						if(url.toLowerCase().endsWith(".pvf") || url.toLowerCase().endsWith(".psf")){
-							pvf = url;
-
-							for(var options of [m_options, m_permanent_options]){
-								options.file_open_url = url;
-							}
-							localStorage.setItem('file_open_js_options', JSON.stringify(m_permanent_options));
+						var path = url.split('?')[0];
+						if(path.toLowerCase().endsWith(".pvf") || path.toLowerCase().endsWith(".psf")){
+							applink = "applink=?loop=1&pvf=" + encodeURIComponent(url);
+						}else if(url.indexOf("applink=") >= 0 || url.indexOf("pvf=") >= 0 || url.indexOf("vpm=") >= 0){
+							applink = url;
 						}else{
 							alert("NOT SUPPORTED FILE TYPE : " + url);
 							return;
 						}
+
+						for(var options of [m_options, m_permanent_options]){
+							options.file_open_url = url;
+						}
+						localStorage.setItem('file_open_js_options', JSON.stringify(m_permanent_options));
 					}
 
-					if(!pvf){
+					if(!applink){
 						alert("NOT SELECTED");
 						return;
 					}
 
-					var applink = "applink=?loop=1&pvf=" + encodeURIComponent(pvf);
 					app.open_applink(applink);
 					
 	            	$( this ).dialog( "close" );
