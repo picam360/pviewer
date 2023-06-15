@@ -64,7 +64,6 @@ var create_plugin = (function() {
 		var sx = 0, sy = 0;
 		var ex = 0, ey = 0;
 		var fov = 120;
-		var pre_view_offset_quat = null;
 		var mousedownFunc = function(ev) {
 			if (ev.type == "touchstart") {
 				ev.clientX = ev.targetTouches[0].clientX;
@@ -130,28 +129,33 @@ var create_plugin = (function() {
 				// + THREE.Math.radToDeg(diff_euler.z));
 				// }
 			} else {
-				if(pre_view_offset_quat == null || !pre_view_offset_quat.equals(view_offset_quat)){
-					var cur_quat = view_offset_quat.clone().multiply(view_quat.clone());
-					var cur_pu = quat_to_yxy(cur_quat);
-					var ori_pu = quat_to_yxy(view_quat);
-					var yaw = (cur_pu[0] - ori_pu[0])*180.0/Math.PI;
-					var pitch = (cur_pu[1] - ori_pu[1])*180.0/Math.PI;
-					var yaw2 = (cur_pu[2] - ori_pu[2])*180.0/Math.PI;
-					console.log("mouse.js : yaw,pitch,yaw2",yaw,pitch,yaw2);
-		
-					abs_pitch = pitch;
-					abs_yaw = yaw;
+				var quat = view_offset_quat.clone().multiply(view_quat.clone());
+				var pos = new THREE.Vector3(0, 1, 0).applyQuaternion(quat);
+				var r = Math.sqrt(pos.x*pos.x + pos.z*pos.z);
+				var pitch_deg = Math.atan2(r, pos.y) * 180 / Math.PI;
+				var yaw_deg = Math.atan2(pos.x, pos.z) * 180 / Math.PI;
+				if(pitch_deg < 45){
+					var pos = new THREE.Vector3(0, 0, 1).applyQuaternion(quat);
+					yaw_deg = Math.atan2(pos.x, pos.z) * 180 / Math.PI;
+				}else if(135 < pitch_deg){
+					var pos = new THREE.Vector3(0, 0, -1).applyQuaternion(quat);
+					yaw_deg = Math.atan2(pos.x, pos.z) * 180 / Math.PI;
 				}
-				abs_pitch = Math.min(Math.max(abs_pitch + pitch_diff, 0), 180);
-				abs_yaw = (abs_yaw - roll_diff) % 360;
-				var euler = new THREE.Euler()
-					.setFromQuaternion(view_quat, "YXZ");
-				euler.x += THREE.Math.degToRad(abs_pitch);
-				euler.y += THREE.Math.degToRad(abs_yaw);
+
+				pitch_deg += pitch_diff;
+				yaw_deg -= roll_diff;
+
+				pitch_deg = Math.max(0, Math.min(pitch_deg, 180))
+
+				//console.log("mouse.js : yaw,pitch",yaw_deg,roll_diff,":",pitch_deg,pitch_diff);
+
+				var euler = new THREE.Euler(
+					THREE.Math.degToRad(pitch_deg),
+					THREE.Math.degToRad(yaw_deg),
+					0,
+					"YXZ");
 				var next_quat = new THREE.Quaternion().setFromEuler(euler);
-				view_offset_quat = next_quat.clone().multiply(view_quat.clone()
-					.conjugate());
-				pre_view_offset_quat = view_offset_quat.clone();
+				view_offset_quat = next_quat.clone().multiply(view_quat.clone().conjugate());
 			}
 			m_plugin_host.set_view_offset(view_offset_quat);
 
