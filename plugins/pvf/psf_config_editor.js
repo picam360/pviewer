@@ -13,6 +13,7 @@ var create_plugin = (function() {
 	var m_map = null;
 	var m_layer_points = null;
 	var m_layer_current = null;
+	var m_layer_selected = null;
 	var m_feature_point_drag_interaction = null;
 
 	function push_str(nodes, str, x, y, z, w, coodinate){
@@ -113,12 +114,37 @@ var create_plugin = (function() {
 	var mousewheelFunc = function(e) {
 	};
 	var keydownFunc = function(e){
+		switch(e.key){
+			case "-":
+			case "+":
+				m_layer_selected.getSource().forEachFeature(function(fet, layer) {
+					var point = fet.get("self");
+					if(!point){
+						return;
+					}
+					var cur = get_point_from_path(m_current_point);
+					if(!cur["next"]){
+						cur["next"] = [];
+					}
+					cur["next"].push(e.key + point["path"]);
+				});
+
+				update_config_json();
+				break;
+		}
 		if(e.ctrlKey) {
 			switch(e.code){
 				case "KeyS":
 					console.log(PLUGIN_NAME, "save config.json");
 					var json_str = JSON.stringify(m_config_json, null, 4);
 					console.log(PLUGIN_NAME, json_str);
+					break;
+				case "KeyJ":
+					var features = m_layer_selected.getSource().getFeatures();
+					if(features && features[0]){
+						var point = features[0].get("self");
+						m_pstcore.pstcore_set_param(m_pst, "psf_loader", "current_point", point["path"]);
+					}
 					break;
 			}
 		}
@@ -223,6 +249,35 @@ var create_plugin = (function() {
 					zoom : 20
 				})
 			});
+			
+			m_map.on('click', function(e) {
+				m_map.forEachFeatureAtPixel(e.pixel, function(fet, layer) {
+					var point = fet.get("self");
+					if(!point){
+						return;
+					}
+					var pos = point.location.split(',');
+					var lon = parseFloat(pos[0]);
+					var lat = parseFloat(pos[1]);
+					var features = [];
+					var feature = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat([lon, lat])));
+					feature.setStyle([
+						new ol.style.Style({
+							image : new ol.style.Circle({
+								radius : 15,
+								stroke : new ol.style.Stroke({
+									color : [255, 255, 255],
+									width : 2
+								})
+							})
+						})]);
+					feature.set("self", point);
+					features.push(feature);
+					m_layer_selected.setSource(new ol.source.Vector({
+						features
+					}));
+				});
+			});
 
 			m_layer_points = new ol.layer.Vector({
 				source : new ol.source.Vector({
@@ -237,6 +292,13 @@ var create_plugin = (function() {
 				})
 			});
 			m_map.addLayer(m_layer_current);
+
+			m_layer_selected = new ol.layer.Vector({
+				source : new ol.source.Vector({
+					features : []
+				})
+			});
+			m_map.addLayer(m_layer_selected);
 		};
 		document.head.appendChild(script);
 	}
@@ -261,6 +323,7 @@ var create_plugin = (function() {
 			var lon = parseFloat(pos[0]);
 			var lat = parseFloat(pos[1]);
 			var feature = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat([lon, lat])));
+			feature.set("self", p);
 			features.push(feature);
 		}
 		m_layer_points.setSource(new ol.source.Vector({
@@ -321,19 +384,53 @@ var create_plugin = (function() {
 									var lat = parseFloat(pos[1]);
 									m_map.getView().setCenter(ol.proj.fromLonLat([lon, lat]));
 
-									var feature = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat([lon, lat])));
-									feature.setStyle([
-										new ol.style.Style({
-											image : new ol.style.Circle({
-												radius : 15,
-												stroke : new ol.style.Stroke({
-													color : [255, 0, 0],
-													width : 2
+									var features = [];
+									{
+										var feature = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat([lon, lat])));
+										feature.setStyle([
+											new ol.style.Style({
+												image : new ol.style.Circle({
+													radius : 15,
+													stroke : new ol.style.Stroke({
+														color : [255, 0, 0],
+														width : 2
+													})
 												})
-											})
-										})]);
+											})]);
+										features.push(feature);
+									}
+									if(point["next"]){
+										for(var p of point["next"]){
+											var point;
+											if(p[0] == '-' || p[0] == '+'){
+												point = get_point_from_path(p.substr(1));
+											}else{
+												point = get_point_from_path(p);
+											}
+											if(point != null){
+												var pos = point.location.split(',');
+												var lon = parseFloat(pos[0]);
+												var lat = parseFloat(pos[1]);
+												var feature = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat([lon, lat])));
+												feature.setStyle([
+													new ol.style.Style({
+														image : new ol.style.Circle({
+															radius : 15,
+															stroke : new ol.style.Stroke({
+																color : [255, 255, 0],
+																width : 2
+															})
+														})
+													})]);
+												features.push(feature);
+											}
+										}
+									}
 									m_layer_current.setSource(new ol.source.Vector({
-										features : [feature]
+										features
+									}));
+									m_layer_selected.setSource(new ol.source.Vector({
+										features : []
 									}));
 
 									if(m_feature_point_drag_interaction){
