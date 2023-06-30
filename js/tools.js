@@ -130,3 +130,18 @@ function decodeUtf8(data) {
 	}
 	return result;
 }
+
+function calPitchYawDegree(quat){
+	var pos = new THREE.Vector3(0, 1, 0).applyQuaternion(quat);
+	var r = Math.sqrt(pos.x*pos.x + pos.z*pos.z);
+	var pitch_deg = Math.atan2(r, pos.y) * 180 / Math.PI;
+	var yaw_deg = Math.atan2(pos.x, pos.z) * 180 / Math.PI;
+	if(pitch_deg < 45){
+		var pos = new THREE.Vector3(0, 0, 1).applyQuaternion(quat);
+		yaw_deg = Math.atan2(pos.x, pos.z) * 180 / Math.PI;
+	}else if(135 < pitch_deg){
+		var pos = new THREE.Vector3(0, 0, -1).applyQuaternion(quat);
+		yaw_deg = Math.atan2(pos.x, pos.z) * 180 / Math.PI;
+	}
+	return [pitch_deg, yaw_deg];
+}
