@@ -384,6 +384,28 @@ function PluginHost(core, options) {
 				}
 			}
 		},
+		fire_xrsession_started(xrsession){
+			for (var i = 0; i < m_plugins.length; i++) {
+				try{
+					if (m_plugins[i].xrsession_started) {
+						m_plugins[i].xrsession_started(xrsession);
+					}
+				}catch(e){
+					console.log(e);
+				}
+			}
+		},
+		fire_xrsession_stopped(xrsession){
+			for (var i = 0; i < m_plugins.length; i++) {
+				try{
+					if (m_plugins[i].xrsession_stopped) {
+						m_plugins[i].xrsession_stopped(xrsession);
+					}
+				}catch(e){
+					console.log(e);
+				}
+			}
+		},
 	};
 	return self;
 };

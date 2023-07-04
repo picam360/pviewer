@@ -1004,6 +1004,7 @@ var app = (function() {
 											refSpace = _refSpace;
 											vr_draw();
 										});
+										self.plugin_host.fire_xrsession_started(m_xrsession);
 									};
 
 									var onsListItem = document.createElement("ons-list-item");
