@@ -431,10 +431,6 @@ var app = (function() {
 				requestAnimationFrame(redraw);
 			}
 			requestAnimationFrame(redraw);
-			
-			setInterval(() => {
-				self.update_status_str();
-			}, 1000);
 		},
 		
 		set_param: function(pst_name, param, value) {
@@ -901,9 +897,11 @@ var app = (function() {
 				
 				if(!window.cordova && m_pstcore.Module && m_pstcore.Module.DGLFWView){
 					m_pstcore.Module.DGLFWView.setCreateWindowCallback((dglfw_win) => {
+						var framebuffer_bk;
 						var framebuffer;
 						var refSpace;
 						var ctx = dglfw_win.ctx.GLctx;
+						framebuffer_bk = ctx.getParameter(ctx.FRAMEBUFFER_BINDING);
 						m_canvas = dglfw_win.canvas;
 						$('#container').append(m_canvas);
 						self.update_canvas_size();
@@ -917,6 +915,28 @@ var app = (function() {
 									var pose = xrFrame.getViewerPose(refSpace);
 									var layer = m_xrsession.renderState.baseLayer;
 									if(pose){
+										{//update canvas size
+											var w = layer.framebufferWidth;
+											var h = layer.framebufferHeight;
+											if(m_query["xr-width"]){
+												w = parseInt(m_query["xr-width"]);
+											}
+											if(m_query["xr-height"]){
+												h = parseInt(m_query["xr-height"]);
+											}
+											// w = 0;
+											// for (let view of pose.views) {
+											// 	let viewport = layer.getViewport(view);
+											// 	w += viewport.width;
+											// 	h = viewport.height;
+											// }
+											if(w != m_canvas.width){
+												m_canvas.width = w;
+											}
+											if(h != m_canvas.height){
+												m_canvas.height = h;
+											}
+										}
 										if(!framebuffer && layer.framebuffer){
 											framebuffer = layer.framebuffer;
 											framebuffer.name = m_pstcore.GL.framebuffers.length;
@@ -942,30 +962,9 @@ var app = (function() {
 												m_options["screen_offset"][1][1] = -pose.views[1].projectionMatrix[9];
 											}
 								
+											//set_stereo need to be called after canvas size changed
 											self.set_stereo(true);
 											self.plugin_host.set_view_offset(new THREE.Quaternion());
-										}
-										{//update canvas size
-											var w = layer.framebufferWidth;
-											var h = layer.framebufferHeight;
-											if(m_query["xr-width"]){
-												w = parseInt(m_query["xr-width"]);
-											}
-											if(m_query["xr-height"]){
-												h = parseInt(m_query["xr-height"]);
-											}
-											// w = 0;
-											// for (let view of pose.views) {
-											// 	let viewport = layer.getViewport(view);
-											// 	w += viewport.width;
-											// 	h = viewport.height;
-											// }
-											if(w != m_canvas.width){
-												m_canvas.width = w;
-											}
-											if(h != m_canvas.height){
-												m_canvas.height = h;
-											}
 										}
 										
 										var euler = new THREE.Euler(THREE.Math
@@ -1005,6 +1004,14 @@ var app = (function() {
 											vr_draw();
 										});
 										self.plugin_host.fire_xrsession_started(m_xrsession);
+
+										m_xrsession.addEventListener('end', (e) => {
+											self.plugin_host.fire_xrsession_stopped(m_xrsession);
+											ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer_bk);
+											framebuffer = null;
+											m_xrsession = null;
+											self.start_animate();
+										});
 									};
 
 									var onsListItem = document.createElement("ons-list-item");
@@ -1209,6 +1216,10 @@ var app = (function() {
 					self.open_applink(m_query['applink']);
 					
 					self.start_animate();
+			
+					setInterval(() => {
+						self.update_status_str();
+					}, 1000);
 					
 					window.addEventListener('resize', () => {
 						self.update_canvas_size();
