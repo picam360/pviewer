@@ -50,6 +50,9 @@ var create_plugin = (function() {
             for(var key in lens_params){
                 for(var i in lens_params[key]){
                     var name = `${key}${i}`;
+                    if(key == "c"){
+                        name = `${key}${i == 0 ? "x" : "y"}`;
+                    }
                     append_node(name, range[key].min, range[key].max, range[key].step, lens_params[key][i]);
                 }
             }
@@ -94,6 +97,9 @@ var create_plugin = (function() {
             for(var key in lens_params){
                 for(var i in lens_params[key]){
                     var name = `${key}${i}`;
+                    if(key == "c"){
+                        name = `${key}${i == 0 ? "x" : "y"}`;
+                    }
                     eventhandler(name, (e) => {
                         var val = parseFloat(e.target.value);
                         if(isNaN(val)){
