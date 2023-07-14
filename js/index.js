@@ -915,7 +915,6 @@ var app = (function() {
 				}
 				setTimeout(() => {
 					self.set_stereo(m_options.stereo);
-					self.plugin_host.set_fov(m_options.fov);
 				
 					if (m_options.view_offset) {
 						var euler = new THREE.Euler(THREE.Math
