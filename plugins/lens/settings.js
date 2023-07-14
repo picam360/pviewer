@@ -37,7 +37,7 @@ var create_plugin = (function() {
                 JSON.parse(JSON.stringify(default_lens_params)),
                 JSON.parse(JSON.stringify(m_options.lens_params)));
             var html = '<p>' + msg + '</p>'
-                     + '<table>';
+                     + '<div style="overflow-y: scroll; height: 150px;"><table>';
             function append_node(name, min, max, step, value){
                 var id = `dialog-message-${name}`;
                 html += '<tr>';
@@ -56,7 +56,7 @@ var create_plugin = (function() {
                     append_node(name, range[key].min, range[key].max, range[key].step, lens_params[key][i]);
                 }
             }
-            html += '</table>';
+            html += '</table></div>';
             $( "#dialog-message" ).html(html);
             $( "#dialog-message" ).dialog({
               modal: true,
