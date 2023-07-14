@@ -54,11 +54,11 @@ var app = (function() {
 		"margin" : "0,0,0,0",
 		"screen_offset" : [[0, 0], [0, 0]],
 		"lens_params" : {
+			c : [ 0.500, 0.500 ],
+			f : [ 1.000, 1.000 ],
 			k : [ 0.000, 0.000, 0.000, 0.000 ],
 			p : [ 0.000, 0.000 ],
 			s : [ 0.000, 0.000, 0.000, 0.000 ],
-			c : [ 0.500, 0.500 ],
-			f : [ 1.000, 1.000 ],
 		},
 	};
 	var m_permanent_options = {};
@@ -496,7 +496,7 @@ var app = (function() {
 				self.set_param("renderer", "lens_params", JSON.stringify(lens_params));
 			}
 		},
-		
+
 		set_fov_stereo: function(value) {
 			if(m_options.fov_stereo != value){
 				m_options.fov_stereo = value;

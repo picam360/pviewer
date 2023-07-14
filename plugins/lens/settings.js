@@ -19,19 +19,19 @@ var create_plugin = (function() {
         return new Promise((resolve, reject) => {
             var range = {
                 fov : { min : 30, max : 150, step : 1},
+                c : { min : 0.0, max : 1.0, step : 0.01},
+                f : { min : 0.0, max : 2.0, step : 0.01},
                 k : { min : -1.0, max : 1.0, step : 0.01},
                 p : { min : -1.0, max : 1.0, step : 0.01},
                 s : { min : -1.0, max : 1.0, step : 0.01},
-                c : { min : 0.0, max : 1.0, step : 0.01},
-                f : { min : 0.0, max : 2.0, step : 0.01},
             };
             var default_fov = 95;
             var default_lens_params = {
+                c : [ 0.500, 0.500 ],
+                f : [ 1.000, 1.000 ],
                 k : [ 0.000, 0.000, 0.000, 0.000 ],
                 p : [ 0.000, 0.000 ],
                 s : [ 0.000, 0.000, 0.000, 0.000 ],
-                c : [ 0.500, 0.500 ],
-                f : [ 1.000, 1.000 ],
             };
             var lens_params = Object.assign(
                 JSON.parse(JSON.stringify(default_lens_params)),
@@ -50,7 +50,7 @@ var create_plugin = (function() {
             for(var key in lens_params){
                 for(var i in lens_params[key]){
                     var name = `${key}${i}`;
-                    if(key == "c"){
+                    if(key == "c" || key == "f"){
                         name = `${key}${i == 0 ? "x" : "y"}`;
                     }
                     append_node(name, range[key].min, range[key].max, range[key].step, lens_params[key][i]);
@@ -97,7 +97,7 @@ var create_plugin = (function() {
             for(var key in lens_params){
                 for(var i in lens_params[key]){
                     var name = `${key}${i}`;
-                    if(key == "c"){
+                    if(key == "c" || key == "f"){
                         name = `${key}${i == 0 ? "x" : "y"}`;
                     }
                     eventhandler(name, (e) => {
