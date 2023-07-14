@@ -53,6 +53,13 @@ var app = (function() {
 		"boost" : false,
 		"margin" : "0,0,0,0",
 		"screen_offset" : [[0, 0], [0, 0]],
+		"lens_params" : {
+			k : [ 0.000, 0.000, 0.000, 0.000 ],
+			p : [ 0.000, 0.000 ],
+			s : [ 0.000, 0.000, 0.000, 0.000 ],
+			c : [ 0.500, 0.500 ],
+			f : [ 1.000, 1.000 ],
+		},
 	};
 	var m_permanent_options = {};
 	var is_recording = false;
@@ -150,6 +157,11 @@ var app = (function() {
 		
 		save_permanent_options: function() {
 			localStorage.setItem('options', JSON.stringify(m_permanent_options));
+		},
+		
+		aply_permanent_options: function(name) {
+			m_permanent_options[name] = m_options[name];
+			self.save_permanent_options();
 		},
 
 		// Bind Event Listeners
@@ -458,11 +470,48 @@ var app = (function() {
 			
 			self.set_stereo(m_options.stereo);
 		},
+
+		set_lens_params: function(value) {
+			var cur = JSON.stringify(m_options.lens_params);
+			var next = JSON.stringify(value);
+			if(cur != next){
+				m_options.lens_params = JSON.parse(next);
+				self.aply_permanent_options("lens_params");
+			}
+			
+			if(!m_options.stereo || (m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS")) {
+				var lens_params = {
+					k : [ 0.000, 0.000 ],
+					f : [ 1.000, 1.000 ],
+				};
+				self.set_param("renderer", "lens_params", JSON.stringify(lens_params));
+			}else{
+				var lens_params = {
+					k : [ 0.000, 0.000 ],
+					f : [ 1.000, 1.000 ],
+				};
+				if(m_options.lens_params){
+					lens_params = m_options.lens_params;
+				}
+				self.set_param("renderer", "lens_params", JSON.stringify(lens_params));
+			}
+		},
+		
+		set_fov_stereo: function(value) {
+			if(m_options.fov_stereo != value){
+				m_options.fov_stereo = value;
+				self.aply_permanent_options("fov_stereo");
+			}
+			if(m_options.stereo){
+				self.plugin_host.set_fov(m_options.fov_stereo);
+			}
+		},
 		
 		set_stereo: function(value) {
-			m_options.stereo = value;
-			m_permanent_options.stereo = value;
-			self.save_permanent_options();
+			if(m_options.stereo != value){
+				m_options.stereo = value;
+				self.aply_permanent_options("stereo");
+			}
 
 			if(swStereoView){
 				swStereoView.setChecked(m_options.stereo);
@@ -475,24 +524,9 @@ var app = (function() {
 			self.plugin_host.send_event("PLUGIN_HOST", value ?
 				"STEREO_ENABLED" :
 				"STEREO_DISABLED");
-
-//			var cmd = UPSTREAM_DOMAIN;
-//			cmd += "set_vstream_param -p stereo=" + (value ? 1 : 0);
-//			self.send_command(cmd);
 			
-			if(!value || (m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS")) {
-				var len_param = {
-					k : [ 0.000, 0.000 ],
-					f : [ 1.000, 1.000 ],
-				};
-				self.set_param("renderer", "lens_params", JSON.stringify(len_param));
-			}else{
-				var len_param = {
-					k : [ 0.000, 0.000 ],
-					f : [ 1.000, 1.000 ],
-				};
-				self.set_param("renderer", "lens_params", JSON.stringify(len_param));
-			}
+			self.set_lens_params(m_options.lens_params);
+
 			if(value){
 				self.set_param("renderer", "stereo", "1");
 				self.plugin_host.set_fov(m_options.fov_stereo);

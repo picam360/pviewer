@@ -74,12 +74,10 @@ var create_plugin = (function() {
             
                     resolve(opt);
                     $( this ).dialog( "close" );
-                    app.menu.close();
                 },
                 "Cancel": function() {
                     reject("CANCELED");
                     $( this ).dialog( "close" );
-                    app.menu.close();
                 }
               }
             });
@@ -652,6 +650,7 @@ var create_plugin = (function() {
     };
     
     function open_dialog(){
+        app.menu.close();
         prompt("input connection info", "connect stream via network").then((opt) => {
             if(opt.type == "ws"){
                 start_ws(opt.ws_url, (socket) => {
