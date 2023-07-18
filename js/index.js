@@ -41,6 +41,7 @@ var app = (function() {
 	var audio_first_packet_s = 0;
 	// motion processer unit
 	var m_mpu;
+	var m_xr_yaw_offset = 0;
 
 	var server_url = window.location.href.split('?')[0];
 	var m_options = {
@@ -1002,7 +1003,7 @@ var app = (function() {
 										
 										var euler = new THREE.Euler(THREE.Math
 											.degToRad(90), THREE.Math
-											.degToRad(0), THREE.Math
+											.degToRad(m_xr_yaw_offset), THREE.Math
 											.degToRad(0), "YXZ");
 						
 										var offset_quat = new THREE.Quaternion()
@@ -1332,6 +1333,7 @@ var app = (function() {
 		get_pstcore: () => {return m_pstcore;},
 		set_pst: (pst) => {m_pst = pst;},
 		get_xrsession: () => {return m_xrsession},
+		set_xr_yaw_offset: (yaw_degree) => {m_xr_yaw_offset = yaw_degree;},
 	};
 	return self;
 })();
