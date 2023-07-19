@@ -1010,9 +1010,9 @@ var app = (function() {
 											.setFromEuler(euler);
 						
 										var ori = pose.transform.orientation;
-										var quat = new THREE.Quaternion(ori.x, ori.y, ori.z, ori.w);
+										var quat = new THREE.Quaternion(ori.x, ori.z, -ori.y, ori.w);
 
-										quat = quat.multiply(offset_quat);
+										quat = offset_quat.multiply(quat);
 
 										self.plugin_host.set_view_quat(quat);
 									}
