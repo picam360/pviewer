@@ -1334,6 +1334,14 @@ var app = (function() {
 		set_pst: (pst) => {m_pst = pst;},
 		get_xrsession: () => {return m_xrsession},
 		set_xr_yaw_offset: (yaw_degree) => {m_xr_yaw_offset = yaw_degree;},
+		set_screen_offset: (so) => {
+			m_options["screen_offset"][0][0] = so[0]
+			m_options["screen_offset"][1][0] = -so[0];
+			m_options["screen_offset"][0][1] = so[1]
+			m_options["screen_offset"][1][1] = so[1];
+			self.set_param("renderer", "screen_offset_left", `${m_options.screen_offset[0][0]},${m_options.screen_offset[0][1]}`);
+			self.set_param("renderer", "screen_offset_right", `${m_options.screen_offset[1][0]},${m_options.screen_offset[1][1]}`);
+		},
 	};
 	return self;
 })();

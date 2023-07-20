@@ -19,6 +19,7 @@ var create_plugin = (function() {
         return new Promise((resolve, reject) => {
             var range = {
                 fov : { min : 30, max : 150, step : 1},
+                so : { min : -1.0, max : 1.0, step : 0.01},
                 c : { min : 0.0, max : 1.0, step : 0.01},
                 f : { min : 0.0, max : 2.0, step : 0.01},
                 k : { min : -1.0, max : 1.0, step : 0.01},
@@ -33,6 +34,7 @@ var create_plugin = (function() {
                 p : [ 0.000, 0.000 ],
                 s : [ 0.000, 0.000, 0.000, 0.000 ],
             };
+            var xrsettings = JSON.parse(localStorage.getItem("xrsettings")) || {};
             var lens_params = Object.assign(
                 JSON.parse(JSON.stringify(default_lens_params)),
                 JSON.parse(JSON.stringify(m_options.lens_params)));
@@ -47,6 +49,9 @@ var create_plugin = (function() {
                 html += '</tr>';
             }
             append_node("fov", range["fov"].min, range["fov"].max, range["fov"].step, m_options.fov_stereo);
+            for(var key of ["x", "y"]){
+                append_node(`so${key}`, range["so"].min, range["so"].max, range["so"].step, xrsettings[`screen_offset_${key}`] || 0);
+            }
             for(var key in lens_params){
                 for(var i in lens_params[key]){
                     var name = `${key}${i}`;
@@ -93,7 +98,20 @@ var create_plugin = (function() {
                 }else{
                     app.set_fov_stereo(val);
                 }
-            }, { key, i });
+            });
+            for(var key of ["x", "y"]){
+                eventhandler(`so${key}`, (e) => {
+                    var key = e.target.ext;
+                    var val = parseFloat(e.target.value);
+                    if(isNaN(val)){
+                        e.target.value = xrsettings[`screen_offset_${key}`] || 0;
+                    }else{
+                        xrsettings[`screen_offset_${key}`] = val;
+                        localStorage.setItem("xrsettings", JSON.stringify(xrsettings));
+                        app.set_screen_offset([xrsettings.screen_offset_x || 0, xrsettings.screen_offset_y || 0]);
+                    }
+                }, key);
+            }
             for(var key in lens_params){
                 for(var i in lens_params[key]){
                     var name = `${key}${i}`;
