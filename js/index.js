@@ -857,6 +857,8 @@ var app = (function() {
 				}
 			});
 		},
+
+		start_xr : null,
 		
 		start_pst: (pst, start_callback, end_callback) => {
 			m_toolbar = null;
@@ -1053,8 +1055,11 @@ var app = (function() {
 									onsListItem.innerHTML = "XR Mode";
 									menu_list.insertBefore(onsListItem, menu_list_about);
 									ons.compile(onsListItem);
-									btnXRMode.onclick = (evt) => {
+									self.start_xr = () => {
 										onRequestSession();
+									};
+									btnXRMode.onclick = (evt) => {
+										self.start_xr();
 									};
 								}
 							});
