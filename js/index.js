@@ -859,6 +859,7 @@ var app = (function() {
 		},
 
 		start_xr : null,
+		stop_pst : null,
 		
 		start_pst: (pst, start_callback, end_callback) => {
 			m_toolbar = null;
@@ -900,6 +901,7 @@ var app = (function() {
 
 				m_pstcore.pstcore_destroy_pstreamer(m_pst);
 				m_pst = null;
+				self.stop_pst = null;
 				
 				if(end_callback){
 					end_callback();
@@ -1085,6 +1087,8 @@ var app = (function() {
 				document.addEventListener("touchstart", mousedownFunc);
 				document.addEventListener("mousedown", mousedownFunc);
 				document.addEventListener("mousemove", mousemoveFunc);
+
+				self.stop_pst = _stop_pst;
 			}
 			if(m_pst){
 				_stop_pst();
@@ -1271,6 +1275,11 @@ var app = (function() {
 						if(e.dataTransfer.files.length == 0){
 							var url = e.dataTransfer.getData("URL");
 							self.open_applink(url);
+						}
+					});
+					window.addEventListener('beforeunload', function (e) {
+						if(self.stop_pst){
+							self.stop_pst();
 						}
 					});
 				}
