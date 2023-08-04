@@ -381,8 +381,10 @@ var create_plugin = (function() {
                         if(conn.attr.in_pt_set_param){//prevent loop back
                             return;
                         }
-                        var param_str = `[${JSON.stringify(pst_name)},${JSON.stringify(param)},${JSON.stringify(value)}]`;
-                        conn.attr.param_pendings.push(param_str);
+                        if(pst_name == "renderer" && param.startsWith("overlay")){
+                            return;
+                        }
+                        conn.attr.param_pendings.push([pst_name, param, value]);
                     };
                     
                     m_pstcore.pstcore_add_set_param_done_callback(conn.attr.pst, conn.on_set_param_done_callback);
@@ -447,8 +449,7 @@ var create_plugin = (function() {
                             for(var ary of list){
                                 if(ary[0] == "network"){
                                     if(ary[1] == "pviewer_config_ext"){
-                                        var json_str = atob(ary[2]);
-                                        var config_ext = JSON.parse(json_str);
+                                        var config_ext = JSON.parse(ary[2]);
                                         if(config_ext && config_ext["plugin_paths"]){
                                             for(var path of config_ext["plugin_paths"]){
                                                 m_plugin_host.getFileFromUpstream(path, (data, path, key) => {
@@ -612,7 +613,7 @@ var create_plugin = (function() {
         conn.attr.timer = setInterval(function() {// param,command to upstream
             try{
                 if(conn.attr.param_pendings.length > 0) {
-                    var msg = "[" + conn.attr.param_pendings.join(',') + "]";
+                    var msg = JSON.stringify(conn.attr.param_pendings);
                     var pack = conn.rtp.build_packet(msg, PT_SET_PARAM);
                     conn.rtp.send_packet(pack);
                     conn.attr.param_pendings = [];

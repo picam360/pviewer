@@ -64,8 +64,17 @@ function PluginHost(core, options) {
 					m_plugins.push(plugin);
 					create_plugin = null;
 
+					var pstcore = core.get_pstcore();
+					var pst = core.get_pst();
+
 					if(plugin.init_options){
 						plugin.init_options(options[plugin.name] || {});
+					}
+					if (plugin.pstcore_initialized && pstcore) {
+						plugin.pstcore_initialized(pstcore);
+					}
+					if (plugin.pst_started && pst) {
+						plugin.pst_started(pstcore, pst);
 					}
 				}
 				if (callback) {
@@ -74,16 +83,23 @@ function PluginHost(core, options) {
 			};
 			console.log("loding : " + name);
 			
-			// var blob = new Blob(chunk_array, {
-			// 	type: "text/javascript"
-			// });
-			// script.src = url.createObjectURL(blob);
+			var blob = new Blob(chunk_array, {
+				type: "text/javascript"
+			});
 
-			//for debug ability
-			var str = (new TextDecoder('utf-8')).decode(chunk_array[0]);
-			script.src = "data:text/javascript;name=" + name + ";base64," + btoa(str);
-
-			document.head.appendChild(script);
+			if(1){
+				//for debug ability
+				const reader = new FileReader();
+	
+				reader.readAsDataURL(blob);
+				reader.onloadend = () => {
+					script.src = reader.result;
+		
+					document.head.appendChild(script);
+				};
+			}else{
+				script.src = url.createObjectURL(blob);
+			}
 		},
 		init_plugins: function() {
 			return new Promise((fullfill,reject) => {

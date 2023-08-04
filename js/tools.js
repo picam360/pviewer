@@ -145,3 +145,17 @@ function calPitchYawDegree(quat){
 	}
 	return [pitch_deg, yaw_deg];
 }
+
+function mergeChunk(chunks){
+	var len = 0;
+	for (var _chunk of chunks) {
+		len += _chunk.length;
+	}
+	var buff = new Uint8Array(len);
+	var cur = 0;
+	for (var _chunk of chunks) {
+		buff.set(_chunk, cur);
+		cur += _chunk.length;
+	}
+	return buff;
+}
