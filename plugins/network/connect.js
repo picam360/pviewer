@@ -3,6 +3,7 @@ var create_plugin = (function() {
     var m_plugin = null;
 	var m_pstcore = null;
     var m_cmd2upstream_list = [];
+    var m_cmd2upstream_callback_list = {};
     var m_filerequest_list = [];
     var m_timediff_ms = 0;
     var m_watches = [];
@@ -14,6 +15,7 @@ var create_plugin = (function() {
         presentor : 0,
         n_clients : 0,
     };
+    var m_rtcp_command_id = 0;
         
     function addMenuButton(name, txt) {
             return new Promise((resolve, reject) => {
@@ -473,6 +475,16 @@ var create_plugin = (function() {
                             if (m_watches[name]) {
                                 m_watches[name](value);
                             }
+                        } else if (packet.GetPayloadType() == PT_CMD) { // callback
+                            var str = (new TextDecoder).decode(packet.GetPayload());
+                            var split = str.split('\"');
+                            var id = split[1];
+                            var value = decodeURIComponent(split[3]);
+                            if(m_cmd2upstream_callback_list[id]){
+                                var {callback, ext} = m_cmd2upstream_callback_list[id];
+                                delete m_cmd2upstream_callback_list[id];
+                                callback(value, ext);
+                            }
                         } else if (packet.GetPayloadType() == PT_FILE) { // file
                             var array = packet.GetPayload();
                             var view = new DataView(array.buffer, array.byteOffset);
@@ -619,13 +631,18 @@ var create_plugin = (function() {
                     conn.attr.param_pendings = [];
                 }
                 if (m_cmd2upstream_list.length > 0) {
-                    var {cmd} = m_cmd2upstream_list.shift();
-                    var xml = "<picam360:command id=\"" + app.rtcp_command_id +
-                        "\" value=\"" + cmd + "\" />"
+
+                    m_rtcp_command_id++;
+
+                    var {cmd, callback, ext} = m_cmd2upstream_list.shift();
+                    var xml = "<picam360:command id=\"" + m_rtcp_command_id +
+                        "\" value=\"" + encodeURIComponent(cmd) + "\" />"
                     var pack = conn.rtp.build_packet(xml, PT_CMD);
                     conn.rtp.send_packet(pack);
 
-                    app.rtcp_command_id++;
+                    if(callback){
+                        m_cmd2upstream_callback_list[m_rtcp_command_id] = {callback, ext};
+                    }
                 }
             }catch(err){
                 clearInterval(conn.attr.timer);
@@ -722,22 +739,22 @@ var create_plugin = (function() {
             },
             event_handler : function(sender, event) {
             },
-            command_handler : function(cmd, update) {
+            command_handler : function(cmd, callback, ext) {
                 if (cmd.indexOf(UPSTREAM_DOMAIN) == 0) {
                     cmd = cmd.substr(UPSTREAM_DOMAIN.length);
-                    if(update){
+                    if(ext && ext.update){
                         for (var i = 0; i < m_cmd2upstream_list.length; i++) {
-                            if(m_cmd2upstream_list[i].update){
+                            if(m_cmd2upstream_list[i].ext && m_cmd2upstream_list[i].ext.update){
                                 var cmd_s1 = cmd.split(' ')[0];
                                 var cmd_s2 = m_cmd2upstream_list[i].cmd.split(' ')[0];
                                 if(cmd_s1 == cmd_s2){
-                                    m_cmd2upstream_list[i] = {cmd, update};
+                                    m_cmd2upstream_list[i] = {cmd, callback, ext};
                                     return;
                                 }
                             }
                         }
                     }
-                    m_cmd2upstream_list.push({cmd, update});
+                    m_cmd2upstream_list.push({cmd, callback, ext});
                     return;
                 }
             },

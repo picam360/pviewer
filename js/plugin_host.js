@@ -19,7 +19,7 @@ function PluginHost(core, options) {
 	var query = GetQueryString();
 	
 	//private functions
-	function handle_command(cmd) {
+	function handle_command(cmd, callback, ext) {
 		var split = cmd.split(' ');
 		if (split[0] == "set_stereo") {
 			self.set_stereo(split[1] == "true" || split[1] == "1");
@@ -36,13 +36,13 @@ function PluginHost(core, options) {
 			}
 			return null;
 		},
-		send_command: function(cmd, update) {
+		send_command: function(cmd, callback, ext) {
 			for (var i = 0; i < m_plugins.length; i++) {
 				if (m_plugins[i].command_handler) {
-					m_plugins[i].command_handler(cmd, update);
+					m_plugins[i].command_handler(cmd, callback, ext);
 				}
 			}
-			handle_command(cmd, update);
+			handle_command(cmd, callback, ext);
 		},
 		send_event: function(sender, event) {
 			for (var i = 0; i < m_plugins.length; i++) {
