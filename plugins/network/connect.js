@@ -708,13 +708,17 @@ var create_plugin = (function() {
                 m_options = options;
 
                 var bln_open_dialog = false;
-                if(m_query['wrtc-key']){
-                    m_options.wrtc_key = m_query['wrtc-key'];
+                if('wrtc-key' in m_query){
+                    if(m_query['wrtc-key']){
+                        m_options.wrtc_key = m_query['wrtc-key'];
+                    }
                     m_options.default_interface = 'wrtc';
                     bln_open_dialog = true;
                 }
-                if(m_query['ws-url']){
-                    m_options.ws_url = m_query['ws-url'];
+                if('ws-url' in m_query){
+                    if(m_query['ws-url']){
+                        m_options.ws_url = m_query['ws-url'];
+                    }
                     m_options.default_interface = 'ws';
                     bln_open_dialog = true;
                 }
