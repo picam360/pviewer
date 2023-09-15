@@ -708,6 +708,9 @@ var create_plugin = (function() {
                 m_options = options;
 
                 var bln_open_dialog = false;
+                if(m_query['open-connect-dialog']){
+                    bln_open_dialog = parseBoolean(m_query['open-connect-dialog']);
+                }
                 if('wrtc-key' in m_query){
                     if(m_query['wrtc-key']){
                         m_options.wrtc_key = m_query['wrtc-key'];
