@@ -2,6 +2,7 @@
 var is_nodejs = (typeof cordova === 'undefined' && typeof process !== 'undefined' && process.versions && process.versions.node);
 var rtp_mod;
 var util;
+var use_cordova_binder = false;
 if(is_nodejs){
 	rtp_mod = require("./rtp.js");
 	util = require('util');
@@ -14,6 +15,9 @@ if(is_nodejs){
 		TextDecoder,
 		TextEncoder,
 	};
+	if (window && window.cordova && window.PstCoreLoader) {
+		use_cordova_binder = true;
+	}
 }
 
 var PT_STATUS = 100;
@@ -58,7 +62,7 @@ function MeetingClient(pstcore, host, _options) {
 		var def = "oal_capture name=capture ! opus_encoder";
 		var post_build = (pst, src) => {
 			m_pst_dq = pst;
-			if (window.cordova && window.PstCoreLoader) {
+			if (use_cordova_binder) {
 				pstcore.pstcore_set_param(m_pst_dq, "cordova_binder", "def", def);
 			}
 			if(options.audio_input_devicename){
@@ -67,7 +71,7 @@ function MeetingClient(pstcore, host, _options) {
 			pstcore.pstcore_set_dequeue_callback(m_pst_dq, dequeue_callback);
 			pstcore.pstcore_start_pstreamer(m_pst_dq);
 		};
-        if (window.cordova && window.PstCoreLoader) {
+        if (use_cordova_binder) {
             pstcore.pstcore_build_pstreamer("cordova_binder", post_build);
         } else {
             pstcore.pstcore_build_pstreamer(def, post_build);
@@ -94,7 +98,7 @@ function MeetingClient(pstcore, host, _options) {
 					var def = "opus_decoder ! oal_player name=player realtime=1 buffer=0.2";
 					var post_build = (pst, src) => {
 						m_src_data[src].pst = pst;
-						if (window.cordova && window.PstCoreLoader) {
+						if (use_cordova_binder) {
 							pstcore.pstcore_set_param(m_src_data[src].pst, "cordova_binder", "def", def);
 						}
 						for (var ary of m_src_data[src].param_pendings) {
@@ -110,7 +114,7 @@ function MeetingClient(pstcore, host, _options) {
 						}
 						pstcore.pstcore_start_pstreamer(m_src_data[src].pst);
 					};
-					if (window.cordova && window.PstCoreLoader) {
+					if (use_cordova_binder) {
 						pstcore.pstcore_build_pstreamer("cordova_binder", post_build, src);
 					} else {
 						pstcore.pstcore_build_pstreamer(def, post_build, src);
