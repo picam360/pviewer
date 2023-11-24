@@ -5,6 +5,8 @@
 		"plugins/lens/settings.js",
 		"plugins/network/connect.js",
 		"plugins/player/play_control.js",
+		"plugins/xr/xrgamepad.js",
+		"plugins/xr/teleport.js",
 		"plugins/tour/tour.js"
 	]
 }
