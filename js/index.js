@@ -1026,11 +1026,11 @@ var app = (function() {
 
 								m_xrsession.requestAnimationFrame(redraw);
 							}
-							navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
+							navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
 								if(supported){
 									var onRequestSession = function(){
 
-										return navigator.xr.requestSession('immersive-vr').then(onSessionStarted);
+										return navigator.xr.requestSession('immersive-ar').then(onSessionStarted);
 									}
 									var onSessionStarted = function(session) {
 										m_xrsession = session;

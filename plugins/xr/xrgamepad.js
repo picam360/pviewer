@@ -56,5 +56,4 @@ var create_plugin = (function() {
 		var plugin = {};
 		return plugin;
 	}
-	return self;
 })();

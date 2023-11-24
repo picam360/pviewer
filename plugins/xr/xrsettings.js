@@ -101,5 +101,4 @@ var create_plugin = (function() {
 		};
 		return plugin;
 	}
-	return self;
 })();
