@@ -29,13 +29,14 @@ var create_plugin = (function() {
     }
     function prompt(msg, title) {
         return new Promise((resolve, reject) => {
+            var protocol = (location.protocol == 'https:' ? 'wss://' : 'ws://');
             var html = '<p>' + msg + '</p>'
                      + '<table>'
                      + '<tr>'
                      + '<td><input type="radio" name="dialog-message-type" id="dialog-message-type" value="ws" checked /></td><td>websocket</td>'
                      + '</tr>'
                      + '<tr>'
-                     + '<td/><td>url:<input type="text" name="dialog-message-wsurl" id="dialog-message-wsurl" autocapitalize="none" size="25" value="ws://' + window.location.host + '" />'
+                     + '<td/><td>url:<input type="text" name="dialog-message-wsurl" id="dialog-message-wsurl" autocapitalize="none" size="25" value="' + protocol + window.location.host + '" />'
                      + '</tr>'
                      + '<tr>'
                      + '<td><input type="radio" name="dialog-message-type" id="dialog-message-type" value="wrtc" /></td><td>webrtc</td>'
@@ -116,8 +117,14 @@ var create_plugin = (function() {
     function start_ws(url, callback, err_callback) {
         try{
             // websocket
-            var ws_url = "ws://" + url.slice(url.indexOf("://")+3);
-            var socket = new WebSocket(ws_url);
+            if (location.protocol == 'http:' && !url.startsWith('ws:')) {
+                alert('ws:// is required.');
+                return;
+            } else if (location.protocol == 'https:' && !url.startsWith('wss:')) {
+                alert('wss:// is required.');
+                return;
+            }
+            var socket = new WebSocket(url);
             socket.binaryType = 'arraybuffer';// blob or arraybuffer
             socket.addEventListener('open', function (event) {
                 class DataChannel extends EventEmitter {
