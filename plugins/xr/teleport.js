@@ -142,11 +142,11 @@ var create_plugin = (function() {
 							break;
 						case "3_AXIS_FORWARD_DOWN":
 							clearInterval(m_interval);
-							start_animate(0.3, -20, 20);
+							start_animate(0.1, -20, 20);
 							break;
 						case "3_AXIS_BACKWARD_DOWN":
 							clearInterval(m_interval);
-							start_animate(-0.3, -20, 20);
+							start_animate(-0.1, -20, 20);
 							break;
 						case "4_BUTTON_DOWN":
 							break;
