@@ -119,9 +119,11 @@ var create_plugin = (function() {
 				app.set_xr_yaw_offset = (yaw_degree) => {
 					m_xr_yaw_offset = yaw_degree;
 				};
+				app.get_xrsession = () => {
+					return m_xrsession;
+				};
 				var onSessionStarted = function(session) {
 					m_xrsession = session;
-					app.set_xrsession(m_xrsession);
 					m_glctx.makeXRCompatible().then(() => {
 						m_xrsession.updateRenderState({ baseLayer: new XRWebGLLayer(m_xrsession, m_glctx) });
 						return m_xrsession.requestReferenceSpace('local');

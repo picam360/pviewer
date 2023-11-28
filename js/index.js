@@ -19,7 +19,6 @@ var app = (function() {
 	// main canvas
 	var m_canvas;
 	var m_glctx;
-	var m_xrsession;
 	// toolbar
 	var m_toolbar;
 	// backbutton
@@ -437,7 +436,7 @@ var app = (function() {
 		start_animate: function() {
 			
 			function redraw() {
-				if(m_xrsession){
+				if(self.get_xrsession && self.get_xrsession()){
 					return;
 				}
 				m_pstcore.pstcore_poll_events();
@@ -1024,7 +1023,7 @@ var app = (function() {
 				
 					m_mpu = MPU();
 					m_mpu.init((quat) => {
-						if(!m_pstcore || !m_pst || m_xrsession){
+						if(!m_pstcore || !m_pst || (self.get_xrsession && self.get_xrsession())){
 							return;
 						}
 						self.plugin_host.set_view_quat(quat);
@@ -1233,8 +1232,6 @@ var app = (function() {
 		get_canvas: () => {return m_canvas;},
 		get_pstcore: () => {return m_pstcore;},
 		set_pst: (pst) => {m_pst = pst;},
-		get_xrsession: () => {return m_xrsession},
-		set_xrsession: (xrsession) => {m_xrsession = xrsession;},
 		get_glctx: () => {return m_glctx},
 		set_screen_offset: (so) => {
 			m_options["screen_offset"][0][0] = so[0]
