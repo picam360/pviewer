@@ -18,6 +18,7 @@ var app = (function() {
 	
 	// main canvas
 	var m_canvas;
+	var m_glctx;
 	var m_xrsession;
 	// toolbar
 	var m_toolbar;
@@ -41,7 +42,6 @@ var app = (function() {
 	var audio_first_packet_s = 0;
 	// motion processer unit
 	var m_mpu;
-	var m_xr_yaw_offset = 0;
 
 	var server_url = window.location.href.split('?')[0];
 	var m_options = {
@@ -935,136 +935,16 @@ var app = (function() {
 				
 				if(!window.cordova && m_pstcore.Module && m_pstcore.Module.DGLFWView){
 					m_pstcore.Module.DGLFWView.setCreateWindowCallback((dglfw_win) => {
-						var framebuffer_bk;
-						var framebuffer;
-						var refSpace;
-						var ctx = dglfw_win.ctx.GLctx;
-						framebuffer_bk = ctx.getParameter(ctx.FRAMEBUFFER_BINDING);
+						self.resetContextCurrent = () => {
+							m_pstcore.GL.makeContextCurrent(dglfw_win.handle);
+						}
+						m_glctx = dglfw_win.ctx.GLctx;
 						m_canvas = dglfw_win.canvas;
 						$('#container').append(m_canvas);
 						self.update_canvas_size();
+						self.plugin_host.fire_pst_started(m_pstcore, m_pst);
 						if(start_callback){
 							start_callback();
-						}
-						if(navigator.xr){
-							function vr_draw(){
-								function redraw(t, xrFrame) {
-									m_pstcore.GL.makeContextCurrent(dglfw_win.handle);
-									var pose = xrFrame.getViewerPose(refSpace);
-									var layer = m_xrsession.renderState.baseLayer;
-									if(pose){
-										{//update canvas size
-											var w = layer.framebufferWidth;
-											var h = layer.framebufferHeight;
-											if(m_query["xr-width"]){
-												w = parseInt(m_query["xr-width"]);
-											}
-											if(m_query["xr-height"]){
-												h = parseInt(m_query["xr-height"]);
-											}
-											// w = 0;
-											// for (let view of pose.views) {
-											// 	let viewport = layer.getViewport(view);
-											// 	w += viewport.width;
-											// 	h = viewport.height;
-											// }
-											if(w != m_canvas.width){
-												m_canvas.width = w;
-											}
-											if(h != m_canvas.height){
-												m_canvas.height = h;
-											}
-										}
-										if(!framebuffer && layer.framebuffer){
-											framebuffer = layer.framebuffer;
-											framebuffer.name = m_pstcore.GL.framebuffers.length;
-											m_pstcore.GL.framebuffers.push(framebuffer);
-											ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
-
-											var xrsettings = JSON.parse(localStorage.getItem("xrsettings")) || {};
-											if(xrsettings.fov !== undefined && 0 < xrsettings.fov && xrsettings.fov < 180){
-												m_options["fov_stereo"] = xrsettings.fov;
-											}
-											if(xrsettings.screen_offset_x !== undefined && -1 < xrsettings.screen_offset_x && xrsettings.screen_offset_x < 1){
-												m_options["screen_offset"][0][0] = xrsettings.screen_offset_x;
-												m_options["screen_offset"][1][0] = -xrsettings.screen_offset_x;
-											}else{
-												m_options["screen_offset"][0][0] = -pose.views[0].projectionMatrix[8];
-												m_options["screen_offset"][1][0] = -pose.views[1].projectionMatrix[8];
-											}
-											if(xrsettings.screen_offset_y !== undefined && -1 < xrsettings.screen_offset_y && xrsettings.screen_offset_y < 1){
-												m_options["screen_offset"][0][1] = xrsettings.screen_offset_y;
-												m_options["screen_offset"][1][1] = xrsettings.screen_offset_y;
-											}else{
-												m_options["screen_offset"][0][1] = -pose.views[0].projectionMatrix[9];
-												m_options["screen_offset"][1][1] = -pose.views[1].projectionMatrix[9];
-											}
-								
-											//set_stereo need to be called after canvas size changed
-											self.set_stereo(true);
-											self.plugin_host.set_view_offset(new THREE.Quaternion());
-										}
-										
-										var euler = new THREE.Euler(THREE.Math
-											.degToRad(90), THREE.Math
-											.degToRad(m_xr_yaw_offset), THREE.Math
-											.degToRad(0), "YXZ");
-						
-										var offset_quat = new THREE.Quaternion()
-											.setFromEuler(euler);
-						
-										var ori = pose.transform.orientation;
-										var quat = new THREE.Quaternion(ori.x, ori.z, -ori.y, ori.w);
-
-										quat = offset_quat.multiply(quat);
-
-										self.plugin_host.set_view_quat(quat);
-									}
-									m_pstcore.pstcore_poll_events();
-									m_xrsession.requestAnimationFrame(redraw);
-								}
-
-								m_xrsession.requestAnimationFrame(redraw);
-							}
-							navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
-								if(supported){
-									var onRequestSession = function(){
-
-										return navigator.xr.requestSession('immersive-ar').then(onSessionStarted);
-									}
-									var onSessionStarted = function(session) {
-										m_xrsession = session;
-										ctx.makeXRCompatible().then(() => {
-											m_xrsession.updateRenderState({ baseLayer: new XRWebGLLayer(m_xrsession, ctx) });
-											return m_xrsession.requestReferenceSpace('local');
-										}).then((_refSpace) => {
-											refSpace = _refSpace;
-											vr_draw();
-										});
-										self.plugin_host.fire_xrsession_started(m_xrsession);
-
-										m_xrsession.addEventListener('end', (e) => {
-											self.plugin_host.fire_xrsession_stopped(m_xrsession);
-											ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer_bk);
-											framebuffer = null;
-											m_xrsession = null;
-											self.start_animate();
-										});
-									};
-
-									var onsListItem = document.createElement("ons-list-item");
-									onsListItem.id = "btnXRMode";
-									onsListItem.innerHTML = "XR Mode";
-									menu_list.insertBefore(onsListItem, menu_list_about);
-									ons.compile(onsListItem);
-									self.start_xr = () => {
-										onRequestSession();
-									};
-									btnXRMode.onclick = (evt) => {
-										self.start_xr();
-									};
-								}
-							});
 						}
 					});
 				}else{
@@ -1072,13 +952,12 @@ var app = (function() {
 					$('#container').append(m_canvas);
 					setTimeout(() => { //delay
 						self.update_canvas_size();
+						self.plugin_host.fire_pst_started(m_pstcore, m_pst);
 						if(start_callback){
 							start_callback();
 						}
 					}, 0);
 				}
-				
-				self.plugin_host.fire_pst_started(m_pstcore, m_pst);
 
 				m_pstcore.pstcore_start_pstreamer(m_pst);
 				self.plugin_host.send_event("app", "open_applink");
@@ -1344,10 +1223,19 @@ var app = (function() {
 				}
 			});
 		},
+		restore_app_menu: () => {
+			setTimeout(() => {
+				if(swStereoView){
+					swStereoView.setChecked(m_options.stereo);
+				}
+			}, 0);
+		},
+		get_canvas: () => {return m_canvas;},
 		get_pstcore: () => {return m_pstcore;},
 		set_pst: (pst) => {m_pst = pst;},
 		get_xrsession: () => {return m_xrsession},
-		set_xr_yaw_offset: (yaw_degree) => {m_xr_yaw_offset = yaw_degree;},
+		set_xrsession: (xrsession) => {m_xrsession = xrsession;},
+		get_glctx: () => {return m_glctx},
 		set_screen_offset: (so) => {
 			m_options["screen_offset"][0][0] = so[0]
 			m_options["screen_offset"][1][0] = -so[0];

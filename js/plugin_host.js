@@ -330,6 +330,7 @@ function PluginHost(core, options) {
 		restore_app_menu: function() {
 			app.menu.setMenuPage("menu.html", {
 				callback: function() {
+					app.restore_app_menu();
 					for (var i = 0; i < m_plugins.length; i++) {
 						if (m_plugins[i].on_restore_app_menu) {
 							m_plugins[i].on_restore_app_menu(app.menu);

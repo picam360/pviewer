@@ -3,6 +3,7 @@ var create_plugin = (function() {
 	var m_plugin_host = null;
 	var m_pstcore = null;
 	var m_pst = 0;
+	var m_permanent_options = {};
 
 	return function(plugin_host) {
 		m_plugin_host = plugin_host;
