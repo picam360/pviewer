@@ -126,6 +126,9 @@ var create_plugin = (function() {
 				start_animate(0.1, -20, 20);
 			},
 			event_handler : function(sender, event) {
+				if(!app.get_xrsession){
+					return;
+				}
 				if(!m_pst || !app.get_xrsession()){
 					return;
 				}

@@ -7,6 +7,9 @@ var create_plugin = (function() {
 	var gamepads = [];
 	var gamepad_state = null;
 	function handleGamepad() {
+		if(!app.get_xrsession){
+			return;
+		}
 		// Iterate over all the gamepads and show their values.
 		if (app.get_xrsession() && app.get_xrsession().inputSources) {
 			gamepads = [];
