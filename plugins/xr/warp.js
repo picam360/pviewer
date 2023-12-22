@@ -71,7 +71,15 @@ var create_plugin = (function() {
 		pstcore.pstcore_set_param(pst, "renderer", "overlay_obj", json_str);
 	}
 
+	function stop_animate(){
+		if(m_interval){
+			clearInterval(m_interval);
+			m_interval = 0;
+		}
+	}
 	function start_animate(step, min, max){
+		stop_animate();
+
 		var scale = 0.1;
 		m_interval = setInterval(() => {
 			var jobj = {
@@ -100,7 +108,7 @@ var create_plugin = (function() {
 			m_pos += step;
 			if(m_pos > max || m_pos < min){
 				m_pos = Math.max(min, Math.min(m_pos, max));
-				clearInterval(m_interval);
+				stop_animate();
 			}
 		}, 1000/60);
 	}
@@ -125,7 +133,7 @@ var create_plugin = (function() {
 				m_pos = -20;
 				start_animate(0.1, -20, 20);
 			},
-			event_handler : function(sender, event) {
+			event_handler : function(sender, event, state) {
 				if(!app.get_xrsession){
 					return;
 				}
@@ -133,34 +141,20 @@ var create_plugin = (function() {
 					return;
 				}
 				try{
-					var step = 1;
-					if(event.startsWith("RIGHT_")){
-						event = event.substr(event.indexOf("_") + 1);
-					}else{
-						return;
-					}
 					switch(event){
-						case "2_AXIS_FORWARD_DOWN":
+						case "RIGHT_3_AXIS_FORWARD":
+							if(state[event]){
+								start_animate(0.1, -20, 20);
+							}else{
+								stop_animate();
+							}
 							break;
-						case "2_AXIS_BACKWARD_DOWN":
-							break;
-						case "3_AXIS_FORWARD_UP":
-						case "3_AXIS_BACKWARD_UP":
-							clearInterval(m_interval);
-							break;
-						case "3_AXIS_FORWARD_DOWN":
-							clearInterval(m_interval);
-							start_animate(0.1, -20, 20);
-							break;
-						case "3_AXIS_BACKWARD_DOWN":
-							clearInterval(m_interval);
-							start_animate(-0.1, -20, 20);
-							break;
-						case "4_BUTTON_DOWN":
-							break;
-						case "5_BUTTON_DOWN":
-							break;
-						case "3_BUTTON_DOWN":
+						case "RIGHT_3_AXIS_BACKWARD":
+							if(state[event]){
+								start_animate(-0.1, -20, 20);
+							}else{
+								stop_animate();
+							}
 							break;
 					}
 				}catch(err){

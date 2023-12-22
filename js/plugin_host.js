@@ -44,10 +44,10 @@ function PluginHost(core, options) {
 			}
 			handle_command(cmd, callback, ext);
 		},
-		send_event: function(sender, event) {
+		send_event: function(sender, event, ext) {
 			for (var i = 0; i < m_plugins.length; i++) {
 				if (m_plugins[i].event_handler) {
-					m_plugins[i].event_handler(sender, event);
+					m_plugins[i].event_handler(sender, event, ext);
 				}
 			}
 		},
