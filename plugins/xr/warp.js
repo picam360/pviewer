@@ -134,6 +134,11 @@ var create_plugin = (function() {
 				}
 				try{
 					var step = 1;
+					if(event.startsWith("RIGHT_")){
+						event = event.substr(event.indexOf("_") + 1);
+					}else{
+						return;
+					}
 					switch(event){
 						case "2_AXIS_FORWARD_DOWN":
 							break;

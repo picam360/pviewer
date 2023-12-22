@@ -3,8 +3,7 @@ var create_plugin = (function() {
 	var m_is_init = false;
 
 	var push_threshold = 0.5;
-	var active_gamepad = "";
-	var gamepads = [];
+	var gamepads = {};
 	var gamepad_state = null;
 	function handleGamepad() {
 		if(!app.get_xrsession){
@@ -12,25 +11,29 @@ var create_plugin = (function() {
 		}
 		// Iterate over all the gamepads and show their values.
 		if (app.get_xrsession() && app.get_xrsession().inputSources) {
-			gamepads = [];
+			gamepads = {};
 			for(var source of app.get_xrsession().inputSources){
-				gamepads.push(source.gamepad);
+				gamepads[source.handedness.toUpperCase()] = source.gamepad;
 			}
 		}
-		if(gamepads.length == 0){
+		if(Object.keys(gamepads).length == 0){
 			return;
 		}
-		var gamepad = gamepads[0];
 
 		var new_state = {}
-		for ( var i = 0 in gamepad.buttons) {
-			var key = i + "_BUTTON";
-			new_state[key] = gamepad.buttons[i].value > push_threshold;
-		}
-		for ( var i = 0 in gamepad.axes) {
-			var key = i + "_AXIS";
-			new_state[key + "_FORWARD"] = gamepad.axes[i] > push_threshold;
-			new_state[key + "_BACKWARD"] = gamepad.axes[i] < -push_threshold;
+		for(var tag in gamepads){
+			var gamepad = gamepads[tag];
+			for ( var i = 0 in gamepad.buttons) {
+				var key = i + "_BUTTON";
+				key = tag + "_" + key;
+				new_state[key] = gamepad.buttons[i].value > push_threshold;
+			}
+			for ( var i = 0 in gamepad.axes) {
+				var key = i + "_AXIS";
+				key = tag + "_" + key;
+				new_state[key + "_FORWARD"] = gamepad.axes[i] > push_threshold;
+				new_state[key + "_BACKWARD"] = gamepad.axes[i] < -push_threshold;
+			}
 		}
 		if (gamepad_state) {
 			var eventList = {};

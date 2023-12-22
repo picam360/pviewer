@@ -7,7 +7,7 @@
 		"plugins/player/play_control.js",
 		"plugins/xr/xrmode.js",
 		"plugins/xr/xrgamepad.js",
-		"plugins/xr/teleport.js",
+		"plugins/xr/warp.js",
 		"plugins/tour/tour.js"
 	]
 }
