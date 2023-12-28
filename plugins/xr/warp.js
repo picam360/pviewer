@@ -7,6 +7,8 @@ var create_plugin = (function() {
 	var m_animate = false;
 	var m_interval = 0;
 	var m_pos = 0;
+	var m_gamepad_enabled = true;
+	var m_rendering_started = false;
 
 	var m_objs = [
 		{
@@ -69,6 +71,32 @@ var create_plugin = (function() {
 		}
 		var json_str = JSON.stringify(json);
 		pstcore.pstcore_set_param(pst, "renderer", "overlay_obj", json_str);
+		set_objs(-20);
+	}
+	function set_objs(pos){
+		var scale = 0.1;
+		var jobj = {
+			"id" : "teleport",
+			"nodes" : [
+				{
+					"obj_scale" : scale,
+					"obj_pos" : `0,${pos*scale},0`,
+					"obj_quat" : "0,0,0,1",
+					"use_light" : false,
+					"blend" : false,
+					"obj_id" : "wall",
+				},
+				{
+					"obj_scale" : scale,
+					"obj_pos" : `0,${pos*scale},0`,
+					"obj_quat" : "0,0,0,1",
+					"use_light" : false,
+					"blend" : false,
+					"obj_id" : "ring",
+				},
+			]
+		};
+		m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", JSON.stringify(jobj));
 	}
 
 	function stop_animate(){
@@ -80,30 +108,8 @@ var create_plugin = (function() {
 	function start_animate(step, min, max){
 		stop_animate();
 
-		var scale = 0.1;
 		m_interval = setInterval(() => {
-			var jobj = {
-				"id" : "teleport",
-				"nodes" : [
-					{
-						"obj_scale" : scale,
-						"obj_pos" : `0,${m_pos*scale},0`,
-						"obj_quat" : "0,0,0,1",
-						"use_light" : false,
-						"blend" : false,
-						"obj_id" : "wall",
-					},
-					{
-						"obj_scale" : scale,
-						"obj_pos" : `0,${m_pos*scale},0`,
-						"obj_quat" : "0,0,0,1",
-						"use_light" : false,
-						"blend" : false,
-						"obj_id" : "ring",
-					},
-				]
-			};
-			m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", JSON.stringify(jobj));
+			set_objs(m_pos);
 
 			m_pos += step;
 			if(m_pos > max || m_pos < min){
@@ -124,16 +130,29 @@ var create_plugin = (function() {
 			pst_started : function(pstcore, pst) {
 				m_pstcore = pstcore;
 				m_pst = pst;
-			},
-			xrsession_started: function (session) {
-				m_xrsession = session;
+				m_pstcore.pstcore_add_set_param_done_callback(m_pst, (pst_name, param, value)=>{
+					if(pst_name == "renderer"){
+						if(!m_rendering_started && param == "pts"){
+							m_rendering_started = true;
 
-				upload_objs(m_pstcore, m_pst);
-				m_animate = true;
-				m_pos = -20;
-				start_animate(0.1, -20, 20);
+							upload_objs(m_pstcore, m_pst);
+							m_animate = true;
+							m_pos = -20;
+							start_animate(0.1, -20, 20);
+						}
+					}else if(pst_name == "warp"){
+						if(param == "pos"){
+							m_pos = parseInt(value);
+						}else if(param == "gamepad_enabled"){
+							m_gamepad_enabled = parseBoolean(value);
+						}
+					}
+				});
 			},
 			event_handler : function(sender, event, state) {
+				if(!m_gamepad_enabled){
+					return;
+				}
 				if(!app.get_xrsession){
 					return;
 				}
