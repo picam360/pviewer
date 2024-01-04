@@ -1,6 +1,7 @@
 {
 	"plugin_paths" : [
 		"plugins/mouse.js",
+		"plugins/gamepad.js",
 		"plugins/pvf/file_open.js",
 		"plugins/lens/settings.js",
 		"plugins/network/connect.js",

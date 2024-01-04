@@ -118,6 +118,15 @@ var create_plugin = (function() {
 			}
 		}, 1000/60);
 	}
+	
+	function start_warp(){
+		if(m_rendering_started && m_xrsession){
+			upload_objs(m_pstcore, m_pst);
+			m_animate = true;
+			m_pos = -20;
+			start_animate(0.1, -20, 20);
+		}
+	}
 
 	return function(plugin_host) {
 		m_plugin_host = plugin_host;
@@ -135,10 +144,7 @@ var create_plugin = (function() {
 						if(!m_rendering_started && param == "pts"){
 							m_rendering_started = true;
 
-							upload_objs(m_pstcore, m_pst);
-							m_animate = true;
-							m_pos = -20;
-							start_animate(0.1, -20, 20);
+							start_warp();
 						}
 					}else if(pst_name == "warp"){
 						if(param == "pos"){
@@ -148,6 +154,11 @@ var create_plugin = (function() {
 						}
 					}
 				});
+			},
+			xrsession_started: function (session) {
+				m_xrsession = session;
+
+				start_warp();
 			},
 			event_handler : function(sender, event, state) {
 				if(!m_gamepad_enabled){
