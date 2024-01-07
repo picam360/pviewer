@@ -64,11 +64,11 @@ var create_plugin = (function() {
 					}
 					document.body.appendChild(m_joydiv[i]);
 					m_joy[i] = new JoyStick("joydiv_" + i, {});
-					m_joydiv[i].addEventListener("mousedown", (event) => {
+					var onmousedown = (event) => {
 						event.currentTarget.last_down = new Date().getTime();
 						pstcore.pstcore_set_param(pst, "mouse", "enabled", "0");
-					}, false);
-					m_joydiv[i].addEventListener("mouseup", (event) => {
+					};
+					var onmouseup = (event) => {
 						var now = new Date().getTime();
 						if(now - event.currentTarget.last_down < 300){//button
 							var key = event.currentTarget.ext.index + "_BUTTON_PUSHED";
@@ -77,7 +77,11 @@ var create_plugin = (function() {
 							m_gamepad_state[key] = false;
 						}
 						pstcore.pstcore_set_param(pst, "mouse", "enabled", "1");
-					}, false);
+					};
+					m_joydiv[i].addEventListener("touchstart", onmousedown, false);
+					m_joydiv[i].addEventListener("mousedown", onmousedown, false);
+					m_joydiv[i].addEventListener("touchend", onmouseup, false);
+					m_joydiv[i].addEventListener("mouseup", onmouseup, false);
 				}
 			},
 			on_restore_app_menu : function(callback) {
