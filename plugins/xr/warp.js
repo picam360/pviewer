@@ -7,8 +7,17 @@ var create_plugin = (function() {
 	var m_animate = false;
 	var m_interval = 0;
 	var m_pos = 0;
-	var m_gamepad_enabled = true;
+	var m_warp_tilt = 0;
 	var m_rendering_started = false;
+
+	function cal_current_pitch_yaw_deg() {
+		var view_offset_quat = m_plugin_host.get_view_offset()
+			|| new THREE.Quaternion();
+		var view_quat = m_plugin_host.get_view_quat()
+			|| new THREE.Quaternion();
+		var quat = view_offset_quat.multiply(view_quat);
+		return calPitchYawDegree(quat);
+	}
 
 	var m_objs = [
 		{
@@ -112,8 +121,8 @@ var create_plugin = (function() {
 			set_objs(m_pos);
 
 			m_pos += step;
-			var ring_tilt = Math.atan2(1, m_pos * 0.1) * 180 / Math.PI;
-			m_pstcore.pstcore_set_param(m_pst, "warp", "tilt", ring_tilt.toString());
+			m_warp_tilt = Math.atan2(1, m_pos * 0.1) * 180 / Math.PI;
+			m_pstcore.pstcore_set_param(m_pst, "warp", "tilt", m_warp_tilt.toString());
 			if(m_pos > max || m_pos < min){
 				m_pos = Math.max(min, Math.min(m_pos, max));
 				stop_animate();
@@ -151,8 +160,6 @@ var create_plugin = (function() {
 					}else if(pst_name == "warp"){
 						if(param == "pos"){
 							m_pos = parseInt(value);
-						}else if(param == "gamepad_enabled"){
-							m_gamepad_enabled = parseBoolean(value);
 						}
 					}
 				});
@@ -173,7 +180,8 @@ var create_plugin = (function() {
 					switch(event){
 						case "RIGHT_3_AXIS_FORWARD":
 							if(state[event]){
-								if(m_gamepad_enabled){
+								var view_tilt = cal_current_pitch_yaw_deg()[0];
+								if(view_tilt < m_warp_tilt){
 									start_animate(0.1, -20, 20);
 								}
 							}else{
@@ -182,7 +190,8 @@ var create_plugin = (function() {
 							break;
 						case "RIGHT_3_AXIS_BACKWARD":
 							if(state[event]){
-								if(m_gamepad_enabled){
+								var view_tilt = cal_current_pitch_yaw_deg()[0];
+								if(view_tilt < m_warp_tilt){
 									start_animate(-0.1, -20, 20);
 								}
 							}else{
