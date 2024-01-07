@@ -3,6 +3,7 @@ var create_plugin = (function() {
 	
 	var m_plugin_host = null;
 	var m_is_init = false;
+	var m_enabled = false;
 	var abs_pitch = 0;
 	var abs_yaw = 0;
 
@@ -157,7 +158,9 @@ var create_plugin = (function() {
 				var next_quat = new THREE.Quaternion().setFromEuler(euler);
 				view_offset_quat = next_quat.clone().multiply(view_quat.clone().conjugate());
 			}
-			m_plugin_host.set_view_offset(view_offset_quat);
+			if (m_plugin_host && m_enabled) {
+				m_plugin_host.set_view_offset(view_offset_quat);
+			}
 
 			autoscroll = false;
 		}
@@ -169,9 +172,11 @@ var create_plugin = (function() {
 			down = false;
 			var now = new Date().getTime();
 			if(now - last_mouseup_ts < 500 && d + last_mousemove_d < 10){
-				m_plugin_host.send_event("mouse", "double_click");
+				if (m_plugin_host && m_enabled) {
+					m_plugin_host.send_event("mouse", "double_click");
 
-				app.set_param("psf_loader", "forward", "1");
+					app.set_param("psf_loader", "forward", "1");
+				}
 			}
 			last_mousemove_d = d;
 			last_mouseup_ts = now;
@@ -183,7 +188,7 @@ var create_plugin = (function() {
 			} else if (fov < 30) {
 				fov = 30;
 			}
-			if (m_plugin_host) {
+			if (m_plugin_host && m_enabled) {
 				m_plugin_host.set_fov(fov);
 			}
 
@@ -208,7 +213,7 @@ var create_plugin = (function() {
 			} else if (fov < 30) {
 				fov = 30;
 			}
-			if (m_plugin_host) {
+			if (m_plugin_host && m_enabled) {
 				m_plugin_host.set_fov(fov);
 			}
 		}
@@ -243,7 +248,17 @@ var create_plugin = (function() {
 					abs_pitch = options.view_offset[0];
 					abs_yaw = options.view_offset[1];
 				}
-			}
+			},
+			pst_started : function(pstcore, pst) {
+				m_enabled = true;
+				pstcore.pstcore_add_set_param_done_callback(pst, (pst_name, param, value)=>{
+					if(pst_name == "mouse"){
+						if(param == "enabled"){
+							m_enabled = parseBoolean(value);
+						}
+					}
+				});
+			},
 		};
 		return plugin;
 	}
