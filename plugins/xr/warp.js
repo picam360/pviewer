@@ -112,6 +112,8 @@ var create_plugin = (function() {
 			set_objs(m_pos);
 
 			m_pos += step;
+			var ring_tilt = Math.atan2(1, m_pos * 0.1) * 180 / Math.PI;
+			m_pstcore.pstcore_set_param(m_pst, "warp", "tilt", ring_tilt.toString());
 			if(m_pos > max || m_pos < min){
 				m_pos = Math.max(min, Math.min(m_pos, max));
 				stop_animate();
