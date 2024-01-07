@@ -163,9 +163,6 @@ var create_plugin = (function() {
 				start_warp();
 			},
 			event_handler : function(sender, event, state) {
-				if(!m_gamepad_enabled){
-					return;
-				}
 				if(!app.get_xrsession){
 					return;
 				}
@@ -176,14 +173,18 @@ var create_plugin = (function() {
 					switch(event){
 						case "RIGHT_3_AXIS_FORWARD":
 							if(state[event]){
-								start_animate(0.1, -20, 20);
+								if(m_gamepad_enabled){
+									start_animate(0.1, -20, 20);
+								}
 							}else{
 								stop_animate();
 							}
 							break;
 						case "RIGHT_3_AXIS_BACKWARD":
 							if(state[event]){
-								start_animate(-0.1, -20, 20);
+								if(m_gamepad_enabled){
+									start_animate(-0.1, -20, 20);
+								}
 							}else{
 								stop_animate();
 							}
