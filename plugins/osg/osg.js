@@ -23,7 +23,7 @@ var create_plugin = (function() {
 			if(!joy){
 				continue;
 			}
-			var axes = [joy.GetX() / 100, joy.GetY() / 100];
+			var axes = [joy.GetX() / 100, -joy.GetY() / 100];
 			for(var i=0;i<2;i++){
 				var key = (idx * 2 + i) + "_AXIS";
 				new_state[key + "_FORWARD"] = axes[i] > PUSH_THRESHOLD;
