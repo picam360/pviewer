@@ -837,8 +837,8 @@ var app = (function() {
 
 		build_pst: (loader, splitter, callback) => {
 			var renderer = "pgl_renderer name=renderer w=640 h=480 fps=30";
-			if(m_query['chromakey_color']){
-				renderer += " chromakey_color=" + m_query['chromakey_color'];
+			if(m_query['chromakey-color']){
+				renderer += " chromakey_color=" + m_query['chromakey-color'];
 			}
 			if(m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS") {
 				renderer += " mode=speed";
