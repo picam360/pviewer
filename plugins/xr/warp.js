@@ -1,6 +1,7 @@
 var create_plugin = (function() {
 	var PLUGIN_NAME = "teleport";
 	var m_plugin_host = null;
+	var m_options = {};
 	var m_pstcore = null;
 	var m_pst = 0;
 	var m_xrsession = null;
@@ -80,7 +81,6 @@ var create_plugin = (function() {
 		}
 		var json_str = JSON.stringify(json);
 		pstcore.pstcore_set_param(pst, "renderer", "overlay_obj", json_str);
-		set_objs(-20);
 	}
 	function set_objs(pos){
 		var scale = 0.1;
@@ -132,7 +132,6 @@ var create_plugin = (function() {
 	
 	function start_warp(){
 		if(m_rendering_started && m_xrsession){
-			upload_objs(m_pstcore, m_pst);
 			m_animate = true;
 			m_pos = -20;
 			start_animate(0.1, -20, 20);
@@ -143,13 +142,16 @@ var create_plugin = (function() {
 		m_plugin_host = plugin_host;
 		var plugin = {
 			init_options : function(options) {
-				if(navigator.xr){
-					load_objs();
-				}
+				m_options = options;
+				load_objs();
 			},
 			pst_started : function(pstcore, pst) {
 				m_pstcore = pstcore;
 				m_pst = pst;
+				upload_objs(m_pstcore, m_pst);
+				if(m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS") {
+					m_xrsession = "dummy";
+				}
 				m_pstcore.pstcore_add_set_param_done_callback(m_pst, (pst_name, param, value)=>{
 					if(pst_name == "renderer"){
 						if(!m_rendering_started && param == "pts"){
@@ -158,8 +160,12 @@ var create_plugin = (function() {
 							start_warp();
 						}
 					}else if(pst_name == "warp"){
-						if(param == "pos"){
-							m_pos = parseInt(value);
+						if(param == "start_animate"){
+							var spd = parseInt(value);
+							start_animate(spd, -20, 20);
+						}
+						if(param == "stop_animate"){
+							stop_animate();
 						}
 					}
 				});
