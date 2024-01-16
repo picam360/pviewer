@@ -144,7 +144,6 @@ var create_plugin = (function() {
 						m_framebuffer_bk = null;
 						m_refSpace = null;
 						m_xrsession = null;
-						app.set_xrsession(null);
 						app.start_animate();
 					});
 				};
