@@ -67,7 +67,7 @@ var create_plugin = (function() {
 			var onmouseup = (event) => {
 				var now = new Date().getTime();
 				if(now - event.currentTarget.last_down < 300){//button
-					var key = event.currentTarget.ext.index + "_BUTTON_PUSHED";
+					var key = (event.currentTarget.ext.index + 10) + "_BUTTON_PUSHED";
 					m_gamepad_state[key] = true;
 					m_plugin_host.send_event("OSG", key, m_gamepad_state);
 					m_gamepad_state[key] = false;
