@@ -1051,6 +1051,7 @@ var app = (function() {
 						"plugins/psf_loader_st.so",
 						"plugins/libde265_decoder_st.so",
 						"plugins/h264bsd_decoder_st.so",
+						"plugins/wsclient_st.so",
 						"plugins/wc_decoder_st.so",
 						"plugins/wc_encoder_st.so",
 						"plugins/ms_capture_st.so",
