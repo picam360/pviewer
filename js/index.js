@@ -1175,11 +1175,13 @@ var app = (function() {
 
 					window.PstCoreLoader = undefined;
 
-				}else if(!window.PstCoreLoader && window.cordova){
+				}else if(window.cordova && (m_options['use_cordova_pstcore'] || !window.PstCoreLoader)){
 
 					m_pstcore = window.cordova.pstcore;
 
 					call_pstcore_init(config);
+
+					window.PstCoreLoader = undefined;
 					
 				}else{
 					m_pstcore = window.PstCoreLoader({
