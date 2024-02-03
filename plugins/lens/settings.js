@@ -135,21 +135,7 @@ var create_plugin = (function() {
     function open_dialog(){
         app.menu.close();
         prompt("Distortion and Offset Tunings", "Lens Settings").then((opt) => {
-            if(opt.type == "ws"){
-                start_ws(opt.ws_url, (socket) => {
-                    init_connection(socket, opt.stream_mode);
-                }, () => {
-                    //error
-                });
-            }else{
-                start_p2p(opt.wrtc_key, (dc) => {
-                    init_connection(dc, opt.stream_mode);
-                }, () => {
-                    //error
-                });
-            }
         }).catch((err) => {
-            throw "CONNECT_CANCELLED";
         });
     }
     
