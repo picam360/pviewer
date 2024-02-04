@@ -1,5 +1,5 @@
 var create_plugin = (function() {
-	var PLUGIN_NAME = "teleport";
+	var PLUGIN_NAME = "warp";
 	var m_plugin_host = null;
 	var m_options = {};
 	var m_pstcore = null;
@@ -88,7 +88,6 @@ var create_plugin = (function() {
 	function set_objs(pos){
 		var scale = 0.1;
 		var jobj = {
-			"id" : "teleport",
 			"nodes" : [
 				{
 					"obj_scale" : scale,
