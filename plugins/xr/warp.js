@@ -10,6 +10,9 @@ var create_plugin = (function() {
 	var m_pos = 0;
 	var m_warp_tilt = 0;
 	var m_rendering_started = false;
+	var m_force = false;
+	var m_click_timer = 0;
+	var m_click_count = 0;
 
 	function cal_current_pitch_yaw_deg() {
 		var view_offset_quat = m_plugin_host.get_view_offset()
@@ -182,12 +185,24 @@ var create_plugin = (function() {
 				if(!m_pst || !app.get_xrsession()){
 					return;
 				}
+				function countup(){
+					m_click_count++;
+					clearTimeout(m_click_timer);
+					m_click_timer = setTimeout(() => {
+						if(m_click_count >= 3){
+							m_force = !m_force;
+						}
+						m_click_count = 0;
+					}, 500);
+				}
 				try{
 					switch(event){
 						case "RIGHT_3_AXIS_FORWARD":
 							if(state[event]){
 								var view_tilt = cal_current_pitch_yaw_deg()[0];
-								if(view_tilt < m_warp_tilt){
+								if(m_force || view_tilt < m_warp_tilt){
+									countup();
+
 									start_animate(0.1, -20, 20);
 								}
 							}else{
@@ -197,7 +212,9 @@ var create_plugin = (function() {
 						case "RIGHT_3_AXIS_BACKWARD":
 							if(state[event]){
 								var view_tilt = cal_current_pitch_yaw_deg()[0];
-								if(view_tilt < m_warp_tilt){
+								if(m_force || view_tilt < m_warp_tilt){
+									countup();
+									
 									start_animate(-0.1, -20, 20);
 								}
 							}else{
