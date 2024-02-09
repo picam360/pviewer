@@ -20,6 +20,8 @@ var create_plugin = (function() {
         return new Promise((resolve, reject) => {
             var range = {
                 ae_target : { min : 10, max : 220, step : 1 },
+                ctemp : { min : 2000, max : 15000, step : 50 },
+                tint : { min : 200, max : 2500, step : 10 },
                 hue : { min : -180, max : 180, step : 1 },
                 saturation : { min : 0.0, max : 255, step : 1 },
                 brightness : { min : -64, max : 64, step : 1 },
@@ -28,6 +30,8 @@ var create_plugin = (function() {
             };
             var default_hqcamera_params = {
                 ae_target : 120,
+                ctemp : 6503,
+                tint : 1000,
                 hue : 0,
                 saturation : 128,
                 brightness : 0,
