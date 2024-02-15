@@ -812,26 +812,47 @@ var app = (function() {
 				}
 				callback(decoder);
 			}else{// web decoder
-				const mediaConfig = {
-					type: 'file',
-					video: {
-						contentType : 'video/mp4;codecs="hev1.1.6.L93.B0"',
-						width: 2048,
-						height: 2048,
-						bitrate: 10000, 
-						framerate: 30,
-					},
-				};
-				navigator.mediaCapabilities.decodingInfo(mediaConfig).then((info) =>{
-					if(info.supported){
-						var decoder = "wc_decoder name=decoder";
-						callback(decoder);
-					}else{
-						var h264_decoder = ('VideoDecoder' in window) ? "wc_decoder" : "h264bsd_decoder";
-						var decoder = "composite_decoder name=decoder h265=libde265_decoder h264=" + h264_decoder;
-						callback(decoder);
-					}	
-				});
+				{
+					const mediaConfig = {
+						type: 'file',
+						video: {
+							contentType : 'video/webm;codecs="av01.0.01M.08"',
+							width: 2048,
+							height: 2048,
+							bitrate: 10000, 
+							framerate: 30,
+						},
+					};
+					navigator.mediaCapabilities.decodingInfo(mediaConfig).then((info) =>{
+						if(info.supported){
+							console.log("av1 supported");
+						}else{
+							console.log("av1 not supported");
+						}	
+					});
+				}
+				{
+					const mediaConfig = {
+						type: 'file',
+						video: {
+							contentType : 'video/mp4;codecs="hev1.1.6.L93.B0"',
+							width: 2048,
+							height: 2048,
+							bitrate: 10000, 
+							framerate: 30,
+						},
+					};
+					navigator.mediaCapabilities.decodingInfo(mediaConfig).then((info) =>{
+						if(info.supported){
+							var decoder = "wc_decoder name=decoder";
+							callback(decoder);
+						}else{
+							var h264_decoder = ('VideoDecoder' in window) ? "wc_decoder" : "h264bsd_decoder";
+							var decoder = "composite_decoder name=decoder h265=libde265_decoder h264=" + h264_decoder;
+							callback(decoder);
+						}	
+					});
+				}
 			}
 		},
 
