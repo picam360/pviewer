@@ -767,7 +767,13 @@ var app = (function() {
 						m_query['get-query'] = "";
 					}
 
-					var loader = m_pvf_url.endsWith(".psf") ? "psf_loader" : "pvf_loader";
+					var loader = "pvf_loader";
+					if(m_pvf_url.endsWith(".psf")){
+						loader = "psf_loader";
+					}else if(m_pvf_url.endsWith(".pvflink")){
+						loader = "pvf2_loader";
+					}
+					http://localhost/samples/test.pvflink
 					
 					var splitter = "splitter vthrough=1 aout0='opus_decoder ! oal_player sync=renderer'";
 					self.build_pst(loader, splitter, (pst) => {
@@ -1069,6 +1075,7 @@ var app = (function() {
 						"plugins/oal_player_st.so",
 						"plugins/oal_capture_st.so",
 						"plugins/pvf_loader_st.so",
+						"plugins/pvf2_loader_st.so",
 						"plugins/psf_loader_st.so",
 						"plugins/libde265_decoder_st.so",
 						"plugins/h264bsd_decoder_st.so",
