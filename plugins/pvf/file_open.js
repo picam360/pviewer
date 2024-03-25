@@ -20,7 +20,7 @@ var create_plugin = (function() {
 			var html = "";
 			html += '<p>' + msg + '</p>';
 			html += `url:<input type="text" name="dialog-message-file-url" id="dialog-message-file-url" size="35" value="${file_open_url}"/><br/>`;
-			html += 'file:<input type="file" name="dialog-message-file" id="dialog-message-file" accept=".pvf,.psf"/><br/>';
+			html += 'file:<input type="file" name="dialog-message-file" id="dialog-message-file" accept=".pvf,.psf,.pvf2,.pvflink"/><br/>';
 			$( "#dialog-message" ).html(html);
 	        $( "#dialog-message" ).dialog({
 	          modal: true,
@@ -45,7 +45,10 @@ var create_plugin = (function() {
 					}else if($( "#dialog-message-file-url" )[0].value){
 						var url = $( "#dialog-message-file-url" )[0].value;
 						var path = url.split('?')[0];
-						if(path.toLowerCase().endsWith(".pvf") || path.toLowerCase().endsWith(".psf")){
+						if(path.toLowerCase().endsWith(".pvf") || 
+						   path.toLowerCase().endsWith(".psf") || 
+						   path.toLowerCase().endsWith(".pvf2") || 
+						   path.toLowerCase().endsWith(".pvflink")){
 							applink = "applink=?loop=1&pvf=" + encodeURIComponent(url);
 						}else if(url.indexOf("applink=") >= 0 || url.indexOf("pvf=") >= 0 || url.indexOf("vpm=") >= 0){
 							applink = url;
@@ -107,7 +110,9 @@ var create_plugin = (function() {
 
 				document.body.addEventListener('drop', function (e) {
 					if(e.dataTransfer.files[0].name.endsWith(".pvf") ||
-					   e.dataTransfer.files[0].name.endsWith(".psf")){
+					   e.dataTransfer.files[0].name.endsWith(".psf") ||
+					   e.dataTransfer.files[0].name.endsWith(".pvf2") ||
+					   e.dataTransfer.files[0].name.endsWith(".pvflink")){
 						
 						var pvf = "";
 						if(!window.PstCoreLoader){
@@ -130,7 +135,7 @@ var create_plugin = (function() {
 			on_restore_app_menu : function(callback) {
 				addMenuButton("swFile", "File").then(() => {
 					swFile.onclick = async (evt) => {
-						await prompt("select pvf/psf file", "file open").then((opt) => {
+						await prompt("select pvf/psf/pvf2/pvflink file", "file open").then((opt) => {
 						}).catch((err) => {
 							throw "FILE_OPEN_CANCELLED";
 						});

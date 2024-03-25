@@ -770,10 +770,11 @@ var app = (function() {
 					var loader = "pvf_loader";
 					if(m_pvf_url.endsWith(".psf")){
 						loader = "psf_loader";
+					}else if(m_pvf_url.endsWith(".pvf2")){
+						loader = "pvf2_loader";
 					}else if(m_pvf_url.endsWith(".pvflink")){
 						loader = "pvf2_loader";
 					}
-					http://localhost/samples/test.pvflink
 					
 					var splitter = "splitter vthrough=1 aout0='opus_decoder ! oal_player sync=renderer'";
 					self.build_pst(loader, splitter, (pst) => {
