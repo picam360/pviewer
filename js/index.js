@@ -880,10 +880,21 @@ var app = (function() {
 						callback(pst);
 					});
 				} else {
-					var def = (loader ? loader + " ! " : "") + (splitter ? splitter + " ! " : "") + decoder + " ! " + renderer;
-					m_pstcore.pstcore_build_pstreamer(def, (pst) => {
-						callback(pst);
-					});
+					if(loader.startsWith("pvf2_loader")){
+						var def = (loader ? loader + " ! " : "") + (splitter ? splitter + " ! " : "") + renderer;
+						m_pstcore.pstcore_build_pstreamer(def, (pst) => {
+							var n_vdecs = (m_query["n_vdecs"] || 1);
+							for(var vidx=0;vidx<n_vdecs;vidx++){
+								m_pstcore.pstcore_set_param(pst, "pvf2_loader", `vdec${vidx}`, decoder);
+							}
+							callback(pst);
+						});
+					}else{
+						var def = (loader ? loader + " ! " : "") + (splitter ? splitter + " ! " : "") + decoder + " ! " + renderer;
+						m_pstcore.pstcore_build_pstreamer(def, (pst) => {
+							callback(pst);
+						});
+					}
 				}
 			});
 		},
