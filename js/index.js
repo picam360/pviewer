@@ -864,12 +864,18 @@ var app = (function() {
 		},
 
 		build_pst: (loader, splitter, callback) => {
-			var renderer = "pgl_renderer name=renderer w=640 h=480 fps=30";
+			var renderer;
+			if(loader.startsWith("pvf2_loader")){
+				renderer = "pgl_renderer2 name=renderer w=640 h=480 fps=30";
+				renderer += " mode=speed";
+			}else{
+				renderer = "pgl_renderer name=renderer w=640 h=480 fps=30";
+				if(m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS") {
+					renderer += " mode=speed";
+				}
+			}
 			if(m_query['chromakey-color']){
 				renderer += " chromakey_color=" + m_query['chromakey-color'];
-			}
-			if(m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS") {
-				renderer += " mode=speed";
 			}
 			self.get_decorder_def((decoder) => {
 				if (window.cordova && m_pstcore.supported_streams["cordova_binder"]) {
@@ -1096,6 +1102,7 @@ var app = (function() {
 						"plugins/wc_encoder_st.so",
 						"plugins/ms_capture_st.so",
 						"plugins/pgl_renderer_st.so",
+						"plugins/pgl_renderer2_st.so",
 						"plugins/pgl_remapper_st.so",
 						//platform dependents
 						"plugins/vt_decoder_st.so",
