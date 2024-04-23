@@ -26,6 +26,22 @@ var create_plugin = (function() {
 	          modal: true,
 		  	  title: title,
 	          buttons: {
+	            "Link": function() {
+					if($( "#dialog-message-file-url" )[0].value){
+						var url = $( "#dialog-message-file-url" )[0].value;
+						var link = new URL(window.location.href);
+						link.searchParams.append("pvf", url);
+						navigator.permissions.query({ name: "clipboard-write" }).then((result) => {
+							if (result.state === "granted" || result.state === "prompt") {
+								navigator.clipboard.writeText(link).then(function() {
+									alert("LINK COPIED TO CLIPBOARD : " + link);
+								}, function(err) {
+									alert("LINK FAILED TO BE COPIED");
+								});
+							}
+						});
+					}
+	            },
 	            "Open": function() {
 
 					var applink = "";
