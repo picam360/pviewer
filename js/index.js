@@ -768,11 +768,12 @@ var app = (function() {
 					}
 
 					var loader = "pvf_loader";
-					if(m_pvf_url.endsWith(".psf")){
+					var base_url = m_pvf_url.split('?')[0];
+					if(base_url.endsWith(".psf")){
 						loader = "psf_loader";
-					}else if(m_pvf_url.endsWith(".pvf2")){
+					}else if(base_url.endsWith(".pvf2")){
 						loader = "pvf2_loader";
-					}else if(m_pvf_url.endsWith(".pvflink")){
+					}else if(base_url.endsWith(".pvflink")){
 						loader = "pvf2_loader";
 					}
 					
