@@ -14,6 +14,80 @@ var create_plugin = (function() {
 			resolve();
 		});
 	}
+	function linkdialog(title, pvf_url) {
+		return new Promise((resolve, reject) => {
+			var qrcode = null;
+			function update(type){
+				switch(type){
+				case "metaquest":
+					var link = new URL(window.location.href);
+					link.searchParams.append("pvf", pvf_url);
+					target_url = "https://www.oculus.com/open_url/?url=" + encodeURIComponent(link.toString());
+					break;
+				case "browser":
+				default:
+					var link = new URL(window.location.href);
+					link.searchParams.append("pvf", pvf_url);
+					target_url = link.toString();
+					break;
+				}
+				qrcode.clear();
+				qrcode.makeCode(target_url);
+
+			}
+			var target_url = "";
+			var html = "";
+			html += '<div style="display: flex; align-items: center; justify-content: center; flex-direction: column; height: 100%; width: 100%; border: 1px solid #ccc;">';
+			html += '    <div id="QR" style="flex: 1;" />';
+			html += '    <div style="flex: 1; display: flex;">';
+			html += '        <label style="flex: 1; display: flex; justify-content: center; align-items: center;">';
+			html += '            <input type="radio" name="dialog-message-type" value="browser" checked="true">Browser';
+			html += '        </label>';
+			html += '        <label style="flex: 1; display: flex; justify-content: center; align-items: center;">';
+			html += '    	     <input type="radio" name="dialog-message-type" value="metaquest">Meta Quest';
+			html += '        </label>';
+			html += '    </div>';
+			html += '</div>';
+			$( "#dialog-message" ).html(html);
+	        $( "#dialog-message" ).dialog({
+	          modal: true,
+		  	  title: title,
+			  open: (event, ui) => {
+				qrcode = new QRCode("QR", {
+					text: "dummy",
+					width: 256,
+					height: 256,
+					colorDark : "#000000",
+					colorLight : "#ffffff",
+					correctLevel : QRCode.CorrectLevel.M
+				});
+				update("browser");
+			  },
+	          buttons: {
+	            "Clipboard": function() {
+					navigator.permissions.query({ name: "clipboard-write" }).then((result) => {
+						if (result.state === "granted" || result.state === "prompt") {
+							navigator.clipboard.writeText(target_url).then(function() {
+								alert("LINK COPIED TO CLIPBOARD : " + target_url);
+							}, function(err) {
+								alert("LINK FAILED TO BE COPIED");
+							});
+						}
+					});
+	            },
+	            "Close": function() {
+	            	$( this ).dialog( "close" );
+					app.menu.close();
+
+					reject("CANCELED");
+	            }
+	          }
+	        });
+            $( "input[name='dialog-message-type']" ).change(() => {
+				update($( "input[name='dialog-message-type']:checked" ).val());
+            });
+		});
+    }
 	function prompt(msg, title) {
 		return new Promise((resolve, reject) => {
 			var file_open_url = (m_options.file_open_url ? m_options.file_open_url : "");
@@ -28,18 +102,16 @@ var create_plugin = (function() {
 	          buttons: {
 	            "Link": function() {
 					if($( "#dialog-message-file-url" )[0].value){
-						var url = $( "#dialog-message-file-url" )[0].value;
-						var link = new URL(window.location.href);
-						link.searchParams.append("pvf", url);
-						navigator.permissions.query({ name: "clipboard-write" }).then((result) => {
-							if (result.state === "granted" || result.state === "prompt") {
-								navigator.clipboard.writeText(link).then(function() {
-									alert("LINK COPIED TO CLIPBOARD : " + link);
-								}, function(err) {
-									alert("LINK FAILED TO BE COPIED");
-								});
-							}
-						});
+						var pvf_url = $( "#dialog-message-file-url" )[0].value;
+					
+						$( this ).dialog( "close" );
+						app.menu.close();
+
+						setTimeout(() => {
+							linkdialog("link tool", pvf_url);							
+						}, 100);
+	
+						resolve("LINK");
 					}
 	            },
 	            "Open": function() {
