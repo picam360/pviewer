@@ -64,6 +64,9 @@ var create_plugin = (function() {
 				update("browser");
 			  },
 	          buttons: {
+	            "Open": function() {
+					window.open(target_url, '_blank');
+	            },
 	            "Clipboard": function() {
 					navigator.permissions.query({ name: "clipboard-write" }).then((result) => {
 						if (result.state === "granted" || result.state === "prompt") {
@@ -100,7 +103,7 @@ var create_plugin = (function() {
 	          modal: true,
 		  	  title: title,
 	          buttons: {
-	            "Link": function() {
+	            "LinkTool": function() {
 					if($( "#dialog-message-file-url" )[0].value){
 						var pvf_url = $( "#dialog-message-file-url" )[0].value;
 					
@@ -111,7 +114,7 @@ var create_plugin = (function() {
 							linkdialog("link tool", pvf_url);							
 						}, 100);
 	
-						resolve("LINK");
+						resolve("LINKTOOL");
 					}
 	            },
 	            "Open": function() {
