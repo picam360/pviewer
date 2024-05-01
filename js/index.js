@@ -767,14 +767,13 @@ var app = (function() {
 						m_query['get-query'] = "";
 					}
 
-					var loader = "pvf_loader";
+					var loader = "pvf2_loader";
+					if(m_query['pvf_loader']){
+						loader = m_query['pvf_loader'];
+					}
 					var base_url = m_pvf_url.split('?')[0];
 					if(base_url.endsWith(".psf")){
 						loader = "psf_loader";
-					}else if(base_url.endsWith(".pvf2")){
-						loader = "pvf2_loader";
-					}else if(base_url.endsWith(".pvflink")){
-						loader = "pvf2_loader";
 					}
 					
 					var splitter = "splitter vthrough=1 aout0='opus_decoder ! oal_player sync=renderer'";
@@ -890,7 +889,7 @@ var app = (function() {
 					if(loader.startsWith("pvf2_loader")){
 						var def = (loader ? loader + " ! " : "") + (splitter ? splitter + " ! " : "") + renderer;
 						m_pstcore.pstcore_build_pstreamer(def, (pst) => {
-							var n_vdecs = (m_query["n_vdecs"] || 1);
+							var n_vdecs = parseInt(m_query["n_vdecs"] || 1) + 1;
 							for(var vidx=0;vidx<n_vdecs;vidx++){
 								m_pstcore.pstcore_set_param(pst, "pvf2_loader", `vdec${vidx}`, decoder);
 							}
