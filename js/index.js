@@ -768,15 +768,16 @@ var app = (function() {
 					}
 
 					var loader = "pvf2_loader";
+					var splitter = "splitter aout0='oal_player'";
 					if(m_query['pvf_loader']){
-						loader = m_query['pvf_loader'];
+						loader = "pvf_loader";
+						splitter = "splitter vthrough=1 aout0='opus_decoder ! oal_player sync=renderer'";
 					}
 					var base_url = m_pvf_url.split('?')[0];
 					if(base_url.endsWith(".psf")){
 						loader = "psf_loader";
 					}
 					
-					var splitter = "splitter vthrough=1 aout0='opus_decoder ! oal_player sync=renderer'";
 					self.build_pst(loader, splitter, (pst) => {
 						m_pstcore.pstcore_set_param(pst, loader, "url", m_pvf_url);
 						m_pstcore.pstcore_set_param(pst, loader, "head_query",
@@ -893,6 +894,9 @@ var app = (function() {
 							for(var vidx=0;vidx<n_vdecs;vidx++){
 								m_pstcore.pstcore_set_param(pst, "pvf2_loader", `vdec${vidx}`, decoder);
 							}
+							
+							m_pstcore.pstcore_set_param(pst, "pvf2_loader", "adec0", "opus_decoder");
+							
 							callback(pst);
 						});
 					}else{
