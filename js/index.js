@@ -948,6 +948,9 @@ var app = (function() {
 				}
 			};
 			function _stop_pst(){
+				if(m_pst == null){
+					return;
+				}
 				document.removeEventListener("touchstart", mousedownFunc);
 				document.removeEventListener("mousedown", mousedownFunc);
 				document.removeEventListener("mousemove", mousemoveFunc);
@@ -963,6 +966,7 @@ var app = (function() {
 				}
 			}
 			function _start_pst(){
+				_stop_pst();
 				m_pst = pst;
 				{//pre params
 					self.set_param("renderer", "win_titlebar", "0");
@@ -1023,9 +1027,6 @@ var app = (function() {
 				document.addEventListener("mousemove", mousemoveFunc);
 
 				self.stop_pst = _stop_pst;
-			}
-			if(m_pst){
-				_stop_pst();
 			}
 			if(app.navi){
 				var page = app.navi.getCurrentPage();
