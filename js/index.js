@@ -775,7 +775,16 @@ var app = (function() {
 						splitter_def = "splitter vthrough=1 aout0='opus_decoder ! oal_player sync=renderer'";
 					}
 					var base_url = m_pvf_url.split('?')[0];
-					if(base_url.endsWith(".psf")){
+					var is_psf = base_url.endsWith(".psf");
+					var DATA_PROTOCOL = "data:application/json;base64,";
+					if(base_url.startsWith(DATA_PROTOCOL)){
+						var config_json_txt = atob(base_url.substring(DATA_PROTOCOL.length));
+						var config_json = JSON.parse(config_json_txt);
+						if(config_json.format == "psf"){
+							is_psf = true;
+						}
+					}
+					if(is_psf){
 						loader = "psf_loader";
 						loader_def = `psf_loader pvfldr='${loader_def}'`;
 					}
