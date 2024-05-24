@@ -94,6 +94,11 @@ var create_plugin = (function() {
 	function prompt(msg, title) {
 		return new Promise((resolve, reject) => {
 			var file_open_url = (m_options.file_open_url ? m_options.file_open_url : "");
+			const params = new URLSearchParams(window.location.search);
+			if(params.has('pvf')){
+				file_open_url = params.get('pvf');
+			}
+
 			var html = "";
 			html += '<p>' + msg + '</p>';
 			html += `url:<input type="text" name="dialog-message-file-url" id="dialog-message-file-url" size="35" value="${file_open_url}"/><br/>`;
@@ -136,7 +141,8 @@ var create_plugin = (function() {
 					}else if($( "#dialog-message-file-url" )[0].value){
 						var url = $( "#dialog-message-file-url" )[0].value;
 						var path = url.split('?')[0];
-						if(path.toLowerCase().endsWith(".pvf") || 
+						if(path.toLowerCase().startsWith("data:application/json;base64,") || 
+						   path.toLowerCase().endsWith(".pvf") || 
 						   path.toLowerCase().endsWith(".psf") || 
 						   path.toLowerCase().endsWith(".pvf2") || 
 						   path.toLowerCase().endsWith(".pvflink")){
