@@ -13,6 +13,7 @@ var create_plugin = (function() {
 	var m_force = false;
 	var m_click_timer = 0;
 	var m_click_count = 0;
+	var m_passthrough_enabled = false;
 
 	function cal_current_pitch_yaw_deg() {
 		var view_offset_quat = m_plugin_host.get_view_offset()
@@ -85,9 +86,10 @@ var create_plugin = (function() {
 		var json_str = JSON.stringify(json);
 		pstcore.pstcore_set_param(pst, "renderer", "overlay_obj", json_str);
 	}
-	function set_objs(pos){
+	function get_overlay_def(pos){
 		var scale = 0.1;
 		var jobj = {
+			"id" : "warp",
 			"nodes" : [
 				{
 					"obj_scale" : scale,
@@ -107,7 +109,14 @@ var create_plugin = (function() {
 				},
 			]
 		};
-		m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", JSON.stringify(jobj));
+		return JSON.stringify(jobj);
+	}
+
+	function set_passthrough_enabled(bln){
+		m_passthrough_enabled = bln;
+
+		var overlay_def = get_overlay_def(bln ? -20 : m_pos);
+		m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", overlay_def);
 	}
 
 	function stop_animate(){
@@ -120,7 +129,10 @@ var create_plugin = (function() {
 		stop_animate();
 
 		m_interval = setInterval(() => {
-			set_objs(m_pos);
+			if(!m_passthrough_enabled){
+				var overlay_def = get_overlay_def(m_pos);
+				m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", overlay_def);
+			}
 
 			m_pos += step;
 			m_warp_tilt = Math.atan2(1, m_pos * 0.1) * 180 / Math.PI;
@@ -131,7 +143,7 @@ var create_plugin = (function() {
 			}
 		}, 1000/60);
 	}
-	
+
 	function start_warp(){
 		if(m_rendering_started && m_xrsession){
 			m_animate = true;
@@ -168,6 +180,9 @@ var create_plugin = (function() {
 						}
 						if(param == "stop_animate"){
 							stop_animate();
+						}
+						if(param == "passthrough_enabled"){
+							set_passthrough_enabled(value == "true" || value == "1");
 						}
 					}
 				});
@@ -213,7 +228,7 @@ var create_plugin = (function() {
 								var view_tilt = cal_current_pitch_yaw_deg()[0];
 								if(m_force || view_tilt < m_warp_tilt){
 									countup();
-									
+
 									start_animate(-0.1, -20, 20);
 								}
 							}else{
