@@ -830,32 +830,32 @@ var app = (function() {
 					break;
 				}
 				callback(decoder);
-			}else{// web decoder
-				if('VideoDecoder' in window){
-					VideoDecoder.isConfigSupported({codec:"av01.0.01M.08"}).then((info) =>{
-						if(info.supported){
-							console.log("av1 supported");
-						}else{
-							console.log("av1 not supported");
-						}	
-					});
-					VideoDecoder.isConfigSupported({codec:"hev1.1.6.L93.B0"}).then((info) =>{
-						if(info.supported){
-							var decoder = "wc_decoder name=decoder";
-							callback(decoder);
-						}else{
-							var h265_decoder = "libde265_decoder";
-							var h264_decoder = "wc_decoder";
-							var decoder = `composite_decoder name=decoder h265=${h265_decoder} h264=${h264_decoder}`;
-							callback(decoder);
-						}	
-					});
-				}else{
-					var h265_decoder = "libde265_decoder";
-					var h264_decoder = "h264bsd_decoder";
-					var decoder = `composite_decoder name=decoder h265=${h265_decoder} h264=${h264_decoder}`;
-					callback(decoder);
-				}
+			}else if('VideoDecoder' in window && !parseBoolean(m_query['webcodecs-disabled'])){// web decoder
+				
+				VideoDecoder.isConfigSupported({codec:"av01.0.01M.08"}).then((info) =>{
+					if(info.supported){
+						console.log("av1 supported");
+					}else{
+						console.log("av1 not supported");
+					}	
+				});
+				VideoDecoder.isConfigSupported({codec:"hev1.1.6.L93.B0"}).then((info) =>{
+					if(info.supported){
+						var decoder = "wc_decoder name=decoder";
+						callback(decoder);
+					}else{
+						var h265_decoder = "libde265_decoder";
+						var h264_decoder = "wc_decoder";
+						var decoder = `composite_decoder name=decoder h265=${h265_decoder} h264=${h264_decoder}`;
+						callback(decoder);
+					}	
+				});
+
+			}else{
+				var h265_decoder = "libde265_decoder";
+				var h264_decoder = "h264bsd_decoder";
+				var decoder = `composite_decoder name=decoder h265=${h265_decoder} h264=${h264_decoder}`;
+				callback(decoder);
 			}
 		},
 
