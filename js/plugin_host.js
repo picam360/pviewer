@@ -368,7 +368,7 @@ function PluginHost(core, options) {
 		fire_pst_started(pstcore, pst){
 
 			pstcore.pstcore_add_set_param_done_callback(pst, (pst_name, param, value)=>{
-				if(param == "view_quat"){
+				if(pst_name == "renderer" && param == "view_quat"){
 					var q = value.split(',');
 					var quat = new THREE.Quaternion(
 						parseFloat(q[0]),

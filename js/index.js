@@ -1068,7 +1068,7 @@ var app = (function() {
 					self.plugin_host.on_view_quat_changed((view_quat, view_offset_quat) => {
 						var quat = view_offset_quat.multiply(view_quat);
 						var value = sprintf("%f,%f,%f,%f", quat.x, quat.y, quat.z, quat.w);
-						self.set_param("", "view_quat", value);
+						self.set_param("renderer", "view_quat", value);
 					});
 				
 					m_mpu = MPU();
