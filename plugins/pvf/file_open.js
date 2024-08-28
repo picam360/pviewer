@@ -18,16 +18,16 @@ var create_plugin = (function() {
 		return new Promise((resolve, reject) => {
 			var qrcode = null;
 			function update(type){
+				var link = new URL(window.location.href);
+				if(pvf_url){
+					link.searchParams.append("pvf", pvf_url);
+				}
 				switch(type){
 				case "metaquest":
-					var link = new URL(window.location.href);
-					link.searchParams.append("pvf", pvf_url);
 					target_url = "https://www.oculus.com/open_url/?url=" + encodeURIComponent(link.toString());
 					break;
 				case "browser":
 				default:
-					var link = new URL(window.location.href);
-					link.searchParams.append("pvf", pvf_url);
 					target_url = link.toString();
 					break;
 				}
@@ -109,18 +109,16 @@ var create_plugin = (function() {
 		  	  title: title,
 	          buttons: {
 	            "LinkTool": function() {
-					if($( "#dialog-message-file-url" )[0].value){
-						var pvf_url = $( "#dialog-message-file-url" )[0].value;
-					
-						$( this ).dialog( "close" );
-						app.menu.close();
+					var pvf_url = $( "#dialog-message-file-url" )[0].value;
+				
+					$( this ).dialog( "close" );
+					app.menu.close();
 
-						setTimeout(() => {
-							linkdialog("link tool", pvf_url);							
-						}, 100);
-	
-						resolve("LINKTOOL");
-					}
+					setTimeout(() => {
+						linkdialog("link tool", pvf_url);							
+					}, 100);
+
+					resolve("LINKTOOL");
 	            },
 	            "Open": function() {
 
