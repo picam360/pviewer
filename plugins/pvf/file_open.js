@@ -31,36 +31,46 @@ var create_plugin = (function() {
 					target_url = link.toString();
 					break;
 				}
-				qrcode.clear();
-				qrcode.makeCode(target_url);
+				qrcode.update({ data: target_url });
 
 			}
 			var target_url = "";
-			var html = "";
-			html += '<div style="display: flex; align-items: center; justify-content: center; flex-direction: column; height: 100%; width: 100%; border: 1px solid #ccc;">';
-			html += '    <div id="QR" style="flex: 1;" />';
-			html += '    <div style="flex: 1; display: flex;">';
-			html += '        <label style="flex: 1; display: flex; justify-content: center; align-items: center;">';
-			html += '            <input type="radio" name="dialog-message-type" value="browser" checked="true">Browser';
-			html += '        </label>';
-			html += '        <label style="flex: 1; display: flex; justify-content: center; align-items: center;">';
-			html += '    	     <input type="radio" name="dialog-message-type" value="metaquest">Meta Quest';
-			html += '        </label>';
-			html += '    </div>';
-			html += '</div>';
+			var html = `
+				<div>
+					<label>
+						<input type="radio" name="dialog-message-type" value="browser" checked="true">Browser
+					</label>
+					<label>
+						<input type="radio" name="dialog-message-type" value="metaquest">Meta Quest
+					</label>
+				</div>
+				<div id="QR"/>`;
 			$( "#dialog-message" ).html(html);
 	        $( "#dialog-message" ).dialog({
 	          modal: true,
 		  	  title: title,
 			  open: (event, ui) => {
-				qrcode = new QRCode("QR", {
-					text: "dummy",
+				const currentUrl = window.location.href;
+				const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
+				qrcode = new QRCodeStyling({
 					width: 256,
 					height: 256,
-					colorDark : "#000000",
-					colorLight : "#ffffff",
-					correctLevel : QRCode.CorrectLevel.M
+					image: `${baseUrl}/img/logo.png`,
+					dotsOptions: {
+						color: "#000000",
+						type: "rounded",
+					},
+					backgroundOptions: {
+						color: "#ffffff",
+					},
+					imageOptions: {
+						crossOrigin: "anonymous",
+						margin: 0,
+					},
+					errorCorrectionLevel: "M",
 				});
+				qrcode.append(document.getElementById("QR"));
+				
 				update("browser");
 			  },
 	          buttons: {
