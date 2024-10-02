@@ -47,7 +47,7 @@ var create_plugin = (function() {
 					cmd = "stop";
 				}
 			}
-			m_plugin_host.send_command(cmd);
+			m_plugin_host.send_command(VEHICLE_DOMAIN + cmd);
 		}, 100);
 	}
 	return function(plugin_host) {
