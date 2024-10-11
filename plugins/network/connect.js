@@ -720,6 +720,8 @@ var create_plugin = (function() {
                 var bln_open_dialog = false;
                 if(m_query['open-connect-dialog']){
                     bln_open_dialog = parseBoolean(m_query['open-connect-dialog']);
+                }else if(m_options['connect'] && m_options['connect']['open-connect-dialog']){
+                    bln_open_dialog = m_options['connect']['open-connect-dialog'];
                 }
                 if('wrtc-key' in m_query){
                     if(m_query['wrtc-key']){
