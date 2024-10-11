@@ -1061,8 +1061,6 @@ var app = (function() {
 				return self.plugin_host.init_plugins();
 			})
 			.then(() => {
-				self.plugin_host.restore_app_menu();
-				
 				if(m_options["platform"] && m_options["platform"].toUpperCase() == "OCULUS") {
 				}else{
 					self.plugin_host.on_view_quat_changed((view_quat, view_offset_quat) => {
@@ -1131,7 +1129,6 @@ var app = (function() {
 				}
 
 				function call_pstcore_init(config){
-					console.log("pstcore initialized");
 					if(m_query['debug']){
 						m_pstcore.pstcore_add_log_callback((level, tag, msg) => {
 							console.log(level, tag, msg);
@@ -1189,10 +1186,11 @@ var app = (function() {
 					}
 					self.open_applink(m_query['applink']);
 					
+					self.plugin_host.restore_app_menu();	
 					self.start_animate();
 			
 					setInterval(() => {
-						self.update_status_str();
+						self.update_status_str();	
 					}, 1000);
 					
 					window.addEventListener('resize', () => {
