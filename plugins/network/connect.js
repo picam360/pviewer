@@ -713,6 +713,9 @@ var create_plugin = (function() {
                 }
                 Object.assign(options, m_permanent_options);
                 m_options = options;
+            },
+			pstcore_initialized : (pstcore) => {
+				m_pstcore = pstcore;
 
                 var bln_open_dialog = false;
                 if(m_query['open-connect-dialog']){
@@ -736,13 +739,9 @@ var create_plugin = (function() {
                     m_options.stream_mode = m_query['stream-mode'];
                 }
 
-
                 if(bln_open_dialog){
                     open_dialog();
                 }
-            },
-			pstcore_initialized : (pstcore) => {
-				m_pstcore = pstcore;
 			},
             on_restore_app_menu : function(callback) {
                 addMenuButton("swConnect", "Connect").then(() => {
