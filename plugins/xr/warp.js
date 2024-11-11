@@ -116,7 +116,16 @@ var create_plugin = (function() {
 		m_passthrough_enabled = bln;
 
 		var overlay_def = get_overlay_def(bln ? -20 : m_pos);
-		m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", overlay_def);
+		var set_param = (count) => {
+            m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", overlay_def);
+            count++;
+            if(count < 5){
+                setTimeout(() => set_param(count), 100);
+            }
+        }
+        set_param(0);
+
+		console.log("warp.js", "set_passthrough_enabled", bln);
 	}
 
 	function stop_animate(){
