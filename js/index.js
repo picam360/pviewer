@@ -840,7 +840,7 @@ var app = (function() {
 					}	
 				});
 				VideoDecoder.isConfigSupported({codec:"hev1.1.6.L93.B0"}).then((info) =>{
-					if(info.supported){
+					if(window.location.protocol === 'https:' && info.supported){
 						var decoder = "wc_decoder name=decoder";
 						callback(decoder);
 					}else{
