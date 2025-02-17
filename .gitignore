@@ -7,3 +7,10 @@ Release
 
 .DS_Store
 .snipet
+
+user-*
+oem-*
+ext-*
+*-user
+*-oem
+*-ext
