@@ -177,12 +177,17 @@ var create_plugin = (function() {
         }
     }
     
+    function randomString(length = 8) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    }
     function start_p2p(p2p_uuid, callback, err_callback) {
         var options = {
             host: SIGNALING_HOST,
             port: SIGNALING_PORT,
             secure: SIGNALING_SECURE,
             key: P2P_API_KEY,
+            local_peer_id: randomString(),
             iceServers : [
                              {"urls": "stun:stun.l.google.com:19302"},
                             {"urls": "stun:stun1.l.google.com:19302"},
