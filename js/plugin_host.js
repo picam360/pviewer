@@ -68,7 +68,7 @@ function PluginHost(core, options) {
 					var pst = core.get_pst();
 
 					if(plugin.init_options){
-						plugin.init_options(options[plugin.name] || {});
+						plugin.init_options(options || {});
 					}
 					if (plugin.pstcore_initialized && pstcore) {
 						plugin.pstcore_initialized(pstcore);
