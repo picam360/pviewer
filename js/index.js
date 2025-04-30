@@ -231,6 +231,8 @@ var app = (function() {
 							_options = JSON.parse(json_str);
 						}
 					}catch(e){
+						console.log("common_config.json parsing error", e);
+
 						_options = {};
 					}
 					Object.assign(m_options, _options);
@@ -278,6 +280,8 @@ var app = (function() {
 								_options = JSON.parse(json_str);
 							}
 						}catch(e){
+							console.log("config.json parsing error", e);
+
 							_options = {};
 						}
 						if(_options.plugin_paths){
