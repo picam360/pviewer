@@ -464,12 +464,39 @@ var create_plugin = (function() {
                                 if(ary[0] == "network"){
                                     if(ary[1] == "pviewer_config_ext"){
                                         var config_ext = JSON.parse(ary[2]);
-                                        if(config_ext && config_ext["plugin_paths"]){
-                                            for(var path of config_ext["plugin_paths"]){
-                                                m_plugin_host.getFileFromUpstream(path, (data, path, key) => {
-                                                    m_plugin_host.add_plugin_from_script(path, config_ext, data);
-                                                });
+                                        function load_pviewer_config_ext(config_ext){
+                                            if(config_ext && config_ext["plugin_paths"]){
+                                                for(var path of config_ext["plugin_paths"]){
+                                                    m_plugin_host.getFileFromUpstream(path, (data, path, key) => {
+                                                        m_plugin_host.add_plugin_from_script(path, config_ext, data);
+                                                    });
+                                                }
                                             }
+                                        }
+                                        if(config_ext && config_ext["url"]){
+                                            m_plugin_host.getFileFromUpstream(config_ext["url"], (data, path, key) => {
+                                                let _options = {};
+                                                try{
+                                                    var txt = (new TextDecoder).decode(data[0]);
+                                                    if (txt) {
+                                                        var lines = txt.split('\n')
+                                                        for(var i=0;i<lines.length;i++){
+                                                            if(lines[i][0] == '#'){
+                                                                lines[i] = "";
+                                                            }
+                                                        }
+                                                        var json_str = lines.join("\n");
+                                                        _options = JSON.parse(json_str);
+                                                    }
+                                                }catch(e){
+                                                    console.log("config.json parsing error", e);
+                        
+                                                    _options = {};
+                                                }
+                                                load_pviewer_config_ext(_options);
+                                            });
+                                        }else{
+                                            load_pviewer_config_ext(config_ext);
                                         }
                                     }
                                 }else{
