@@ -395,6 +395,10 @@ var create_plugin = (function() {
                         if(conn.attr.in_pt_set_param){//prevent loop back
                             return;
                         }
+                        if(value.length > 64*1024){//too long
+                            console.log("send param too long", pst_name, param, value);
+                            return;
+                        }
                         if(pst_name == "renderer" && param.startsWith("overlay")){
                             return;
                         }
