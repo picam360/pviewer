@@ -778,7 +778,7 @@ var create_plugin = (function() {
                     m_options.stream_mode = m_query['stream-mode'];
                 }
                 if(m_query['auto-connect']){
-                    bln_auto_connect = (m_query['auto-connect'] == "true");
+                    bln_auto_connect = parseBoolean(m_query['auto-connect']);
                 }
 
                 if(bln_auto_connect){
