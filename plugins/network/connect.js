@@ -753,6 +753,7 @@ var create_plugin = (function() {
 			pstcore_initialized : (pstcore) => {
 				m_pstcore = pstcore;
 
+                var bln_auto_connect = false;
                 var bln_open_dialog = false;
                 if(m_query['open-connect-dialog']){
                     bln_open_dialog = parseBoolean(m_query['open-connect-dialog']);
@@ -776,8 +777,25 @@ var create_plugin = (function() {
                 if(m_query['stream-mode']){
                     m_options.stream_mode = m_query['stream-mode'];
                 }
+                if(m_query['auto-connect']){
+                    bln_auto_connect = (m_query['auto-connect'] == "true");
+                }
 
-                if(bln_open_dialog){
+                if(bln_auto_connect){
+                    if(m_options.default_interface == "ws"){
+                        start_ws(m_options.ws_url, (socket) => {
+                            init_connection(socket, m_options.stream_mode);
+                        }, () => {
+                            //error
+                        });
+                    }else{
+                        start_p2p(m_options.wrtc_key, (dc) => {
+                            init_connection(dc, m_options.stream_mode);
+                        }, () => {
+                            //error
+                        });
+                    }
+                }else if(bln_open_dialog){
                     open_dialog();
                 }
 			},
