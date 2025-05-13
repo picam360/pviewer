@@ -27,7 +27,7 @@ var create_plugin = (function() {
             resolve();
         });
     }
-    function prompt(msg, title) {
+    function prompt(msg, title, bln_auto_connect) {
         return new Promise((resolve, reject) => {
             var protocol = (location.protocol == 'https:' ? 'wss://' : 'ws://');
             var html = '<p>' + msg + '</p>'
@@ -57,32 +57,40 @@ var create_plugin = (function() {
                      + '</table>';
             $( "#dialog-message" ).html(html);
             $( "#dialog-message" ).dialog({
-              modal: true,
+                modal: true,
                 title: title,
-              buttons: {
-                "Connect": function() {
-                    var opt = {
-                        type:$( "input[name='dialog-message-type']:checked" ).val(),
-                        ws_url:$( "#dialog-message-wsurl" ).val().trim(),
-                        wrtc_key:$( "#dialog-message-wrtckey" ).val().trim(),
-                        stream_mode:$( "#dialog-message-stream-mode" ).val(),
-                    };
-                    for(var options of [m_options, m_permanent_options]){
-                        options.ws_url = opt.ws_url;
-                        options.wrtc_key = opt.wrtc_key;
-                        options.default_interface = opt.type;
-                        options.stream_mode = opt.stream_mode;
+                buttons: {
+                    "Connect": function() {
+                        var opt = {
+                            type:$( "input[name='dialog-message-type']:checked" ).val(),
+                            ws_url:$( "#dialog-message-wsurl" ).val().trim(),
+                            wrtc_key:$( "#dialog-message-wrtckey" ).val().trim(),
+                            stream_mode:$( "#dialog-message-stream-mode" ).val(),
+                        };
+                        for(var options of [m_options, m_permanent_options]){
+                            options.ws_url = opt.ws_url;
+                            options.wrtc_key = opt.wrtc_key;
+                            options.default_interface = opt.type;
+                            options.stream_mode = opt.stream_mode;
+                        }
+                        localStorage.setItem('connect_js_options', JSON.stringify(m_permanent_options));
+                
+                        resolve(opt);
+                        $( this ).dialog( "close" );
+                    },
+                    "Cancel": function() {
+                        reject("CANCELED");
+                        $( this ).dialog( "close" );
                     }
-                    localStorage.setItem('connect_js_options', JSON.stringify(m_permanent_options));
-            
-                    resolve(opt);
-                    $( this ).dialog( "close" );
                 },
-                "Cancel": function() {
-                    reject("CANCELED");
-                    $( this ).dialog( "close" );
+                open: function(event, ui) {
+                    $(".ui-dialog-buttonpane button:contains('Connect')").focus();
+                    if(bln_auto_connect){
+                        setTimeout(() => {
+                            $(".ui-dialog-buttonpane button:contains('Connect')").trigger("click");
+                        }, 5000);
+                    }
                 }
-              }
             });
             $( "input[name='dialog-message-type']" ).change(() => {
                 switch($( "input[name='dialog-message-type']:checked" ).val()){
@@ -395,11 +403,11 @@ var create_plugin = (function() {
                         if(conn.attr.in_pt_set_param){//prevent loop back
                             return;
                         }
-                        if(value.length > 64*1024){//too long
-                            console.log("send param too long", pst_name, param, value);
+                        if(pst_name == "renderer" && param.startsWith("overlay")){
                             return;
                         }
-                        if(pst_name == "renderer" && param.startsWith("overlay")){
+                        if(value.length > 64*1024){//too long
+                            console.log("send param too long", pst_name, param, value);
                             return;
                         }
                         conn.attr.param_pendings.push([pst_name, param, value]);
@@ -710,9 +718,9 @@ var create_plugin = (function() {
         });
     };
     
-    function open_dialog(){
+    function open_dialog(bln_auto_connect){
         app.menu.close();
-        prompt("input connection info", "connect stream via network").then((opt) => {
+        prompt("input connection info", "connect stream via network", bln_auto_connect).then((opt) => {
             if(opt.type == "ws"){
                 start_ws(opt.ws_url, (socket) => {
                     init_connection(socket, opt.stream_mode);
@@ -781,22 +789,8 @@ var create_plugin = (function() {
                     bln_auto_connect = parseBoolean(m_query['auto-connect']);
                 }
 
-                if(bln_auto_connect){
-                    if(m_options.default_interface == "ws"){
-                        start_ws(m_options.ws_url, (socket) => {
-                            init_connection(socket, m_options.stream_mode);
-                        }, () => {
-                            //error
-                        });
-                    }else{
-                        start_p2p(m_options.wrtc_key, (dc) => {
-                            init_connection(dc, m_options.stream_mode);
-                        }, () => {
-                            //error
-                        });
-                    }
-                }else if(bln_open_dialog){
-                    open_dialog();
+                if(bln_open_dialog){
+                    open_dialog(bln_auto_connect);
                 }
 			},
             on_restore_app_menu : function(callback) {
