@@ -5,7 +5,6 @@ var create_plugin = (function() {
 	var m_pstcore = null;
 	var m_pst = 0;
 	var m_xrsession = null;
-	var m_animate = false;
 	var m_interval = 0;
 	var m_pos = 0;
 	var m_warp_tilt = 0;
@@ -14,6 +13,8 @@ var create_plugin = (function() {
 	var m_click_timer = 0;
 	var m_click_count = 0;
 	var m_passthrough_enabled = false;
+	var m_query = GetQueryString();
+	var m_auto_warp_disabled = parseBoolean(m_query["warp.auto_warp_disabled"]);
 
 	function cal_current_pitch_yaw_deg() {
 		var view_offset_quat = m_plugin_host.get_view_offset()
@@ -134,30 +135,48 @@ var create_plugin = (function() {
 			m_interval = 0;
 		}
 	}
-	function start_animate(step, min, max){
+	function start_animate(step, start, end){
 		stop_animate();
+		
+		m_pos = start;
 
-		m_interval = setInterval(() => {
-			if(!m_passthrough_enabled){
-				var overlay_def = get_overlay_def(m_pos);
-				m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", overlay_def);
+		if(m_rendering_started && m_xrsession){//xr only
+			let min, max;
+			if(start < end){
+				min = start;
+				max = end;
+				step = Math.abs(step);
+			}else{
+				min = end;
+				max = start;
+				step = -Math.abs(step);
 			}
 
-			m_pos += step;
-			m_warp_tilt = Math.atan2(1, m_pos * 0.1) * 180 / Math.PI;
-			m_pstcore.pstcore_set_param(m_pst, "warp", "tilt", m_warp_tilt.toString());
-			if(m_pos > max || m_pos < min){
-				m_pos = Math.max(min, Math.min(m_pos, max));
-				stop_animate();
-			}
-		}, 1000/60);
+			m_interval = setInterval(() => {
+				if(!m_passthrough_enabled){
+					var overlay_def = get_overlay_def(m_pos);
+					m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", overlay_def);
+				}
+
+				m_pos += step;
+				m_warp_tilt = Math.atan2(1, m_pos * 0.1) * 180 / Math.PI;
+				m_pstcore.pstcore_set_param(m_pst, "warp", "tilt", m_warp_tilt.toString());
+				if(m_pos > max || m_pos < min){//considering interrupt
+					m_pos = Math.max(min, Math.min(m_pos, max));
+					stop_animate();
+				}
+			}, 1000/60);
+		}
 	}
 
-	function start_warp(){
+	function auto_start_warp(){
 		if(m_rendering_started && m_xrsession){
-			m_animate = true;
-			m_pos = -20;
-			start_animate(0.1, -20, 20);
+			setTimeout(() => {
+				if(m_auto_warp_disabled){
+					return;
+				}
+				start_animate(0.1, -20, 20);
+			}, 500);
 		}
 	}
 
@@ -180,12 +199,15 @@ var create_plugin = (function() {
 						if(!m_rendering_started && param == "pts"){
 							m_rendering_started = true;
 
-							start_warp();
+							auto_start_warp();
 						}
 					}else if(pst_name == "warp"){
 						if(param == "start_animate"){
-							var spd = parseInt(value);
-							start_animate(spd, -20, 20);
+							const elms = value.split(",");
+							const spd = elms[0] ? parseFloat(elms[0]) : 0.1;
+							const start = elms[1] ? parseFloat(elms[1]) : -20
+							const end = elms[2] ? parseFloat(elms[2]) : 20;
+							start_animate(spd, start, end);
 						}
 						if(param == "stop_animate"){
 							stop_animate();
@@ -193,13 +215,17 @@ var create_plugin = (function() {
 						if(param == "passthrough_enabled"){
 							set_passthrough_enabled(value == "true" || value == "1");
 						}
+						if(param == "auto_warp_disabled"){
+							m_auto_warp_disabled = parseBoolean(value);
+						}
 					}
 				});
 			},
 			xrsession_started: function (session) {
 				m_xrsession = session;
 
-				start_warp();
+            	m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", get_overlay_def(-20));//default position
+				auto_start_warp();
 			},
 			event_handler : function(sender, event, state) {
 				if(!app.get_xrsession){
