@@ -83,6 +83,16 @@ function PluginHost(core, options) {
 			};
 			console.log("loding : " + name);
 			
+			if(!chunk_array){
+				chunk_array = [];
+			}else if (!Array.isArray(chunk_array)) {
+				chunk_array = [chunk_array];
+			}
+			{//embed sourceURL
+  				const bytes = new TextEncoder().encode(`\n//# sourceURL=${name}`);
+				chunk_array.push(bytes);
+			}
+			
 			var blob = new Blob(chunk_array, {
 				type: "text/javascript"
 			});
