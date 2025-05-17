@@ -161,6 +161,13 @@ function PluginHost(core, options) {
 				callback(m_view_quat.clone(), m_view_offset.clone());
 			}
 		},
+		soft_centering: function() {
+			const [_pitch_, yaw] = calPitchYawDegree(self.get_view_quat());
+			const [pitch, _yaw_] = calPitchYawDegree(self.get_view_offset());
+			const euler = new THREE.Euler(pitch*Math.PI/180, -yaw*Math.PI/180, 0, "YXZ");
+			const quat = new THREE.Quaternion().setFromEuler(euler);
+			self.set_view_offset(quat);
+		},
 		on_view_quat_changed: function(callback) {
 			m_view_quat_changed_callbacks.push(callback);
 		},
