@@ -4,6 +4,8 @@ var create_plugin = (function() {
 
 	var PUSH_THRESHOLD = 0.5;
 	var m_gamepad_state = null;
+	var m_vibration_requested = null;
+
 	function handleGamepad() {
 		if(!app.get_xrsession){
 			return;
@@ -48,6 +50,21 @@ var create_plugin = (function() {
 			}
 		}
 		m_gamepad_state = new_state;
+
+
+		if(m_vibration_requested){
+			if (gamepad.hapticActuators && gamepad.hapticActuators[0]) {
+				gamepad.hapticActuators[0].playEffect("dual-rumble", {
+					startDelay: m_vibration_requested?.startDelay || 0,
+					duration: m_vibration_requested?.duration || 1000,         // ミリ秒
+					weakMagnitude: m_vibration_requested?.weakMagnitude || 0.5, // 左（低周波）
+					strongMagnitude: m_vibration_requested?.strongMagnitude || 1.0 // 右（高周波）
+				});
+			} else {
+				console.log("振動対応していないか、見つかりません");
+			}
+			m_vibration_requested = null;
+		}
 	}
 
 	function init() {
@@ -60,7 +77,12 @@ var create_plugin = (function() {
 			m_is_init = true;
 			init();
 		}
-		var plugin = {};
+		var plugin = {
+			name : "xrgamepad",
+			vibration: (options) => {
+				m_vibration_requested = options || {};
+			}
+		};
 		return plugin;
 	}
 })();
