@@ -5,6 +5,7 @@ var create_plugin = (function() {
 	var PUSH_THRESHOLD = 0.5;
 	var m_gamepad_id = "";//need to call navigator.getGamepads() dynamically to get live values
 	var m_gamepad_state = null;
+	var m_vibration_requested = null;
 
 	function get_last_gamepad_id(){
 		if (navigator.getGamepads) {
@@ -79,7 +80,22 @@ var create_plugin = (function() {
 			}
 		}
 		m_gamepad_state = new_state;
-	}
+
+
+		if(m_vibration_requested){
+			if (gamepad.vibrationActuator) {
+				gamepad.vibrationActuator.playEffect("dual-rumble", {
+					startDelay: m_vibration_requested.startDelay || 0,
+					duration: m_vibration_requested.duration || 1000,         // ミリ秒
+					weakMagnitude: m_vibration_requested.weakMagnitude || 0.5,     // 低周波振動（左）
+					strongMagnitude: m_vibration_requested.strongMagnitude || 1.0    // 高周波振動（右）
+				});
+			} else {
+				console.log("振動対応していないか、見つかりません");
+			}
+			m_vibration_requested = null;
+		}
+}
 
 	function init() {
 		setInterval(handleGamepad, 100);
@@ -91,7 +107,12 @@ var create_plugin = (function() {
 			m_is_init = true;
 			init();
 		}
-		var plugin = {};
+		var plugin = {
+			name: "gamepad",
+			vibration: (options) => {
+				m_vibration_requested = options || {};
+			}
+		};
 		return plugin;
 	}
 	return self;
