@@ -15,6 +15,7 @@ var create_plugin = (function() {
 	var m_passthrough_enabled = false;
 	var m_query = GetQueryString();
 	var m_auto_warp_disabled = parseBoolean(m_query["warp.auto_warp_disabled"]);
+	var m_animate_owner = null;
 
 	function cal_current_pitch_yaw_deg() {
 		var view_offset_quat = m_plugin_host.get_view_offset()
@@ -129,16 +130,29 @@ var create_plugin = (function() {
 		console.log("warp.js", "set_passthrough_enabled", bln);
 	}
 
-	function stop_animate(){
+	function stop_animate(owner){
+		if(m_animate_owner && m_animate_owner !== owner){
+			return;
+		}
+		console.log("stop_animate", owner);
+
 		if(m_interval){
 			clearInterval(m_interval);
 			m_interval = 0;
 		}
+		m_animate_owner = null;
 	}
-	function start_animate(step, start, end){
-		stop_animate();
+	function start_animate(step, start, end, owner){
+		if(!m_query["warp.interrupt-enabled"] && m_animate_owner && m_animate_owner !== owner){
+			return;
+		}
+
+		stop_animate(m_animate_owner);
+
+		console.log("start_animate", step, start, end, owner);
 		
 		m_pos = start;
+		m_animate_owner = owner;
 
 		if(m_rendering_started && m_xrsession){//xr only
 			let min, max;
@@ -163,7 +177,7 @@ var create_plugin = (function() {
 				m_pstcore.pstcore_set_param(m_pst, "warp", "tilt", m_warp_tilt.toString());
 				if(m_pos > max || m_pos < min){//considering interrupt
 					m_pos = Math.max(min, Math.min(m_pos, max));
-					stop_animate();
+					stop_animate(m_animate_owner);
 				}
 			}, 1000/60);
 		}
@@ -175,7 +189,7 @@ var create_plugin = (function() {
 				if(m_auto_warp_disabled){
 					return;
 				}
-				start_animate(0.1, -20, 20);
+				start_animate(0.1, -20, 20, "auto_start_warp");
 			}, 500);
 		}
 	}
@@ -207,10 +221,10 @@ var create_plugin = (function() {
 							const spd = elms[0] ? parseFloat(elms[0]) : 0.1;
 							const start = elms[1] ? parseFloat(elms[1]) : -20
 							const end = elms[2] ? parseFloat(elms[2]) : 20;
-							start_animate(spd, start, end);
+							start_animate(spd, start, end, "set_param");
 						}
 						if(param == "stop_animate"){
-							stop_animate();
+							stop_animate("set_param");
 						}
 						if(param == "passthrough_enabled"){
 							set_passthrough_enabled(value == "true" || value == "1");
@@ -240,6 +254,7 @@ var create_plugin = (function() {
 					m_click_timer = setTimeout(() => {
 						if(m_click_count >= 3){
 							m_force = !m_force;
+							console.log("force_animate", m_force);
 						}
 						m_click_count = 0;
 					}, 500);
@@ -252,10 +267,10 @@ var create_plugin = (function() {
 								if(m_force || view_tilt < m_warp_tilt){
 									countup();
 
-									start_animate(0.1, -20, 20);
+									start_animate(0.1, m_pos, 20, "manual");
 								}
 							}else{
-								stop_animate();
+								stop_animate("manual");
 							}
 							break;
 						case "RIGHT_3_AXIS_BACKWARD":
@@ -264,10 +279,10 @@ var create_plugin = (function() {
 								if(m_force || view_tilt < m_warp_tilt){
 									countup();
 
-									start_animate(-0.1, -20, 20);
+									start_animate(0.1, m_pos, -20, "manual");
 								}
 							}else{
-								stop_animate();
+								stop_animate("manual");
 							}
 							break;
 					}
