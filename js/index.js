@@ -264,8 +264,9 @@ var app = (function() {
 						m_options.screen_offset[1][1] = parseFloat(nodes[3]);
 					}
 				}
+				const config_path = m_query["config-path"] || "config.json";
 				// @data : uint8array
-				loadFile("config.json", function(chunk_array) {
+				loadFile(config_path, function(chunk_array) {
 						var _options = {};
 						try{
 							var txt = (new TextDecoder).decode(chunk_array[0]);
