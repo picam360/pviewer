@@ -474,7 +474,7 @@ var create_plugin = (function() {
                             var list = JSON.parse(str);
                             for(var ary of list){
                                 if(ary[0] == "network"){
-                                    if(ary[1] == "pviewer_config_ext"){
+                                    if(ary[1] == "pviewer_config_ext" && !parseBoolean(m_query['config-ext-disabled'])){
                                         var config_ext = JSON.parse(ary[2]);
                                         function load_pviewer_config_ext(config_ext){
                                             if(config_ext && config_ext["plugin_paths"]){
