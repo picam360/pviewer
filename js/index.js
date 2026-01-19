@@ -400,10 +400,6 @@ var app = (function() {
 					status += "n_pending:" + n_pending + "<br/>";
 					if(latency){
 						latency = parseFloat(latency);
-						var timediff = m_pstcore.pstcore_get_param(m_pst, "network", "timediff");
-						if(timediff){
-							latency += parseFloat(timediff);
-						}
 						status += "latency:" + latency.toFixed(3) + "sec<br/>";
 					}
 				}
