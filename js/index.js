@@ -391,6 +391,11 @@ var app = (function() {
 					var n_in_bq_r = m_pstcore.pstcore_get_param(m_pst, "renderer", "n_in_bq");
 					var n_pending = m_pstcore.pstcore_get_param(m_pst, "renderer", "n_pending");
 					var latency = m_pstcore.pstcore_get_param(m_pst, "renderer", "latency");
+					try{
+						latency = JSON.parse(latency);
+					}catch(err){
+						latency = null;
+					}
 					status += "texture<br/>";
 					status += "fps:" + fps + "<br/>";
 					status += "preload:" + preload + "<br/>";
@@ -399,8 +404,14 @@ var app = (function() {
 					status += "n_in_bq:" + n_in_bq_l + "+" + n_in_bq_d + "+" + n_in_bq_r + "<br/>";
 					status += "n_pending:" + n_pending + "<br/>";
 					if(latency){
-						latency = parseFloat(latency);
-						status += "latency:" + latency.toFixed(3) + "sec<br/>";
+						try{
+							status += "ave_latency:" + latency.arrived.ave.toFixed(3) + "sec<br/>";
+							status += "min_latency:" + latency.arrived.min.toFixed(3) + "sec<br/>";
+							status += "max_latency:" + latency.arrived.max.toFixed(3) + "sec<br/>";
+							status += "tex_latency:" + latency.rendered.ave.toFixed(3) + "sec<br/>";
+						}catch(err){
+							status += "latency:ERROR<br/>";
+						}
 					}
 				}
 //				var texture_info = m_video_handler.get_info(); {
