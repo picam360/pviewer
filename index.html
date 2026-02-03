@@ -249,12 +249,20 @@
 	></ons-switch> </ons-col> </ons-row></ons-list-item>
     -->
 	
-	<ons-list-item class="menu-item"> <ons-row
-		align="center"
-	> <ons-col>Stereo</ons-col> <ons-col align="right" valign="center"> <ons-switch
-		var="swStereoView"
-		onchange="app.set_stereo(swStereoView.isChecked());"
-	></ons-switch> </ons-col> </ons-row></ons-list-item> 
+	<ons-list-item class="menu-item">
+		<ons-row align="center" >
+			<ons-col>Stereo</ons-col>
+			<ons-col align="right" valign="center">
+				<ons-switch var="swStereoView" onchange="app.set_stereo(swStereoView.isChecked());"></ons-switch>
+			</ons-col>
+		</ons-row>
+		<ons-row align="center" >
+			<ons-col>Stabilizer</ons-col>
+			<ons-col align="right" valign="center">
+				<ons-switch var="swStabilizer" onchange="app.set_stabilizer(swStabilizer.isChecked());"></ons-switch>
+			</ons-col>
+		</ons-row>
+    </ons-list-item>
     <!--
     <ons-list-item class="menu-item"> <ons-row
 	align="center"

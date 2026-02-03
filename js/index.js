@@ -556,6 +556,23 @@ var app = (function() {
 			}
 		},
 		
+		set_stabilizer: function(value) {
+			if(m_options.stabilizer != value){
+				m_options.stabilizer = value;
+				self.aply_permanent_options("stabilizer");
+			}
+
+			if(swStabilizer){
+				swStabilizer.setChecked(m_options.stabilizer);
+			}
+
+			if(value){
+				self.set_param("renderer", "stabilizer", "1");
+			}else{
+				self.set_param("renderer", "stabilizer", "0");
+			}
+		},
+		
 		set_deblock: function(value) {
 			m_options.deblock = value;
 			m_permanent_options.deblock = value;
@@ -984,6 +1001,7 @@ var app = (function() {
 				}
 				setTimeout(() => {
 					self.set_stereo(m_options.stereo);
+					self.set_stabilizer(m_options.stabilizer);
 				
 					if (m_options.view_offset) {
 						var euler = new THREE.Euler(THREE.Math
@@ -1291,6 +1309,9 @@ var app = (function() {
 			setTimeout(() => {
 				if(swStereoView){
 					swStereoView.setChecked(m_options.stereo);
+				}
+				if(swStabilizer){
+					swStabilizer.setChecked(m_options.stabilizer);
 				}
 			}, 0);
 		},
