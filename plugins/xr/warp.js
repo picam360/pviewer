@@ -100,6 +100,7 @@ var create_plugin = (function() {
 					"use_light" : false,
 					"blend" : false,
 					"obj_id" : "wall",
+					"direct": true,
 				},
 				{
 					"obj_scale" : scale,
@@ -108,6 +109,7 @@ var create_plugin = (function() {
 					"use_light" : false,
 					"blend" : false,
 					"obj_id" : "ring",
+					"direct": true,
 				},
 			]
 		};
