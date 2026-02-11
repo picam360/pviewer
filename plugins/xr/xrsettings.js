@@ -19,16 +19,19 @@ var create_plugin = (function() {
 				m_pstcore = pstcore;
 				m_pst = pst;
 			},
-			event_handler : function(sender, event) {
+			event_handler : function(sender, event, new_state) {
 				if(!m_pst || !app.get_xrsession()){
+					return;
+				}
+				if(!new_state || !new_state[event]){
 					return;
 				}
 				try{
 					switch(event){
-						case "2_AXIS_FORWARD_DOWN":
-						case "2_AXIS_BACKWARD_DOWN":
-						case "3_AXIS_FORWARD_DOWN":
-						case "3_AXIS_BACKWARD_DOWN":
+						case "RIGHT_2_AXIS_FORWARD":
+						case "RIGHT_2_AXIS_BACKWARD":
+						case "RIGHT_3_AXIS_FORWARD":
+						case "RIGHT_3_AXIS_BACKWARD":
 							{
 								var x = 0;
 								var y = 0;
@@ -40,19 +43,19 @@ var create_plugin = (function() {
 								}catch{};
 
 								switch(event){
-									case "2_AXIS_FORWARD_DOWN":
+									case "RIGHT_2_AXIS_FORWARD":
 										x += 0.01;
 										m_permanent_options.screen_offset_x = x;
 										break;
-									case "2_AXIS_BACKWARD_DOWN":
+									case "RIGHT_2_AXIS_BACKWARD":
 										x -= 0.01;
 										m_permanent_options.screen_offset_x = x;
 										break;
-									case "3_AXIS_FORWARD_DOWN":
+									case "RIGHT_3_AXIS_FORWARD":
 										y -= 0.01;
 										m_permanent_options.screen_offset_y = y;
 										break;
-									case "3_AXIS_BACKWARD_DOWN":
+									case "RIGHT_3_AXIS_BACKWARD":
 										y += 0.01;
 										m_permanent_options.screen_offset_y = y;
 										break;
@@ -64,7 +67,7 @@ var create_plugin = (function() {
 								console.log(m_permanent_options);
 							}
 							break;
-						case "4_BUTTON_DOWN":
+						case "RIGHT_4_BUTTON_PUSHED":
 							{
 								var value = parseFloat(m_pstcore.pstcore_get_param(m_pst, "renderer", "fov"));
 								value -= 1;
@@ -75,7 +78,7 @@ var create_plugin = (function() {
 								console.log(m_permanent_options);
 							}
 							break;
-						case "5_BUTTON_DOWN":
+						case "RIGHT_5_BUTTON_PUSHED":
 							{
 								var value = parseFloat(m_pstcore.pstcore_get_param(m_pst, "renderer", "fov"));
 								value += 1;
@@ -86,7 +89,7 @@ var create_plugin = (function() {
 								console.log(m_permanent_options);
 							}
 							break;
-						case "3_BUTTON_DOWN":
+						case "RIGHT_3_BUTTON_PUSHED":
 							{//reset
 								m_permanent_options = {};
 								localStorage.setItem(PLUGIN_NAME, JSON.stringify(m_permanent_options));
