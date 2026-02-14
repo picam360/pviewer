@@ -89,6 +89,15 @@ var create_plugin = (function() {
 
 				m_plugin_host.set_view_quat(quat);
 			}
+			if(xrFrame.predictedDisplayTime){
+				const orig_tv_sec = Math.floor(performance.timeOrigin / 1000);
+				const orig_tv_usec  = Math.round((performance.timeOrigin % 1000) * 1000);
+				const pred_usec = Math.round(xrFrame.predictedDisplayTime * 1000);
+				const tv_sec = orig_tv_sec + Math.floor((orig_tv_usec + pred_usec) / 1000000);
+				const tv_usec = Math.round((orig_tv_usec + pred_usec) % 1000000);
+				const rdr_ts = `${tv_sec}.${String(tv_usec).padStart(6, '0')}`;
+				m_pstcore.pstcore_set_param(m_pst, "renderer", "rdr_ts", rdr_ts);
+			}
 			m_pstcore.pstcore_poll_events();
 			m_xrsession.requestAnimationFrame(redraw);
 		}
