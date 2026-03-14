@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Browser Face Pose Sample</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111418;
+      --panel: #1a1f26;
+      --text: #e8edf2;
+      --muted: #9fb0c0;
+      --accent: #4db6ff;
+      --good: #6ee7a2;
+      --bad: #ff8a8a;
+      --line: rgba(255,255,255,0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+    p {
+      margin: 0 0 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) 320px;
+      gap: 16px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .video-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #000;
+    }
+    video, canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    video {
+      transform: scaleX(-1);
+    }
+    canvas {
+      pointer-events: none;
+    }
+    .side {
+      padding: 16px;
+    }
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      background: rgba(255,255,255,0.02);
+    }
+    .metric .label {
+      color: var(--muted);
+    }
+    .metric .value {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 12px 0 0;
+    }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--accent);
+      color: #00111d;
+    }
+    button.secondary {
+      background: #2a3340;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+    .status {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .ok { color: var(--good); }
+    .ng { color: var(--bad); }
+    .small {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 14px;
+      line-height: 1.6;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>顔ポーズ推定サンプル</h1>
+    <p>
+      ブラウザのみで顔の向き（yaw / pitch / roll）を表示します。
+      正面・左右回転・上下回転・傾きをリアルタイムで確認できます。
+    </p>
+
+    <div class="grid">
+      <div class="card">
+        <div class="video-wrap">
+          <video id="video" playsinline autoplay muted></video>
+          <canvas id="canvas"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="side">
+          <div class="metric">
+            <div class="label">Yaw（左右）</div>
+            <div class="value" id="yaw">0.0°</div>
+          </div>
+          <div class="metric">
+            <div class="label">Pitch（上下）</div>
+            <div class="value" id="pitch">0.0°</div>
+          </div>
+          <div class="metric">
+            <div class="label">Roll（傾き）</div>
+            <div class="value" id="roll">0.0°</div>
+          </div>
+          <div class="metric">
+            <div class="label">Face detected</div>
+            <div class="value" id="detected">NO</div>
+          </div>
+          <div class="metric">
+            <div class="label">FPS</div>
+            <div class="value" id="fps">0.0</div>
+          </div>
+
+          <div class="row">
+            <button id="startBtn">カメラ開始</button>
+            <button id="stopBtn" class="secondary">停止</button>
+          </div>
+
+          <div class="status" id="status">初期化前</div>
+
+          <div class="small">
+            メモ:
+            <br>・顔の向きは transformation matrix から取り出しています
+            <br>・映像は見やすいように左右反転表示です
+            <br>・推定値は少し平滑化しています
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    
+    import {
+      FaceLandmarker,
+      FilesetResolver
+    } from "./@mediapipe/tasks-vision/vision_bundle.js";
+
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const yawEl = document.getElementById("yaw");
+    const pitchEl = document.getElementById("pitch");
+    const rollEl = document.getElementById("roll");
+    const detectedEl = document.getElementById("detected");
+    const fpsEl = document.getElementById("fps");
+    const statusEl = document.getElementById("status");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+
+    let faceLandmarker = null;
+    let stream = null;
+    let animationId = 0;
+    let running = false;
+    let lastVideoTime = -1;
+    let lastTs = performance.now();
+
+    let smoothYaw = 0;
+    let smoothPitch = 0;
+    let smoothRoll = 0;
+    const alpha = 0.25;
+
+    function setStatus(msg, ok = true) {
+      statusEl.textContent = msg;
+      statusEl.className = "status " + (ok ? "ok" : "ng");
+    }
+
+    function toDeg(rad) {
+      return rad * 180 / Math.PI;
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    // 4x4行列の回転部分から yaw/pitch/roll を求める
+    // m は 16要素の配列（row-major想定）
+    function matrixToEulerDegrees(m) {
+      const r00 = m[0],  r01 = m[1],  r02 = m[2];
+      const r10 = m[4],  r11 = m[5],  r12 = m[6];
+      const r20 = m[8],  r21 = m[9],  r22 = m[10];
+
+      // 一般的な Tait-Bryan angles (YXZ寄りの取り方)
+      let yaw = Math.atan2(r02, r22);
+      let pitch = Math.asin(-r12);
+      let roll = Math.atan2(r10, r11);
+
+      // 画面の見た目に合わせて符号を調整
+      yaw = -toDeg(yaw);
+      pitch = toDeg(pitch);
+      roll = -toDeg(roll);
+
+      return { yaw, pitch, roll };
+    }
+
+    function resizeCanvasToVideo() {
+      const w = video.videoWidth || 640;
+      const h = video.videoHeight || 480;
+      canvas.width = w;
+      canvas.height = h;
+    }
+
+    function drawLandmarks(faceLandmarks) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // video は CSS で左右反転しているので、canvas も合わせる
+      ctx.save();
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+
+      // 点を軽く描く
+      ctx.fillStyle = "rgba(77,182,255,0.9)";
+      const step = 6;
+      for (let i = 0; i < faceLandmarks.length; i += step) {
+        const p = faceLandmarks[i];
+        const x = p.x * canvas.width;
+        const y = p.y * canvas.height;
+        ctx.beginPath();
+        ctx.arc(x, y, 1.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 顔の向きの基準として鼻先付近から線を描く
+      const nose = faceLandmarks[1];
+      if (nose) {
+        const nx = nose.x * canvas.width;
+        const ny = nose.y * canvas.height;
+
+        ctx.strokeStyle = "rgba(110,231,162,0.95)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(nx, ny);
+        ctx.lineTo(nx, ny - 60);
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(255,255,255,0.95)";
+        ctx.beginPath();
+        ctx.arc(nx, ny, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    async function initFaceLandmarker() {
+      setStatus("MediaPipe 初期化中...");
+      const vision = await FilesetResolver.forVisionTasks(
+        "./@mediapipe/tasks-vision/wasm"
+      );
+
+      faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath:
+            "./@mediapipe/models/face_landmarker.task"
+        },
+        runningMode: "VIDEO",
+        numFaces: 1,
+        outputFaceBlendshapes: false,
+        outputFacialTransformationMatrixes: true,
+        minFaceDetectionConfidence: 0.5,
+        minFacePresenceConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+
+      setStatus("MediaPipe 初期化完了");
+    }
+
+    async function startCamera() {
+      if (running) return;
+
+      try {
+        if (!faceLandmarker) {
+          await initFaceLandmarker();
+        }
+
+        setStatus("カメラ起動中...");
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "user",
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+
+        video.srcObject = stream;
+
+        await new Promise((resolve) => {
+          video.onloadedmetadata = () => resolve();
+        });
+
+        await video.play();
+        resizeCanvasToVideo();
+
+        running = true;
+        lastVideoTime = -1;
+        lastTs = performance.now();
+        setStatus("推定中");
+        render();
+      } catch (err) {
+        console.error(err);
+        setStatus("起動失敗: " + (err?.message || err), false);
+      }
+    }
+
+    function stopCamera() {
+      running = false;
+      cancelAnimationFrame(animationId);
+      animationId = 0;
+
+      if (stream) {
+        for (const track of stream.getTracks()) {
+          track.stop();
+        }
+        stream = null;
+      }
+
+      video.srcObject = null;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      detectedEl.textContent = "NO";
+      setStatus("停止しました");
+    }
+
+    function render() {
+      if (!running) return;
+
+      const now = performance.now();
+      const dt = Math.max(1, now - lastTs);
+      lastTs = now;
+      fpsEl.textContent = (1000 / dt).toFixed(1);
+
+      if (video.readyState >= 2) {
+        if (video.currentTime !== lastVideoTime) {
+          lastVideoTime = video.currentTime;
+
+          const result = faceLandmarker.detectForVideo(video, now);
+
+          const hasFace =
+            result &&
+            result.faceLandmarks &&
+            result.faceLandmarks.length > 0 &&
+            result.facialTransformationMatrixes &&
+            result.facialTransformationMatrixes.length > 0;
+
+          if (hasFace) {
+            detectedEl.textContent = "YES";
+            const landmarks = result.faceLandmarks[0];
+            drawLandmarks(landmarks);
+
+            const mat = result.facialTransformationMatrixes[0].data;
+            const pose = matrixToEulerDegrees(mat);
+
+            smoothYaw = lerp(smoothYaw, pose.yaw, alpha);
+            smoothPitch = lerp(smoothPitch, pose.pitch, alpha);
+            smoothRoll = lerp(smoothRoll, pose.roll, alpha);
+
+            yawEl.textContent = `${smoothYaw.toFixed(1)}°`;
+            pitchEl.textContent = `${smoothPitch.toFixed(1)}°`;
+            rollEl.textContent = `${smoothRoll.toFixed(1)}°`;
+          } else {
+            detectedEl.textContent = "NO";
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }
+        }
+      }
+
+      animationId = requestAnimationFrame(render);
+    }
+
+    startBtn.addEventListener("click", startCamera);
+    stopBtn.addEventListener("click", stopCamera);
+
+    window.addEventListener("resize", resizeCanvasToVideo);
+
+    setStatus("準備完了。『カメラ開始』を押してください。");
+  </script>
+</body>
+</html>
