@@ -118,13 +118,13 @@ function PluginHost(core, options) {
 					return;
 				}
 				function load_plugin(idx) {
-					self.getFileUrl(m_options.plugin_paths[idx], function(
+					self.getFileUrl(m_options.plugin_paths[idx], async function(
 							url) {
-							var script = document
-								.createElement('script');
-							script.onload = function() {
+							
+							const onload = () => {
 								console.log("loaded : " +
 									m_options.plugin_paths[idx]);
+
 								if (create_plugin) {
 									var plugin = create_plugin(self);
 									m_plugins.push(plugin);
@@ -141,12 +141,22 @@ function PluginHost(core, options) {
 									}
 									fullfill();
 								}
-							};
+							}
+
 							console.log("loding : " +
 								m_options.plugin_paths[idx]);
-							script.src = url;
-	
-							document.head.appendChild(script);
+							if (url.endsWith(".mjs")) {
+								const mod = await import(document.documentURI + url);
+								create_plugin = mod.create_plugin;
+								onload();
+							}else{
+								var script = document
+									.createElement('script');
+								script.onload = onload;
+								script.src = url;
+		
+								document.head.appendChild(script);
+							}
 						});
 				}
 				load_plugin(0);
