@@ -122,8 +122,12 @@ async function startCamera(callback) {
 
                         const nose = result.faceLandmarks[0][1];
 
-                        const z_scale = 10.0;
-                        const DISPLAY_LENGTH = 400;//mm
+                        const DISPLAY_LENGTH = 300;//mm
+                        const z_30 = 60;
+                        const z_60 = 20;
+                        const nz_30 = DISPLAY_LENGTH / 2 / Math.tan(30 / 2 / 180 * Math.PI);
+                        const nz_60 = DISPLAY_LENGTH / 2 / Math.tan(60 / 2 / 180 * Math.PI);
+                        const z_scale = (nz_30 - nz_60) / (z_30-z_60);
                         const fov = 60;
                         const fov_rad = fov * Math.PI / 180;
 
@@ -135,11 +139,19 @@ async function startCamera(callback) {
 
                         const nx = (nose.x - 0.5) * W;
                         const ny = -(nose.y - 0.5) * H;
-                        const nz = -mat[14] * z_scale;
+                        let nz = -mat[14] * z_scale;
+
+                        if(-mat[14] > 20){
+                            nz = (-mat[14] - z_60) * z_scale + nz_60;
+                        }else{
+                            nz = -mat[14] * nz_60 / z_60;
+                        }
 
                         const nyaw = Math.atan2(nx, fx);
                         const npitch = Math.atan2(ny, fy);
                         const display_fov = Math.atan2(DISPLAY_LENGTH/2, nz) * 2;
+
+                        console.log(-mat[14], DISPLAY_LENGTH/2, nz, display_fov * 180 / Math.PI);
 
                         callback({
                             nyaw,
@@ -210,12 +222,15 @@ export const create_plugin = (function () {
                     swFd.onclick = (evt) => {
                         if(!running){
                             startCamera((res) => {
+                                if(!m_pst){
+                                    return;
+                                }
 
                                 const pitch_deg = res.npitch * 180 / Math.PI;
                                 const yaw_deg = res.nyaw * 180 / Math.PI;
                                 const fov_deg = res.display_fov * 180 / Math.PI;
 
-                                console.log("detected", pitch_deg, yaw_deg, fov_deg);
+                                //console.log("detected", pitch_deg, yaw_deg, fov_deg);
 
                                 const euler = new THREE.Euler(
                                     THREE.Math.degToRad(-pitch_deg + 90),
@@ -223,8 +238,11 @@ export const create_plugin = (function () {
                                     0,
                                     "YXZ");
                                 const view_quat = new THREE.Quaternion().setFromEuler(euler);
-				                m_plugin_host.set_view_offset(view_quat);
+				                //m_plugin_host.set_view_offset(view_quat);
 				                m_plugin_host.set_fov(fov_deg);
+
+			                    m_pstcore.pstcore_set_param(m_pst, "renderer", "screen_offset_left", `${-res.nyaw},${res.npitch}`);
+			                    m_pstcore.pstcore_set_param(m_pst, "renderer", "screen_offset_right", `${-res.nyaw},${res.npitch}`);
                             });
                         }else{
                             stopCamera();
