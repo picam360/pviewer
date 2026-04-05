@@ -35,7 +35,7 @@ var create_plugin = (function() {
 			prepared : false,
 		},
 		{
-			url : "/amf/wall.amf",
+			url : "/amf/ring-wall.amf",
 			obj_id : "wall",
 			obj : null,
 			default_color : "0.0,0.0,0.0,0.001",

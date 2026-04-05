@@ -23,6 +23,9 @@ var create_plugin = (function() {
 		var new_state = {}
 		for(var tag in gamepads){
 			var gamepad = gamepads[tag];
+			if(!gamepad){
+				continue;
+			}
 			for (var i in gamepad.buttons) {
 				var key = i + "_BUTTON";
 				key = tag + "_" + key;
