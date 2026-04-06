@@ -35,8 +35,8 @@ var create_plugin = (function() {
 			prepared : false,
 		},
 		{
-			url : "/amf/ring-wall.amf",
-			obj_id : "wall",
+			url : "/amf/warp-wall.amf",
+			obj_id : "warp-wall",
 			obj : null,
 			default_color : "0.0,0.0,0.0,0.001",
 			prepared : false,
@@ -99,7 +99,7 @@ var create_plugin = (function() {
 					"obj_quat" : "0,0,0,1",
 					"use_light" : false,
 					"blend" : false,
-					"obj_id" : "wall",
+					"obj_id" : "warp-wall",
 					"direct": true,
 				},
 				{

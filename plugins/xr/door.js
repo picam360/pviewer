@@ -25,7 +25,7 @@ var create_plugin = (function() {
 	var m_objs = [
 		{
 			url : "/amf/door-wall.amf",
-			obj_id : "wall",
+			obj_id : "door-wall",
 			obj : null,
 			default_color : "0.0,0.0,0.0,0.001",
 			prepared : false,
@@ -81,7 +81,7 @@ var create_plugin = (function() {
 		{
 			url : "/img/door-frame.png",
 			format : "png",
-			tex_id : "frame",
+			tex_id : "door-frame",
 			tex : null,
 			prepared : false,
 		},
@@ -127,29 +127,32 @@ var create_plugin = (function() {
 		pstcore.pstcore_set_param(pst, "renderer", "overlay_tex", tex_json_str);
 	}
 	function get_overlay_def(pos){
-		var scale = 1;
+		var scale = 0.5;
 		var jobj = {
 			"id" : "door",
-			"nodes" : [
+			"nodes" : []
+		};
+		if(pos){
+			jobj["nodes"] = [
 				{
-					"obj_scale" : scale,
+					"obj_scale" : scale*1.4,
 					"obj_pos" : pos,
 					"obj_quat" : "0,0,0,1",
 					"use_light" : false,
 					"blend" : false,
-					"obj_id" : "wall",
+					"obj_id" : "door-wall",
 					"direct": true,
 				},
 				{
-					"obj_scale" : scale,
+					"obj_scale" : scale*1.4,
 					"obj_pos" : pos,
-					"tex_id" : "frame",
+					"tex_id" : "door-frame",
 					"obj_quat" : "0,0,0,1",
 					"obj_id" : "board",
 					//"direct": true,
 				},
-			]
-		};
+			];
+		}
 		return JSON.stringify(jobj);
 	}
 
@@ -175,9 +178,6 @@ var create_plugin = (function() {
 							m_rendering_started = true;
 						}
 					}else if(pst_name == "door"){
-						if(param == "disable"){
-							m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", "");
-						}
 						if(param == "set_pos"){
 							m_pos = value;
 							var overlay_def = get_overlay_def(m_pos);
