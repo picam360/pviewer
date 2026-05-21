@@ -5,7 +5,11 @@ var create_plugin = (function() {
 	var m_pstcore = null;
 	var m_pst = 0;
 	var m_xrsession = null;
-	var m_pos = 0;
+	var m_transform = {
+	    position: [0,0,0],
+	    rotation: [0,0,0,1],
+	    scale: [1,1,1],
+	};
 	var m_rendering_started = false;
 	var m_click_timer = 0;
 	var m_click_count = 0;
@@ -126,7 +130,7 @@ var create_plugin = (function() {
 		var tex_json_str = JSON.stringify(tex_json);
 		pstcore.pstcore_set_param(pst, "renderer", "overlay_tex", tex_json_str);
 	}
-	function get_overlay_def(pos){
+	function get_overlay_def(transform){
 		var scale = 0.5;
 		var jobj = {
 			"id" : "door",
@@ -135,22 +139,22 @@ var create_plugin = (function() {
 		if(pos){
 			jobj["nodes"] = [
 				{
-					"obj_scale" : scale*1.4,
-					"obj_pos" : pos,
+					"obj_scale" : `{transform.scale[0]*scale*1.2},{transform.scale[1]*scale*1.2},{transform.scale[2]*scale*1.2}`,
+					"obj_pos" : `{transform.position[0]},{transform.position[1]},{transform.position[2]}`,
 					"obj_quat" : "0,0,0,1",
 					"use_light" : false,
 					"blend" : false,
 					"obj_id" : "door-wall",
 					"direct": true,
 				},
-				{
-					"obj_scale" : scale*1.4,
-					"obj_pos" : pos,
-					"tex_id" : "door-frame",
-					"obj_quat" : "0,0,0,1",
-					"obj_id" : "board",
-					//"direct": true,
-				},
+//				{
+//					"obj_scale" : scale*1.4,
+//					"obj_pos" : pos,
+//					"tex_id" : "door-frame",
+//					"obj_quat" : "0,0,0,1",
+//					"obj_id" : "board",
+//					//"direct": true,
+//				},
 			];
 		}
 		return JSON.stringify(jobj);
@@ -178,9 +182,9 @@ var create_plugin = (function() {
 							m_rendering_started = true;
 						}
 					}else if(pst_name == "door"){
-						if(param == "set_pos"){
-							m_pos = value;
-							var overlay_def = get_overlay_def(m_pos);
+						if(param == "set_transform"){
+							m_transform = JSON.parse(value);
+							var overlay_def = get_overlay_def(m_transform);
 							m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", overlay_def);
 						}
 					}
