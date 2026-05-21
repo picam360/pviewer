@@ -58,14 +58,34 @@ function uuid() {
 	return uuid;
 }
 
-function loadFile(path, callback) {
+function loadFile(path, callback, timeout_ms) {
 	var req = new XMLHttpRequest();
 	req.responseType = "arraybuffer";
 	req.open("get", path, true);
 	req.send(null);
 
+	let is_timeout = false;
+	const timer = setTimeout(() => {
+		is_timeout = true;
+		if(callback){
+			console.log("timeout error : " + path);
+			callback(null);
+		}
+	}, timeout_ms || 5000);
+
 	req.onload = function() {
-		callback([new Uint8Array(req.response)]);
+		if(is_timeout){
+			return;
+		}else{
+			clearTimeout(timer);
+		}
+		if(callback){
+			callback([new Uint8Array(req.response)]);
+		}
+	}
+
+	req.onerror = function(err) {
+		console.log(err);
 	}
 }
 
