@@ -228,7 +228,7 @@ var app = (function() {
 								}
 							}
 							var json_str = lines.join("\n");
-							_options = JSON.parse(json_str);
+							_options = JSONC.parse(json_str);
 						}
 					}catch(e){
 						console.log("common_config.json parsing error", e);
@@ -278,7 +278,7 @@ var app = (function() {
 									}
 								}
 								var json_str = lines.join("\n");
-								_options = JSON.parse(json_str);
+								_options = JSONC.parse(json_str);
 							}
 						}catch(e){
 							console.log("config.json parsing error", e);

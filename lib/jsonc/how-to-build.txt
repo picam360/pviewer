@@ -1,0 +1,17 @@
+npm init -y        
+npm install jsonc-parser esbuild
+cat > build-jsonc.js <<'EOF'
+const esbuild = require("esbuild");
+
+esbuild.build({
+    entryPoints: [
+        "node_modules/jsonc-parser/lib/esm/main.js"
+    ],
+    bundle: true,
+    format: "iife",
+    globalName: "JSONC",
+    minify: true,
+    outfile: "jsonc.js",
+}).catch(() => process.exit(1));
+EOF
+node build-jsonc.js
