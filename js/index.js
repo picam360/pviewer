@@ -47,6 +47,7 @@ var app = (function() {
 		"fov" : 120,
 		"fov_stereo" : 95,
 		"stereo" : false,
+		"sbs3d" : false,
 		"sao" : false,
 		"deblock" : false,
 		"simd" : false,
@@ -553,6 +554,23 @@ var app = (function() {
 				self.set_param("renderer", "screen_offset_right", "0,0");
 				self.set_param("renderer", "margin", "0");
 				self.set_param("renderer", "mode", "quality");
+			}
+		},
+		
+		set_sbs3d: function(value) {
+			if(m_options.sbs3d != value){
+				m_options.sbs3d = value;
+				self.aply_permanent_options("sbs3d");
+			}
+
+			if(swSbs3D){
+				swSbs3D.setChecked(m_options.sbs3d);
+			}
+
+			if(value){
+				self.set_param("renderer", "sbs3d", "1");
+			}else{
+				self.set_param("renderer", "sbs3d", "0");
 			}
 		},
 		
@@ -1309,6 +1327,9 @@ var app = (function() {
 			setTimeout(() => {
 				if(swStereoView){
 					swStereoView.setChecked(m_options.stereo);
+				}
+				if(swSbs3D){
+					swSbs3D.setChecked(m_options.sbs3d);
 				}
 				if(swStabilizer){
 					swStabilizer.setChecked(m_options.stabilizer);
