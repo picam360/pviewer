@@ -1019,6 +1019,7 @@ var app = (function() {
 				}
 				setTimeout(() => {
 					self.set_stereo(m_options.stereo);
+					self.set_sbs3d(m_options.sbs3d);
 					self.set_stabilizer(m_options.stabilizer);
 				
 					if (m_options.view_offset) {
@@ -1345,6 +1346,8 @@ var app = (function() {
 			m_options["screen_offset"][1][0] = -so[0];
 			m_options["screen_offset"][0][1] = so[1]
 			m_options["screen_offset"][1][1] = so[1];
+			self.aply_permanent_options("screen_offset");
+
 			self.set_param("renderer", "screen_offset_left", `${m_options.screen_offset[0][0]},${m_options.screen_offset[0][1]}`);
 			self.set_param("renderer", "screen_offset_right", `${m_options.screen_offset[1][0]},${m_options.screen_offset[1][1]}`);
 		},
