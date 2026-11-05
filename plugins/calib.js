@@ -8,6 +8,7 @@ var create_plugin = (function() {
 		var map = {
 			"A" : "add",
 			"R" : "remove",
+			"B" : "dark",
 			"C" : "center",
 			"D" : "distortion",
 			"E" : "execute",
