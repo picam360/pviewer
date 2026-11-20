@@ -324,6 +324,16 @@ var create_plugin = (function() {
             var pack = conn.rtp.build_packet(cmd, PT_CMD);
             conn.rtp.send_packet(pack);
         }
+        if(m_query['stream-params']){//stream stream-params
+            var cmd = "<picam360:command id=\"0\" value=\"stream_params " + encodeURIComponent(m_query['stream-params']) + "\" />";
+            var pack = conn.rtp.build_packet(cmd, PT_CMD);
+            conn.rtp.send_packet(pack);
+        }
+        if(m_query['stream-replacements']){//stream stream-replacements
+            var cmd = "<picam360:command id=\"0\" value=\"stream_replacements " + encodeURIComponent(m_query['stream-replacements']) + "\" />";
+            var pack = conn.rtp.build_packet(cmd, PT_CMD);
+            conn.rtp.send_packet(pack);
+        }
         { // ping
             var cmd = "<picam360:command id=\"0\" value=\"ping " + new Date().getTime() + "\" />";
             var pack = conn.rtp.build_packet(cmd, PT_CMD);
