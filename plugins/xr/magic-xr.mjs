@@ -94,7 +94,7 @@ function stopCamera() {
 }
 
 export const create_plugin = (function () {
-    var PLUGIN_NAME = "magic_mr";
+    var PLUGIN_NAME = "magic_xr";
     var m_plugin_host = null;
     var m_pstcore = null;
     var m_pst = 0;
@@ -144,7 +144,7 @@ export const create_plugin = (function () {
                                 //     return;
                                 // }
 
-                                const qr = results[0];
+                                const qr = res[0];
                                 console.log("QR Result:", qr);
                             });
                         }else{
