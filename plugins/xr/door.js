@@ -136,27 +136,28 @@ var create_plugin = (function() {
 			"id" : "door",
 			"nodes" : []
 		};
-		if(pos){
+		if(transform){
 			jobj["nodes"] = [
 				{
-					"obj_scale" : `{transform.scale[0]*scale*1.2},{transform.scale[1]*scale*1.2},{transform.scale[2]*scale*1.2}`,
-					"obj_pos" : `{transform.position[0]},{transform.position[1]},{transform.position[2]}`,
+					"obj_scale" : `${transform.scale[0]*scale*1.2},${transform.scale[1]*scale*1.2},${transform.scale[2]*scale*1.2}`,
+					"obj_pos" : `${transform.position[0]},${transform.position[1]},${transform.position[2]}`,
 					"obj_quat" : "0,0,0,1",
 					"use_light" : false,
 					"blend" : false,
 					"obj_id" : "door-wall",
 					"direct": true,
 				},
-//				{
-//					"obj_scale" : scale*1.4,
-//					"obj_pos" : pos,
-//					"tex_id" : "door-frame",
-//					"obj_quat" : "0,0,0,1",
-//					"obj_id" : "board",
-//					//"direct": true,
-//				},
+				{
+				 	"obj_scale" : `${transform.scale[0]*scale*1.4},${transform.scale[1]*scale*1.4},${transform.scale[2]*scale*1.4}`,
+				 	"obj_pos" : `${transform.position[0]*0.99},${transform.position[1]*0.99},${transform.position[2]*0.99}`,
+					"tex_id" : "door-frame",
+					"obj_quat" : "0,0,0,1",
+					"obj_id" : "board",
+					//"direct": true,
+				},
 			];
 		}
+
 		return JSON.stringify(jobj);
 	}
 

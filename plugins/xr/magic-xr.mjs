@@ -94,23 +94,89 @@ function stopCamera() {
 }
 
 export const create_plugin = (function () {
-    var PLUGIN_NAME = "magic_xr";
-    var m_plugin_host = null;
-    var m_pstcore = null;
-    var m_pst = 0;
-    var m_permanent_options = {};
+    const PLUGIN_NAME = "magic_xr";
+    let m_plugin_host = null;
+    let m_pstcore = null;
+    let m_pst = 0;
+    let m_permanent_options = {};
 
-    function addMenuButton(name, txt) {
-        return new Promise((resolve, reject) => {
-            var onsListItem = document.createElement("ons-list-item");
-            onsListItem.id = name;
-            onsListItem.innerHTML = txt;
-            menu_list.insertBefore(onsListItem, menu_list_about);
-            ons.compile(onsListItem);
-            resolve();
-        });
+    let m_xrsession = null;
+
+	var m_objs = [
+		{
+			url : "/amf/blind-wall.amf",
+			obj_id : "blind-wall",
+			obj : null,
+			default_color : "0.0,0.0,0.0,0.001",
+			prepared : false,
+		},
+	];
+
+	function base64encode_binary(data){
+		return btoa([...data].map(n => String.fromCharCode(n)).join(""));
+	}
+
+	function load_objs(idx){
+		if(idx === undefined){
+			idx = 0;
+		}else if(idx >= m_objs.length){
+			return;
+		}
+		var base_url = "plugins/xr";
+		if(m_objs[idx].url){
+			var getFile = m_plugin_host.getFile;
+			if(m_plugin_host.getFileFromUpstream){
+				getFile = m_plugin_host.getFileFromUpstream;
+			}
+			getFile(base_url + m_objs[idx].url, (data) => {
+				if(Array.isArray(data)){
+					data = data[0];
+				}
+				m_objs[idx].obj = base64encode_binary(data);
+				m_objs[idx].prepared = true;
+				load_objs(idx + 1);
+			});
+		}else{
+			m_objs[idx].prepared = true;
+			load_objs(idx + 1);
+		}
+	}
+
+	function upload_objs(pstcore, pst){
+		var json = {
+			nodes : [],
+		};
+		for(var node of m_objs){
+			json.nodes.push({
+				obj : node.obj,
+				default_color : node.default_color,
+				smooth_shading : false,
+				obj_id : node.obj_id,
+			});
+		}
+		var json_str = JSON.stringify(json);
+		pstcore.pstcore_set_param(pst, "renderer", "overlay_obj", json_str);
+	}
+
+    function blind(bln){
+        var jobj = {
+            "id" : "blind",
+            "nodes" : []
+        };
+        if(bln){
+			jobj.nodes.push({
+                "obj_scale" : "0.1,0.1,0.1",
+                "obj_pos" : "0.0,0.0,0.0",
+                "obj_quat" : "0,0,0,1",
+                "use_light" : false,
+                "blend" : false,
+                "obj_id" : "blind-wall",
+                "direct": true,
+                "cull_face" : false,
+			});
+        }
+		m_pstcore.pstcore_set_param(m_pst, "renderer", "overlay", JSON.stringify(jobj));
     }
-
 
     return function (plugin_host) {
         m_plugin_host = plugin_host;
@@ -122,6 +188,8 @@ export const create_plugin = (function () {
                     m_permanent_options = {};
                 }
 
+				load_objs();
+
                 ZXingWASM.setZXingModuleOverrides({
                     locateFile: (path, prefix) => {
                         if (path.endsWith(".wasm")) {
@@ -131,27 +199,33 @@ export const create_plugin = (function () {
                     }
                 });
             },
+			xrsession_started: function (session) {
+				m_xrsession = session;
+
+                startCamera((res) => {
+                    // if(!m_pst){
+                    //     return;
+                    // }
+
+                    blind(false);
+
+                    const qr = res[0];
+                    console.log("QR Result:", qr);
+
+                    const transform = {
+                        position : [ 0, 0, 1 ],
+                        scale : [ 1.0, 1.0, 1.0 ],
+                    };
+                    m_pstcore.pstcore_set_param(m_pst, "door", "set_transform", JSON.stringify(transform));
+                });
+			},
             pst_started: function (pstcore, pst) {
                 m_pstcore = pstcore;
                 m_pst = pst;
-            },
-            on_restore_app_menu: function (callback) {
-                addMenuButton("swMm", "MM").then(() => {
-                    swMm.onclick = (evt) => {
-                        if(!running){
-                            startCamera((res) => {
-                                // if(!m_pst){
-                                //     return;
-                                // }
 
-                                const qr = res[0];
-                                console.log("QR Result:", qr);
-                            });
-                        }else{
-                            stopCamera();
-                        }
-                    };
-                });
+				upload_objs(m_pstcore, m_pst);
+
+                blind(true);
             },
             event_handler: function (sender, event, new_state) {
             },
