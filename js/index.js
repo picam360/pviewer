@@ -1117,6 +1117,10 @@ var app = (function() {
 						var value = sprintf("%f,%f,%f,%f", quat.x, quat.y, quat.z, quat.w);
 						self.set_param("renderer", "view_quat", value);
 					});
+					self.plugin_host.on_view_pos_changed((view_pos) => {
+						var value = sprintf("%f,%f,%f", view_pos.x, view_pos.y, view_pos.z);
+						self.set_param("renderer", "view_pos", value);
+					});
 				
 					m_mpu = MPU();
 					m_mpu.init((quat) => {

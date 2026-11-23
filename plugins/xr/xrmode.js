@@ -73,6 +73,14 @@ var create_plugin = (function() {
 					m_plugin_host.set_view_offset(new THREE.Quaternion());
 					app.set_stereo(true);
 				}
+
+				const view_pos = new THREE.Vector3(
+					pose.transform.position.x,
+					//pose.transform.position.y,
+					0,//for y
+					pose.transform.position.z,
+				);
+				m_plugin_host.set_view_pos(view_pos);//need to be called before set_view_quat
 				
 				var euler = new THREE.Euler(THREE.Math
 					.degToRad(90), THREE.Math

@@ -12,8 +12,10 @@ function PluginHost(core, options) {
 	var m_view_offset = new THREE.Quaternion();
 	var m_view_offset_lock = false;
 	var m_view_quat = new THREE.Quaternion();
+	var m_view_pos = new THREE.Vector3();
 	var m_north = 0;
 	var m_view_quat_changed_callbacks = [];
+	var m_view_pos_changed_callbacks = [];
 	var m_loaded_scripts = {};
 
 	var query = GetQueryString();
@@ -171,6 +173,12 @@ function PluginHost(core, options) {
 				callback(m_view_quat.clone(), m_view_offset.clone());
 			}
 		},
+		set_view_pos: function(value) {
+			m_view_pos = value.clone();
+			for(var callback of m_view_pos_changed_callbacks){
+				callback(m_view_pos.clone());
+			}
+		},
 		soft_centering: function() {
 			const [_pitch_, yaw] = calPitchYawDegree(self.get_view_quat());
 			const [pitch, _yaw_] = calPitchYawDegree(self.get_view_offset());
@@ -180,6 +188,9 @@ function PluginHost(core, options) {
 		},
 		on_view_quat_changed: function(callback) {
 			m_view_quat_changed_callbacks.push(callback);
+		},
+		on_view_pos_changed: function(callback) {
+			m_view_pos_changed_callbacks.push(callback);
 		},
 		get_view_north: function() {
 			return m_north;
