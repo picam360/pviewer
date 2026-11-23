@@ -1,0 +1,7 @@
+{
+    "format": "REMOPASS_JUMON",
+    "url": "https://loalhost:36443",
+    "type": "door",
+    "tex": "https://loalhost:36443/plugins/xr/img/door-frame.png",
+    "marker_size": 50,
+}
